@@ -1,26 +1,36 @@
-# Learn Blockchains by Building One
 
-[![Build Status](https://travis-ci.org/dvf/blockchain.svg?branch=master)](https://travis-ci.org/dvf/blockchain)
+# SBChain Blockchain
 
-This is the source code for my post on [Building a Blockchain](https://medium.com/p/117428612f46). 
+The code for this project was imported from the article [Building a Blockchain](https://medium.com/p/117428612f46). The original source code can be found [here](https://github.com/dvf/blockchain).
 
-## Installation
+## Python
 
-1. Make sure [Python 3.6+](https://www.python.org/downloads/) is installed. 
-2. Install [pipenv](https://github.com/kennethreitz/pipenv). 
+1. Make sure [Python 3.6+](https://www.python.org/downloads/) is installed. This can be tested by running `$ python -V`.
 
+2. Install [virtualenv](https://virtualenv.pypa.io/en/stable/installation/).
 ```
-$ pip install pipenv 
+$ pip install virtualenv 
 ```
-3. Install requirements  
+
+4. Create a new virtual environment for this project. The venv folder will be ignored by GitHub.
 ```
-$ pipenv install 
+$ virtualenv -p python3 venv
+```
+
+5. Mount the virtual environment. After this line, your command prompt should be prefaced with ```(venv)```.
+```
+$ .\local\venv\Scripts\activate
+```
+
+6. Install requirements.
+```
+$ pip install -r requirements.txt
 ``` 
 
-4. Run the server:
-    * `$ pipenv run python blockchain.py` 
-    * `$ pipenv run python blockchain.py -p 5001`
-    * `$ pipenv run python blockchain.py --port 5002`
+7. Run the server:
+    * `$ python blockchain.py` 
+    * `$ python blockchain.py -p 5001`
+    * `$ python blockchain.py --port 5002`
     
 ## Docker
 
@@ -47,19 +57,24 @@ $ docker run --rm -p 82:5000 blockchain
 $ docker run --rm -p 83:5000 blockchain
 ```
 
-## Installation (C# Implementation)
+## API
 
-1. Install a free copy of Visual Studio IDE (Community Edition):
-https://www.visualstudio.com/vs/
-
-2. Once installed, open the solution file (BlockChain.sln) using the File > Open > Project/Solution menu options within Visual Studio.
-
-3. From within the "Solution Explorer", right click the BlockChain.Console project and select the "Set As Startup Project" option.
-
-4. Click the "Start" button, or hit F5 to run. The program executes in a console window, and is controlled via HTTP with the same commands as the Python version.
-
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
+### GET /mine
+Tell the node to mine a new block.
+```
+$ curl -X GET "http://localhost:5000/mine"
+```
+### GET /chain
+Return the full blockchain
+```
+$ curl -X GET "http://localhost:5000/chain"
+```
+### POST /transactions/new
+Create a new transaction in the current block.
+```
+$ curl -X POST -H "Content-Type: application/json" -d '{  
+ "sender": "your-address",  
+ "recipient": "someone-other-address",  
+ "amount": 5  
+}' "http://localhost:5000/transactions/new"
+```
