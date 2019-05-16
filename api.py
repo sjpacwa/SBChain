@@ -1,8 +1,17 @@
-from blockchain import *
-import requests
-from flask import Flask, jsonify, request
+"""
+api.py
+This file is responsible for defining the API for interacting with the node
+server.
+"""
+
+# Standard library imports
 from uuid import uuid4
 
+# Third party imports
+from flask import Flask, jsonify, request
+
+# Local imports
+from blockchain import Blockchain
 
 # Instantiate the Node
 app = Flask(__name__)
@@ -101,5 +110,3 @@ def consensus():
         }
 
     return jsonify(response), 200
-
-
