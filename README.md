@@ -19,7 +19,7 @@ $ virtualenv -p python3 venv
 
 5. Mount the virtual environment. After this line, your command prompt should be prefaced with ```(venv)```.
 ```
-$ .\local\venv\Scripts\activate
+$ .\venv\Scripts\activate
 ```
 
 6. Install requirements.
@@ -77,4 +77,16 @@ $ curl -X POST -H "Content-Type: application/json" -d '{
  "recipient": "someone-other-address",  
  "amount": 5  
 }' "http://localhost:5000/transactions/new"
+```
+### POST /nodes/register
+Add a new node to the list of peers for this node.
+```
+$ curl -X POST -H "Content-Type: application/json" -d '{
+ "nodes": ["127.0.0.1"]
+}' "https://localhost:5000/transactions/new"
+```
+### GET /nodes/resolve
+Resolve conflicts and keep the chain that is longer.
+```
+$ curl -X GET "http://localhost:5000/nodes/resolve"
 ```
