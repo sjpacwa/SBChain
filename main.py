@@ -10,11 +10,11 @@ from argparse import ArgumentParser
 from api import app
 
 if __name__ == '__main__':
-    # Parse command line arguments.
-    parser = ArgumentParser()
-    parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
-    args = parser.parse_args()
-    port = args.port
+	# Parse command line arguments.
+	parser = ArgumentParser()
+	parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
+	args = parser.parse_args()
+	port = args.port
 
-    # Run the application.
-    app.run(host='0.0.0.0', port=port)
+	# Run the application.
+	app.run(host='0.0.0.0', port=port)

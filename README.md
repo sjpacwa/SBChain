@@ -1,4 +1,3 @@
-
 # SBChain Blockchain
 
 The code for this project was imported from the article [Building a Blockchain](https://medium.com/p/117428612f46). The original source code can be found [here](https://github.com/dvf/blockchain).
