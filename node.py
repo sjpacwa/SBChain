@@ -1,7 +1,8 @@
 import json
 from urllib.parse import urlparse
+from blockchain import *
 
-class node:
+class Node:
 	def __init__(self):
 		self.nodes = set()
 		self.chain = Blockchain()

@@ -1,6 +1,7 @@
 import hashlib
 import json
 from time import time
+from block import *
 
 
 class Blockchain:
@@ -51,14 +52,8 @@ class Blockchain:
 		:param previous_hash: Hash of previous Block
 		:return: New Block
 		"""
-
-		block = {
-			'index': len(self.chain) + 1,
-			'timestamp': time(),
-			'transactions': self.current_transactions,
-			'proof': proof,
-			'previous_hash': previous_hash or self.hash(self.chain[-1]),
-		}
+		
+		block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash())
 
 		# Reset the current list of transactions
 		self.current_transactions = []
@@ -86,18 +81,6 @@ class Blockchain:
 	@property
 	def last_block(self):
 		return self.chain[-1]
-
-	@staticmethod
-	def hash(block):
-		"""
-		Creates a SHA-256 hash of a Block
-
-		:param block: Block
-		"""
-
-		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-		block_string = json.dumps(block, sort_keys=True).encode()
-		return hashlib.sha256(block_string).hexdigest()
 
 	def proof_of_work(self, last_block):
 		"""
