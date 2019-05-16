@@ -4,10 +4,12 @@ from time import time
 from block import *
 
 
+
 class Blockchain:
 	def __init__(self):
 		self.current_transactions = []
 		self.chain = []
+		self.chain_dict = []
 
 		# Create the genesis block
 		self.new_block(previous_hash='1', proof=100)
@@ -21,16 +23,22 @@ class Blockchain:
 		:return: True if valid, False if not
 		"""
 
+		print(chain)
+
 		last_block = chain[0]
 		current_index = 1
 
 		while current_index < len(chain):
 			block = chain[current_index]
+			
+			# TODO Fix printing.
 			print(f'{last_block}')
 			print(f'{block}')
 			print("\n-----------\n")
+			
 			# Check that the hash of the block is correct
-			last_block_hash = self.hash(last_block)
+			block_string = json.dumps(last_block, sort_keys=True).encode()
+			last_block_hash = hashlib.sha256(block_string).hexdigest()
 			if block['previous_hash'] != last_block_hash:
 				return False
 
@@ -59,6 +67,7 @@ class Blockchain:
 		self.current_transactions = []
 
 		self.chain.append(block)
+		self.chain_dict.append(block.toDict())
 		return block
 
 	def new_transaction(self, sender, recipient, amount):
@@ -76,7 +85,7 @@ class Blockchain:
 			'amount': amount,
 		})
 
-		return self.last_block['index'] + 1
+		return self.last_block.index + 1
 
 	@property
 	def last_block(self):
@@ -92,9 +101,10 @@ class Blockchain:
 		:param last_block: <dict> last Block
 		:return: <int>
 		"""
+		print(last_block.hash())
 
-		last_proof = last_block['proof']
-		last_hash = self.hash(last_block)
+		last_proof = last_block.proof
+		last_hash = last_block.hash()
 
 		proof = 0
 		while self.valid_proof(last_proof, proof, last_hash) is False:
@@ -116,6 +126,6 @@ class Blockchain:
 
 		guess = f'{last_proof}{proof}{last_hash}'.encode()
 		guess_hash = hashlib.sha256(guess).hexdigest()
+		
+		# This is where difficulty is set.
 		return guess_hash[:4] == "0000"
-
-

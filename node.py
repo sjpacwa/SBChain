@@ -1,11 +1,14 @@
 import json
 from urllib.parse import urlparse
 from blockchain import *
+from uuid import uuid4
+import requests
 
 class Node:
 	def __init__(self):
 		self.nodes = set()
-		self.chain = Blockchain()
+		self.blockchain = Blockchain()
+		self.identifier = str(uuid4()).replace('-', '')
 
 	def resolve_conflicts(self):
 		"""
@@ -19,7 +22,7 @@ class Node:
 		new_chain = None
 
 		# We're only looking for chains longer than ours
-		max_length = len(self.chain.chain)
+		max_length = len(self.blockchain.chain)
 
 		# Grab and verify the chains from all the nodes in our network
 		for node in neighbours:
@@ -30,13 +33,19 @@ class Node:
 				chain = response.json()['chain']
 
 				# Check if the length is longer and the chain is valid
-				if length > max_length and self.chain.valid_chain(chain):
+				if length > max_length and self.blockchain.valid_chain(chain):
 					max_length = length
 					new_chain = chain
 
 		# Replace our chain if we discovered a new, valid chain longer than ours
 		if new_chain:
-			self.chain.chain = new_chain
+			for item in new_chain:
+				# TODO make into helper function
+				self.blockchain.chain.append(Block(item['index'], 
+					item['timestamp'], item['transactions'], item['proof'],
+					item['previous_hash']))
+			self.blockchain.chain = new_chain
+			self.blockchain.chain_dict = new_chain
 			return True
 
 		return False

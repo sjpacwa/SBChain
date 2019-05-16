@@ -5,48 +5,43 @@ server.
 """
 
 # Standard library imports
-from uuid import uuid4
 
 # Third party imports
 from flask import Flask, jsonify, request
 
 # Local imports
-from blockchain import Blockchain
+from node import Node
 
 # Instantiate the Node
 app = Flask(__name__)
 
-# Generate a globally unique address for this node
-node_identifier = str(uuid4()).replace('-', '')
-
-# Instantiate the Blockchain
-blockchain = Blockchain()
-
+node = Node()
 
 @app.route('/mine', methods=['GET'])
 def mine():
 	# We run the proof of work algorithm to get the next proof...
-	last_block = blockchain.last_block
-	proof = blockchain.proof_of_work(last_block)
+	last_block = node.blockchain.last_block
+	print(last_block.index)
+	proof = node.blockchain.proof_of_work(last_block)
 
 	# We must receive a reward for finding the proof.
 	# The sender is "0" to signify that this node has mined a new coin.
-	blockchain.new_transaction(
+	node.blockchain.new_transaction(
 		sender="0",
-		recipient=node_identifier,
+		recipient= node.identifier,
 		amount=1,
 	)
 
 	# Forge the new Block by adding it to the chain
-	previous_hash = blockchain.hash(last_block)
-	block = blockchain.new_block(proof, previous_hash)
+	previous_hash = last_block.hash()
+	block = node.blockchain.new_block(proof, previous_hash)
 
 	response = {
 		'message': "New Block Forged",
-		'index': block['index'],
-		'transactions': block['transactions'],
-		'proof': block['proof'],
-		'previous_hash': block['previous_hash'],
+		'index': block.index,
+		'transactions': block.transactions,
+		'proof': block.proof,
+		'previous_hash': block.previous_hash,
 	}
 	return jsonify(response), 200
 
@@ -61,7 +56,7 @@ def new_transaction():
 		return 'Missing values', 400
 
 	# Create a new Transaction
-	index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+	index = node.blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
 	response = {'message': f'Transaction will be added to Block {index}'}
 	return jsonify(response), 201
@@ -70,8 +65,8 @@ def new_transaction():
 @app.route('/chain', methods=['GET'])
 def full_chain():
 	response = {
-		'chain': blockchain.chain,
-		'length': len(blockchain.chain),
+		'chain': node.blockchain.chain_dict,
+		'length': len(node.blockchain.chain_dict),
 	}
 	return jsonify(response), 200
 
@@ -84,29 +79,29 @@ def register_nodes():
 	if nodes is None:
 		return "Error: Please supply a valid list of nodes", 400
 
-	for node in nodes:
-		blockchain.register_node(node)
+	for item in nodes:
+		node.register_node(item)
 
 	response = {
 		'message': 'New nodes have been added',
-		'total_nodes': list(blockchain.nodes),
+		'total_nodes': list(node.nodes),
 	}
 	return jsonify(response), 201
 
 
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
-	replaced = blockchain.resolve_conflicts()
+	replaced = node.resolve_conflicts()
 
 	if replaced:
 		response = {
 			'message': 'Our chain was replaced',
-			'new_chain': blockchain.chain
+			'new_chain': node.blockchain.chain_dict
 		}
 	else:
 		response = {
 			'message': 'Our chain is authoritative',
-			'chain': blockchain.chain
+			'chain': node.blockchain.chain_dict
 		}
 
 	return jsonify(response), 200
