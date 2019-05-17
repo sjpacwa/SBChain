@@ -1,3 +1,10 @@
+"""
+block.py
+This file defines the Block class which is used to hold information on the 
+blocks that are stored in the blockchain.
+"""
+
+# Standard library imports
 import hashlib
 import json
 from time import time

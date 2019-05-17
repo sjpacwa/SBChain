@@ -1,8 +1,16 @@
+"""
+blockchain.py
+This file defines the Blockchain class which is used to manage information 
+related to the chain.
+"""
+
+# Standard library imports
 import hashlib
 import json
 from time import time
-from block import *
 
+# Local imports
+from block import Block
 
 
 class Blockchain:
@@ -13,7 +21,6 @@ class Blockchain:
 
 		# Create the genesis block
 		self.new_block(previous_hash='1', proof=100)
-
 
 	def valid_chain(self, chain):
 		"""
@@ -50,7 +57,6 @@ class Blockchain:
 			current_index += 1
 
 		return True
-
 
 	def new_block(self, proof, previous_hash):
 		"""

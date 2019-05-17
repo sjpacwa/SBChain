@@ -4,8 +4,6 @@ This file is responsible for defining the API for interacting with the node
 server.
 """
 
-# Standard library imports
-
 # Third party imports
 from flask import Flask, jsonify, request
 

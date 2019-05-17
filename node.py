@@ -1,8 +1,20 @@
+"""
+node.py
+This file defines the Node class which is used to store information node 
+specific information.
+"""
+
+# Standard library imports
 import json
 from urllib.parse import urlparse
-from blockchain import *
 from uuid import uuid4
+
+# Third party imports
 import requests
+
+# Local imports
+from blockchain import Blockchain
+
 
 class Node:
 	def __init__(self):
