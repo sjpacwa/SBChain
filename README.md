@@ -15,6 +15,10 @@ $ pip install virtualenv
 ```
 $ virtualenv -p python3 venv
 ```
+If this command doesn't work, try:
+```
+$ virtualenv -p python venv
+```
 
 5. Mount the virtual environment. After this line, your command prompt should be prefaced with ```(venv)```.
 ```
@@ -27,9 +31,9 @@ $ pip install -r requirements.txt
 ``` 
 
 7. Run the server:
-    * `$ python blockchain.py` 
-    * `$ python blockchain.py -p 5001`
-    * `$ python blockchain.py --port 5002`
+    * `$ python main.py` 
+    * `$ python main.py -p 5001`
+    * `$ python main.py --port 5002`
     
 ## Docker
 
