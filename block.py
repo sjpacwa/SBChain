@@ -38,3 +38,6 @@ class Block:
 			'proof': self.proof,
 			'previous_hash': self.previous_hash,
 		}
+
+	def to_json(self):
+		return json.dump(self.toDict())

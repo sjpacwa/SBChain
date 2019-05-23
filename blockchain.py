@@ -113,13 +113,13 @@ class Blockchain:
 		last_hash = last_block.hash()
 
 		proof = 0
-		while self.valid_proof(last_proof, proof, last_hash) is False:
+		while self.valid_proof(last_proof, proof, last_hash, self.current_transactions) is False:
 			proof += 1
 
 		return proof
 
 	@staticmethod
-	def valid_proof(last_proof, proof, last_hash):
+	def valid_proof(last_proof, proof, last_hash, current_transactions):
 		"""
 		Validates the Proof
 
@@ -130,7 +130,7 @@ class Blockchain:
 
 		"""
 
-		guess = f'{last_proof}{proof}{last_hash}'.encode()
+		guess = f'{last_proof}{proof}{last_hash}{current_transactions}'.encode()
 		guess_hash = hashlib.sha256(guess).hexdigest()
 		
 		# This is where difficulty is set.
