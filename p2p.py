@@ -21,9 +21,10 @@ peers = {}
 class MessageType(object):
 	QUERY_LATEST = 0
 	QUERY_ALL = 1
-	RESPONSE_BLOCKCHAIN = 2
-	QUERY_TRANSACTIONS = 3
-	RESPONSE_TRANSACTIONS = 4
+	RESPONSE_BLOCK = 2
+	RESPONSE_BLOCKCHAIN = 3
+	QUERY_TRANSACTIONS = 4
+	RESPONSE_TRANSACTIONS = 5
 
 
 class Message(object):
@@ -55,7 +56,7 @@ def resp_latest_message(node):
 	:return: msg object with lastest block-json as data
 	"""
 	log.info("Generating latest block response json")
-	return Message(MessageType.RESPONSE_BLOCKCHAIN,
+	return Message(MessageType.RESPONSE_BLOCK,
 			   [ node.blockchain.last_block().to_json() ]
 			   ).to_json()
 
@@ -76,32 +77,33 @@ def resp_tx_msg():
 			   [json.dump(tx) for tx in node.blockchain.current_transactions]
 			   ).to_json()
 
-"""
-async def handle_blockchain_resp(new_chain):
-	if len(new_chain) == 0:
-		log.info("New received chain len is 0")
-		return
+def resolve_conflicts(new_chain):
+		"""
+		This is our consensus algorithm, it resolves conflicts
+		by replacing our chain with the longest one in the network.
 
-	our_last_blk = block.get_latest_block()
-	got_last_blk = new_chain[-1]
+		:return: True if our chain was replaced, False if not
+		"""
 
-	# if more blocks in new chain
-	if our_last_blk.index < got_last_blk.index:
-		log.info("Got new chain with len: {}, ours is: {}".format(len(new_chain), len(blockchain.blockchain)))
+		# We're only looking for chains longer than ours.
+		max_length = len(node.blockchain.chain)
 
-		if our_last_blk.hash == got_last_blk.prev_hash:
-			log.info("We were one block behind, adding new block")
-			block.add_block_to_blockchain(got_last_blk)
-			await broadcast_latest()
-		elif len(new_chain) == 1:
-			log.info("Got just one block. gonna query whole chain")
-			await broadcast( query_all_msg )
+		# Compare length of sent chain with the current chain.
+		if len(new_chain) > max_length and node.blockchain.valid_chain(new_chain):
+			if len(new_chain) == 1:
+				await broadcast( query_all_msg )
+				return
+			self.blockchain.chain = new_chain
+			self.blockchain.chain_dict = new_chain
+			print('Peer\'s chain was larger, replacing ours')
 		else:
-			log.info("Received longer chain, replacing")
-			await blockchain.replace_chain(new_chain)
-	else:
-		log.info("Shorter blockchain received, do nothing")
-"""
+			print('Our chain was larger or the same than our peer\'s')
+
+def check_block(new_block):
+	if node.blockchain.chain[-1].hash() == new_block.previous_hash:
+		print('Another node has mined a block')
+		node.blockchain.chain.append(new_block)
+		await broadcast_latest()
 
 async def handle_peer_msg(key, ws):
 	await ws.send_str(query_latest_msg)
@@ -122,11 +124,12 @@ async def handle_peer_msg(key, ws):
 				await ws.send_str(resp_chain_message())
 
 			elif recv_msg.type == msg_type.RESPONSE_BLOCKCHAIN:
-				pass
-				"""
 				new_chain = [ block.generate_block_from_json(b) for b in recv_msg.data ]
-				await handle_blockchain_resp(new_chain)
-				"""
+				await resolve_conflicts(new_chain)
+				
+			elif recv_msg.type == msg_type.RESPONSE_BLOCK:
+				new_block = block.generate_block_from_json(recv_msg.data[0])
+				await check_block(new_block)
 
 			elif recv_msg.type == msg_type.QUERY_TRANSACTIONS:
 				await  ws.send_str(resp_tx_msg())
@@ -137,12 +140,9 @@ async def handle_peer_msg(key, ws):
 					log.warning("Received txpool is empty")
 				else:
 					for t in received_pool:
-						try:
-							# TODO Validate the transaction.
-							transact_pool.add_to_transact_pool(t, blockchain.utxo)
-							await broadcast_txpool()
-						except Exception:
-							log.warning("Received pool was not added")
+						if t not in node.blockchain.current_transactions:
+							node.blockchain.current_transactions.append(t)
+					await broadcast_tx()
 		elif ws_msg.type == web.WSMsgType.binary:
 			log.info("Binary message; ignoring...")
 		elif ws_msg.type in [web.WSMsgType.close, web.WSMsgType.error]:
