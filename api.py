@@ -2,12 +2,6 @@
 api.py
 This file is responsible for defining the API for interacting with the node
 server.
-
-Notes: 6/21/19
-Not sure how to encorporate adding peers: add_peer(request), add_peer(peer_addr)
-Include api_get_block_count() ?
-Not sure where wshandle() comes in
-How to encorporate mine_cron() into this file?
 """
 
 # Third party imports
@@ -16,7 +10,7 @@ from aiohttp import web,ClientSession
 
 # Local imports
 from node import Node
-from p2p import handle_peer_msg, broadcast_latest,broadcast_tx
+from p2p import handle_peer_msg, broadcast_latest,broadcast_tx, resolve_conflicts
 
 # Instantiate the Node
 app = Flask(__name__)
@@ -50,7 +44,8 @@ def mine():
 		'previous_hash': block.previous_hash,
 	}
 	# Broadcast the newly mined block
-	await broadcast_latest()
+	# Removed an await here!
+	broadcast_latest()
 
 	return jsonify(response), 200
 
@@ -70,12 +65,13 @@ def new_transaction():
 	response = {'message': f'Transaction will be added to Block {index}'}
 
 	# send transaction
-	await broadcast_tx()
+	# Removed an await here!
+	broadcast_tx()
 	# included in imcoin implementation wallet.py: send_transaction(data)
 	'''
 	if len(transact_pool.transact_pool)>=10:
-            log.info("More than 10 transaction in pool, mining block")
-            block.generate_next_block()
+			log.info("More than 10 transaction in pool, mining block")
+			block.generate_next_block()
 	'''
 	return jsonify(response), 201
 
@@ -89,6 +85,19 @@ def full_chain():
 	return jsonify(response), 200
 
 
+async def add_peer(peer_addr):
+	try:
+		async  with ClientSession() as session:
+			async with session.ws_connect(peer_addr) as ws:
+				key = ws.get_extra_info('peername')[0]
+				node.peers[key] = ws
+				await handle_peer_msg(key,ws)
+	except Exception:
+		session.close()
+	await node.peers[key].close()
+	del node.peers[key]
+
+
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
 	values = request.get_json()
@@ -99,6 +108,7 @@ def register_nodes():
 
 	for item in nodes:
 		node.register_node(item)
+		add_peer(item)
 
 	response = {
 		'message': 'New nodes have been added',

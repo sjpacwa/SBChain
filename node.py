@@ -19,6 +19,7 @@ from blockchain import Blockchain
 class Node:
 	def __init__(self):
 		self.nodes = set()
+		self.peers = dict()
 		self.blockchain = Blockchain()
 		self.identifier = str(uuid4()).replace('-', '')
 

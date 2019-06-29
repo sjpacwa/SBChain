@@ -77,7 +77,8 @@ def resp_tx_msg():
 			   [json.dump(tx) for tx in node.blockchain.current_transactions]
 			   ).to_json()
 
-def resolve_conflicts(new_chain):
+# Added an async
+async def resolve_conflicts(new_chain):
 		"""
 		This is our consensus algorithm, it resolves conflicts
 		by replacing our chain with the longest one in the network.
@@ -99,7 +100,8 @@ def resolve_conflicts(new_chain):
 		else:
 			print('Our chain was larger or the same than our peer\'s')
 
-def check_block(new_block):
+# Added an async
+async def check_block(new_block):
 	if node.blockchain.chain[-1].hash() == new_block.previous_hash:
 		print('Another node has mined a block')
 		node.blockchain.chain.append(new_block)
@@ -164,4 +166,4 @@ async def broadcast_latest():
 async def broadcast_tx():
 	log.info("Broadcasting tx")
 	data = resp_tx_msg()
-await broadcast(data)
+	await broadcast(data)
