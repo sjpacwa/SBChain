@@ -8,6 +8,7 @@ other.
 
 # Standard Library Imports
 import logging
+import requests
 
 # Third Party Imports
 from flask import Flask, jsonify, request
@@ -108,6 +109,13 @@ def new_transaction():
 	# Sender: Send the new transaction to peer.
 	# Peer: If not duplicate, add transaction to list and forward to other 
 	# peers.
+	transaction = {}
+	transaction['sender'] = values['sender']
+	transaction['recipient'] = values['recipient']
+	transaction['amount'] = values['amount']
+
+	for peer in node.peers:
+		broadcast_transaction(peer,transaction)
 
 	# Generate a response to report that the transaction was added to pool.
 	response = {
@@ -115,6 +123,44 @@ def new_transaction():
 	}
 
 	return jsonify(response), 201
+
+def broadcast_transaction(peer,transaction):
+	"""
+	broadcast_transaction
+	This function broadcasts a transaction that was recieved to peers
+	"""
+	endpoint = 'http://' + peer + "/transactions/recieve_transaction"
+	r = requests.post(url=endpoint,params=transaction)
+
+	data = r.json()
+
+	return jsonify(data)
+
+@app.route('/transactions/recieve_transaction', methods=['GET'])
+def recieve_transactions():
+	values = request.get_json()
+
+	transaction = values.get('transaction')
+
+	#check if transaction is a duplicate
+	for my_transac in node.blockchain.current_transactions:
+		# if duplicate, ignore
+		if transaction in my_transac:
+			logging.info(
+				'Recieved duplicate transaction:' + node.identifier
+			)
+	else:
+		logging.info(
+			'Recieved a new transaction, adding to current_transactions'
+		)
+		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'])
+		
+		#broadcast transaction
+		for peer in node.peers:
+			broadcast_transaction(peer,transaction)
+
+		return jsonify(transaction), 200
+
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
