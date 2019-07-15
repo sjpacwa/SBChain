@@ -61,7 +61,9 @@ def mine():
 		'New block created and added to the end of the block.'
 	)
 
-	# TODO Broadcast the newly created block to peers.
+	# TODO Broadcast the newly created block to peers. Stephen
+	# Sender: Send the new block to peer.
+	# Peer: Validate the new block and add to chain. Forward to other peers.
 
 	# Generate a response to report that block creation was successful.
 	response = {
@@ -102,7 +104,10 @@ def new_transaction():
 		amount=values['amount']
 	)
 
-	# TODO Broadcast the transaction that was received to peers.
+	# TODO Broadcast the transaction that was received to peers. Daniel
+	# Sender: Send the new transaction to peer.
+	# Peer: If not duplicate, add transaction to list and forward to other 
+	# peers.
 
 	# Generate a response to report that the transaction was added to pool.
 	response = {
@@ -130,20 +135,6 @@ def full_chain():
 	}
 	
 	return jsonify(response), 200
-
-# TODO remove this function.
-async def add_peer(peer_addr):
-	try:
-		async  with ClientSession() as session:
-			async with session.ws_connect(peer_addr) as ws:
-				key = ws.get_extra_info('peername')[0]
-				node.peers[key] = ws
-				await handle_peer_msg(key,ws)
-	except Exception:
-		session.close()
-	await node.peers[key].close()
-	del node.peers[key]
-# TODO end removal
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
@@ -190,7 +181,7 @@ def consensus():
 		'Received API call "/nodes/resolve". Checking if our list is valid.'
 	)
 
-	# TODO this needs to be returned to original algorithm.
+	# TODO this needs to be returned to original algorithm. Daniel
 	replaced = resolve_conflicts(node.blockchain)
 
 	# Based on conflicts, generate a response of which chain was valid.
@@ -204,7 +195,5 @@ def consensus():
 			'message': 'Our chain is authoritative.',
 			'chain': node.blockchain.chain_dict
 		}
-
-	# TODO Another case to update the remote peer?
 
 	return jsonify(response), 200
