@@ -9,6 +9,7 @@ other.
 # Standard Library Imports
 import logging
 import requests
+import json
 
 # Third Party Imports
 from flask import Flask, jsonify, request
@@ -109,18 +110,21 @@ def new_transaction():
 	# Sender: Send the new transaction to peer.
 	# Peer: If not duplicate, add transaction to list and forward to other 
 	# peers.
-	transaction = {}
-	transaction['sender'] = values['sender']
-	transaction['recipient'] = values['recipient']
-	transaction['amount'] = values['amount']
 
-	for peer in node.peers:
-		broadcast_transaction(peer,transaction)
+	#we never use node.peers for anything ?
+
+	msgs = []
+
+	for peer in node.nodes:
+		trnx_msg = broadcast_transaction(peer,values)
+		#msgs.append(json.dumps(trnx_msg))
+		print(trnx_msg)
 
 	# Generate a response to report that the transaction was added to pool.
 	response = {
-		'message': 'Transaction will be added to block {}.'.format(index),
+		'message': 'Transaction will be added to block {}.'.format(block_index),
 	}
+	response['msgs'] = msgs
 
 	return jsonify(response), 201
 
@@ -129,12 +133,17 @@ def broadcast_transaction(peer,transaction):
 	broadcast_transaction
 	This function broadcasts a transaction that was recieved to peers
 	"""
-	endpoint = 'http://' + peer + "/transactions/recieve_transaction"
-	r = requests.post(url=endpoint,params=transaction)
 
-	data = r.json()
+	#logging.basicConfig(filename="debug.log",filemode='w')
+	endpoint = 'http://' + str(peer) + "/transactions/recieve_transaction"
 
-	return jsonify(data)
+	logging.debug(endpoint)
+
+	r = requests.post(url=endpoint,data=transaction)
+
+	data = r
+
+	return data
 
 @app.route('/transactions/recieve_transaction', methods=['GET'])
 def recieve_transactions():
@@ -146,9 +155,12 @@ def recieve_transactions():
 	for my_transac in node.blockchain.current_transactions:
 		# if duplicate, ignore
 		if transaction in my_transac:
-			logging.info(
-				'Recieved duplicate transaction:' + node.identifier
-			)
+			response = {
+				'Recieved duplicate transaction': node.identifier
+			}
+			logging.info(response)
+
+			return jsonify(response), 100
 	else:
 		logging.info(
 			'Recieved a new transaction, adding to current_transactions'
@@ -156,7 +168,7 @@ def recieve_transactions():
 		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'])
 		
 		#broadcast transaction
-		for peer in node.peers:
+		for peer in node.nodes:
 			broadcast_transaction(peer,transaction)
 
 		return jsonify(transaction), 200
