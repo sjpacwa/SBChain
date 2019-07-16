@@ -114,7 +114,7 @@ def new_transaction():
 	#we never use node.peers for anything ?
 
 	msgs = []
-
+	# TODO add timestamp in transaction + send hash
 	for peer in node.nodes:
 		trnx_msg = broadcast_transaction(peer,values)
 		#msgs.append(json.dumps(trnx_msg))
