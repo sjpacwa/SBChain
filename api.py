@@ -10,6 +10,8 @@ other.
 import logging
 import requests
 import json
+import hashlib
+import sys
 
 # Third Party Imports
 from flask import Flask, jsonify, request
@@ -117,7 +119,7 @@ def new_transaction():
 	# TODO add timestamp in transaction + send hash
 	for peer in node.nodes:
 		trnx_msg = broadcast_transaction(peer,values)
-		#msgs.append(json.dumps(trnx_msg))
+		logging.warn(trnx_msg)
 		print(trnx_msg)
 
 	# Generate a response to report that the transaction was added to pool.
@@ -137,35 +139,35 @@ def broadcast_transaction(peer,transaction):
 	#logging.basicConfig(filename="debug.log",filemode='w')
 	endpoint = 'http://' + str(peer) + "/transactions/recieve_transaction"
 
-	logging.debug(endpoint)
+	#logging.warn(endpoint)
 
 	r = requests.post(url=endpoint,data=transaction)
 
-	data = r
-
-	return data
+	return r
 
 @app.route('/transactions/recieve_transaction', methods=['GET'])
 def recieve_transactions():
 	values = request.get_json()
 
 	transaction = values.get('transaction')
-
+	trnx_hash = hashlib.sha256(json.dumps(transaction))
 	#check if transaction is a duplicate
-	for my_transac in node.blockchain.current_transactions:
+	for my_trnx in node.blockchain.current_transactions:
 		# if duplicate, ignore
-		if transaction in my_transac:
+		my_hash = hashlib.sha256(my_trnx)
+		if my_hash == trnx_hash:
 			response = {
-				'Recieved duplicate transaction': node.identifier
+				'msg' : 'Recieved duplicate transaction {}'.format(node.identifier)
 			}
-			logging.info(response)
 
-			return jsonify(response), 100
+			#app.logger.warn(response)
+
+			return jsonify(response), 200
 	else:
-		logging.info(
+		app.logger.info(
 			'Recieved a new transaction, adding to current_transactions'
 		)
-		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'])
+		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'])
 		
 		#broadcast transaction
 		for peer in node.nodes:
@@ -209,11 +211,11 @@ def register_nodes():
 	# Get the values from the request as JSON.
 	values = request.get_json()
 
-	# Retrieve the list of addresses from nodes.
-	nodes = values.get('nodes')
-	if nodes is None:
+	if values is None:
 		logging.warn('Did not receive a node list.')
 		return "Error: Please supply a valid list of nodes", 400
+	# Retrieve the list of addresses from nodes.
+	nodes = values.get('nodes')
 
 	# Register the nodes that have been received.
 	for item in nodes:

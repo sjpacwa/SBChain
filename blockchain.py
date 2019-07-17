@@ -76,7 +76,7 @@ class Blockchain:
 		self.chain_dict.append(block.toDict())
 		return block
 
-	def new_transaction(self, sender, recipient, amount):
+	def new_transaction(self, sender, recipient, amount,timestamp = time()):
 		"""
 		Creates a new transaction to go into the next mined Block
 
@@ -89,6 +89,7 @@ class Blockchain:
 			'sender': sender,
 			'recipient': recipient,
 			'amount': amount,
+			'timestamp': timestamp
 		})
 
 		return self.last_block.index + 1
