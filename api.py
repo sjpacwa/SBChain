@@ -137,7 +137,7 @@ def broadcast_transaction(peer,transaction):
 	"""
 
 	#logging.basicConfig(filename="debug.log",filemode='w')
-	endpoint = 'http://' + str(peer) + "/transactions/recieve_transaction"
+	endpoint = 'http://' + str(peer) + "/transactions/recieve_transactions"
 
 	#logging.warn(endpoint)
 
@@ -145,7 +145,7 @@ def broadcast_transaction(peer,transaction):
 
 	return r
 
-@app.route('/transactions/recieve_transaction', methods=['GET'])
+@app.route('/transactions/recieve_transactions', methods=['GET'])
 def recieve_transactions():
 	values = request.get_json()
 
@@ -167,6 +167,8 @@ def recieve_transactions():
 		app.logger.info(
 			'Recieved a new transaction, adding to current_transactions'
 		)
+
+		verify_transaction()
 		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'])
 		
 		#broadcast transaction
@@ -174,7 +176,31 @@ def recieve_transactions():
 			broadcast_transaction(peer,transaction)
 
 		return jsonify(transaction), 200
+def verify_transaction():
+	if sender is me:
+		#sender or reciever claimed to be me but not in my transactions
+		return error
+	elif reciever is me:	
+		handle_this_case()
+		# not sure how to handle this case
+		# when transaction is made, do both nodes generate a new transaction or does only 1
+		# how to verify transaction is valid?
+	else:
+		send hash_of_transaction ? unique_identifier ? to sender for confirmation
+		send hash_of_transaction ? unique_identifier ? to reciever for confirmation
 
+		# both cases have verify_transaction route?
+		# duplicate response = confirmation
+		# not in transactions = error
+
+		if error:
+			return error
+		else:
+			add_transaction_to_my_chain
+
+			broadcast_transaction_to_peers
+
+			return success 
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
