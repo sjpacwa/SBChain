@@ -12,10 +12,12 @@ import requests
 import json
 import hashlib
 import sys
+import os
 
 # Third Party Imports
 from flask import Flask, jsonify, request
 from aiohttp import web,ClientSession
+from datetime import datetime
 
 # Local Imports
 from node import Node
@@ -87,7 +89,7 @@ def new_transaction():
 	This function handles a POST request to 0.0.0.0/transactions/new. It will
 	create a new transaction and add it to the pool of transactions.
 	"""
-
+	# NOTE no current way of checking if transactions are valid or not, fake transactions allowed
 	logging.info(
 		'Received API call "/transactions/new". Adding transcation to pool.'
 	)
@@ -101,26 +103,25 @@ def new_transaction():
 		logging.warn('Received data did not include a required field.')
 		return 'Error: Missing values', 400
 
+	values['timestamp'] = datetime.now()
+	values['port'] = os.environ['FLASK_PORT']
 	# Create a new transaction from received data.
 	block_index = node.blockchain.new_transaction(
 		sender=values['sender'],
 		recipient=values['recipient'],
-		amount=values['amount']
+		amount=values['amount'],
+		timestamp = values['timestamp'],
+		port = values['port']
 	)
 
-	# TODO Broadcast the transaction that was received to peers. Daniel
+	# Broadcast the transaction that was received to peers. Daniel
 	# Sender: Send the new transaction to peer.
 	# Peer: If not duplicate, add transaction to list and forward to other 
 	# peers.
 
-	#we never use node.peers for anything ?
-
 	msgs = []
-	# TODO add timestamp in transaction + send hash
 	for peer in node.nodes:
-		trnx_msg = broadcast_transaction(peer,values)
-		logging.warn(trnx_msg)
-		print(trnx_msg)
+		broadcast_transaction(peer,values)
 
 	# Generate a response to report that the transaction was added to pool.
 	response = {
@@ -135,72 +136,52 @@ def broadcast_transaction(peer,transaction):
 	broadcast_transaction
 	This function broadcasts a transaction that was recieved to peers
 	"""
-
-	#logging.basicConfig(filename="debug.log",filemode='w')
 	endpoint = 'http://' + str(peer) + "/transactions/recieve_transactions"
+	headers = {
+			'Content-type': 'application/json', 
+			'Accept': 'text/plain'
+	}
 
-	#logging.warn(endpoint)
+	r = requests.post(url=endpoint,data=json.dumps(transaction, indent = 4, sort_keys = True, default = str),headers=headers)
 
-	r = requests.post(url=endpoint,data=transaction)
+	return r, 200
 
-	return r
-
-@app.route('/transactions/recieve_transactions', methods=['GET'])
+@app.route('/transactions/recieve_transactions', methods=['POST'])
 def recieve_transactions():
 	values = request.get_json()
+	print("RECIEVE TRANSACTION",values)
+	transaction = {
+		'sender': values.get('sender'),
+		'recipient': values.get('recipient'),
+		'amount': values.get('amount'),
+		'timestamp': values.get('timestamp'),
+		'port': values.get('port')
+	}
 
-	transaction = values.get('transaction')
-	trnx_hash = hashlib.sha256(json.dumps(transaction))
+	trnx_hash = hashlib.sha256(json.dumps(transaction).encode())
 	#check if transaction is a duplicate
 	for my_trnx in node.blockchain.current_transactions:
-		# if duplicate, ignore
 		my_hash = hashlib.sha256(my_trnx)
+		# if duplicate, ignore
 		if my_hash == trnx_hash:
-			response = {
-				'msg' : 'Recieved duplicate transaction {}'.format(node.identifier)
-			}
-
-			#app.logger.warn(response)
-
-			return jsonify(response), 200
+			logging.warn( 'Recieved duplicate transaction {}'.format(node.identifier))
+			return "duplicate", 200
 	else:
-		app.logger.info(
+		logging.info(
 			'Recieved a new transaction, adding to current_transactions'
 		)
-
-		verify_transaction()
-		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'])
+		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'],transaction['port'])
 		
 		#broadcast transaction
 		for peer in node.nodes:
-			broadcast_transaction(peer,transaction)
+			print("NEW",request.environ['REMOTE_ADDR'] + ":" + transaction['port'])
+			print("PEER",peer)
+			#TODO what happens if port changes later?
+			if peer != request.environ['REMOTE_ADDR'] + ":" + transaction['port']:
+				print("Broadcasting!")
+				broadcast_transaction(peer,transaction)
 
-		return jsonify(transaction), 200
-def verify_transaction():
-	if sender is me:
-		#sender or reciever claimed to be me but not in my transactions
-		return error
-	elif reciever is me:	
-		handle_this_case()
-		# not sure how to handle this case
-		# when transaction is made, do both nodes generate a new transaction or does only 1
-		# how to verify transaction is valid?
-	else:
-		send hash_of_transaction ? unique_identifier ? to sender for confirmation
-		send hash_of_transaction ? unique_identifier ? to reciever for confirmation
-
-		# both cases have verify_transaction route?
-		# duplicate response = confirmation
-		# not in transactions = error
-
-		if error:
-			return error
-		else:
-			add_transaction_to_my_chain
-
-			broadcast_transaction_to_peers
-
-			return success 
+		return "new transaction", 200
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
