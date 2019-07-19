@@ -134,9 +134,9 @@ def new_transaction():
 def broadcast_transaction(peer,transaction):
 	"""
 	broadcast_transaction
-	This function broadcasts a transaction that was recieved to peers
+	This function broadcasts a transaction that was received to peers
 	"""
-	endpoint = 'http://' + str(peer) + "/transactions/recieve_transactions"
+	endpoint = 'http://' + str(peer) + "/transactions/receive_transactions"
 	headers = {
 			'Content-type': 'application/json', 
 			'Accept': 'text/plain'
@@ -146,10 +146,10 @@ def broadcast_transaction(peer,transaction):
 
 	return r, 200
 
-@app.route('/transactions/recieve_transactions', methods=['POST'])
-def recieve_transactions():
+@app.route('/transactions/receive_transactions', methods=['POST'])
+def receive_transactions():
 	values = request.get_json()
-	print("RECIEVE TRANSACTION",values)
+	print("RECEIVE TRANSACTION",values)
 	transaction = {
 		'sender': values.get('sender'),
 		'recipient': values.get('recipient'),
@@ -164,11 +164,11 @@ def recieve_transactions():
 		my_hash = hashlib.sha256(my_trnx)
 		# if duplicate, ignore
 		if my_hash == trnx_hash:
-			logging.warn( 'Recieved duplicate transaction {}'.format(node.identifier))
+			logging.warn( 'Received duplicate transaction {}'.format(node.identifier))
 			return "duplicate", 200
 	else:
 		logging.info(
-			'Recieved a new transaction, adding to current_transactions'
+			'Received a new transaction, adding to current_transactions'
 		)
 		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'],transaction['port'])
 		
