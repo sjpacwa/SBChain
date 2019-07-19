@@ -8,10 +8,16 @@ other.
 
 # Standard Library Imports
 import logging
+import requests
+import json
+import hashlib
+import sys
+import os
 
 # Third Party Imports
 from flask import Flask, jsonify, request
 from aiohttp import web,ClientSession
+from datetime import datetime
 
 # Local Imports
 from node import Node
@@ -83,7 +89,7 @@ def new_transaction():
 	This function handles a POST request to 0.0.0.0/transactions/new. It will
 	create a new transaction and add it to the pool of transactions.
 	"""
-
+	# NOTE no current way of checking if transactions are valid or not, fake transactions allowed
 	logging.info(
 		'Received API call "/transactions/new". Adding transcation to pool.'
 	)
@@ -97,24 +103,85 @@ def new_transaction():
 		logging.warn('Received data did not include a required field.')
 		return 'Error: Missing values', 400
 
+	values['timestamp'] = datetime.now()
+	values['port'] = os.environ['FLASK_PORT']
 	# Create a new transaction from received data.
 	block_index = node.blockchain.new_transaction(
 		sender=values['sender'],
 		recipient=values['recipient'],
-		amount=values['amount']
+		amount=values['amount'],
+		timestamp = values['timestamp'],
+		port = values['port']
 	)
 
-	# TODO Broadcast the transaction that was received to peers. Daniel
+	# Broadcast the transaction that was received to peers. Daniel
 	# Sender: Send the new transaction to peer.
 	# Peer: If not duplicate, add transaction to list and forward to other 
 	# peers.
 
+	msgs = []
+	for peer in node.nodes:
+		broadcast_transaction(peer,values)
+
 	# Generate a response to report that the transaction was added to pool.
 	response = {
-		'message': 'Transaction will be added to block {}.'.format(index),
+		'message': 'Transaction will be added to block {}.'.format(block_index),
 	}
+	response['msgs'] = msgs
 
 	return jsonify(response), 201
+
+def broadcast_transaction(peer,transaction):
+	"""
+	broadcast_transaction
+	This function broadcasts a transaction that was received to peers
+	"""
+	endpoint = 'http://' + str(peer) + "/transactions/receive_transactions"
+	headers = {
+			'Content-type': 'application/json', 
+			'Accept': 'text/plain'
+	}
+
+	r = requests.post(url=endpoint,data=json.dumps(transaction, indent = 4, sort_keys = True, default = str),headers=headers)
+
+	return r, 200
+
+@app.route('/transactions/receive_transactions', methods=['POST'])
+def receive_transactions():
+	values = request.get_json()
+	print("RECEIVE TRANSACTION",values)
+	transaction = {
+		'sender': values.get('sender'),
+		'recipient': values.get('recipient'),
+		'amount': values.get('amount'),
+		'timestamp': values.get('timestamp'),
+		'port': values.get('port')
+	}
+
+	trnx_hash = hashlib.sha256(json.dumps(transaction).encode())
+	#check if transaction is a duplicate
+	for my_trnx in node.blockchain.current_transactions:
+		my_hash = hashlib.sha256(my_trnx)
+		# if duplicate, ignore
+		if my_hash == trnx_hash:
+			logging.warn( 'Received duplicate transaction {}'.format(node.identifier))
+			return "duplicate", 200
+	else:
+		logging.info(
+			'Received a new transaction, adding to current_transactions'
+		)
+		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'],transaction['port'])
+		
+		#broadcast transaction
+		for peer in node.nodes:
+			print("NEW",request.environ['REMOTE_ADDR'] + ":" + transaction['port'])
+			print("PEER",peer)
+			#TODO what happens if port changes later?
+			if peer != request.environ['REMOTE_ADDR'] + ":" + transaction['port']:
+				print("Broadcasting!")
+				broadcast_transaction(peer,transaction)
+
+		return "new transaction", 200
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
@@ -151,11 +218,11 @@ def register_nodes():
 	# Get the values from the request as JSON.
 	values = request.get_json()
 
-	# Retrieve the list of addresses from nodes.
-	nodes = values.get('nodes')
-	if nodes is None:
+	if values is None:
 		logging.warn('Did not receive a node list.')
 		return "Error: Please supply a valid list of nodes", 400
+	# Retrieve the list of addresses from nodes.
+	nodes = values.get('nodes')
 
 	# Register the nodes that have been received.
 	for item in nodes:
@@ -182,7 +249,7 @@ def consensus():
 	)
 
 	# TODO this needs to be returned to original algorithm. Daniel
-	replaced = resolve_conflicts(node.blockchain)
+	replaced = node.resolve_conflicts()
 
 	# Based on conflicts, generate a response of which chain was valid.
 	if replaced:

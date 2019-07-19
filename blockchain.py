@@ -7,7 +7,6 @@ related to the chain.
 # Standard library imports
 import hashlib
 import json
-from time import time
 
 # Local imports
 from block import Block
@@ -76,7 +75,7 @@ class Blockchain:
 		self.chain_dict.append(block.toDict())
 		return block
 
-	def new_transaction(self, sender, recipient, amount):
+	def new_transaction(self, sender, recipient, amount,timestamp,port):
 		"""
 		Creates a new transaction to go into the next mined Block
 
@@ -89,6 +88,8 @@ class Blockchain:
 			'sender': sender,
 			'recipient': recipient,
 			'amount': amount,
+			'timestamp': timestamp,
+			'port':port
 		})
 
 		return self.last_block.index + 1
