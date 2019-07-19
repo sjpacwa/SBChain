@@ -249,7 +249,7 @@ def consensus():
 	)
 
 	# TODO this needs to be returned to original algorithm. Daniel
-	replaced = resolve_conflicts(node.blockchain)
+	replaced = node.resolve_conflicts()
 
 	# Based on conflicts, generate a response of which chain was valid.
 	if replaced:

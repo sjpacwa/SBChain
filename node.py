@@ -14,6 +14,7 @@ import requests
 
 # Local imports
 from blockchain import Blockchain
+from block import Block
 
 
 class Node:
