@@ -7,20 +7,21 @@ other.
 """
 
 # Standard Library Imports
-import logging
 import requests
 import json
+import logging
 import hashlib
 import sys
 import os
+from datetime import datetime
 
 # Third Party Imports
 from flask import Flask, jsonify, request
 from aiohttp import web,ClientSession
-from datetime import datetime
 
 # Local Imports
 from node import Node
+from block import Block
 
 # Instantiate the local node Flask webserver.
 app = Flask(__name__)
@@ -54,7 +55,9 @@ def mine():
 	node.blockchain.new_transaction(
 		sender='0',
 		recipient=node.identifier,
-		amount=1
+		amount=1,
+		timestamp=datetime.now(),
+		port=os.environ['FLASK_PORT']
 	)
 	logging.info(
 		'New transaction added to block due to valid proof of work.'
@@ -64,8 +67,27 @@ def mine():
 	previous_block_hash = last_block.hash()
 	block = node.blockchain.new_block(proof, previous_block_hash)
 	logging.info(
-		'New block created and added to the end of the block.'
+		'New block created and added to the end of the chain.'
 	)
+
+	# Prepare a request for broadcasting.
+	target = 'http://{}/block/receive_block'
+	headers = {
+		'Content-type': 'application/json',
+		'Accept': 'text/plain',
+	}
+	data = {
+		**block.toDict(),
+		'port': os.environ['FLASK_PORT']
+	}
+
+	replies = []
+	for peer in node.nodes:
+		address = target.format(peer)
+		response = requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, default=str), headers=headers)
+		replies.append(response.text)
+
+
 
 	# TODO Broadcast the newly created block to peers. Stephen
 	# Sender: Send the new block to peer.
@@ -78,9 +100,79 @@ def mine():
 		'transactions': block.transactions,
 		'proof': block.proof,
 		'previous_hash': block.previous_hash,
+		'replies': replies 
 	}
 	
 	return jsonify(response), 200
+
+@app.route('/block/receive_block', methods=['POST'])
+def receive_block():
+	"""
+	receive_block
+	This function handles a POST request to 0.0.0.0/block/receive_block. It 
+	receive a block from a peer and forward it along to everyone but the 
+	original sender.
+	"""
+	values = request.get_json()
+
+	# Create a block from the sent data.
+	new_block = Block(values['index'], values['transactions'], values['proof'],
+		values['previous_hash'], values['timestamp'])
+	
+	for block in node.blockchain.chain:
+		if new_block == block:
+			# This is a duplicate block.
+			return "Duplicate Block", 200
+
+	else:
+		# Check that the proof of work is valid.
+		last_proof = node.blockchain.last_block.proof
+		last_hash = node.blockchain.last_block.hash()
+		proof = values['proof']
+		transactions = values['transactions']
+
+		block_reward = None
+		for transaction in transactions:
+			# Remove the payment for the block to be added later.
+			if transaction['sender'] == '0':
+				block_reward = transaction
+				break
+
+		transactions.remove(block_reward)
+
+		if node.blockchain.valid_proof(last_proof, proof, last_hash, transactions):
+			# Readd the reward transaction
+			transactions.append(block_reward)
+
+			# Valid proof. Add the block and propogate it.
+			for i in range(len(node.blockchain.current_transactions)):
+				for item in transcations:
+					if node.blockchain.current_transactions[i] == item:
+						node.blockchain.current_transactions.remove(node.blockchain.current_transactions[i])
+
+			node.blockchain.chain.append(new_block)
+			node.blockchain.chain_dict.append(new_block.toDict())
+
+			target = 'http://{}/block/receive_block'
+			headers = {
+				'Content-type': 'application/json',
+				'Accept': 'text/plain',
+			}
+			data = {
+				**block.toDict(),
+				'port': os.environ['FLASK_PORT']
+			}
+			for peer in node.nodes:
+				if peer != request.environ['REMOTE_ADDR'] + ":" + values['port']:
+					address = target.format(peer)
+					response = requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, default=str), headers=headers)
+
+			return 'Block added', 200
+		else:
+			# Proof is not valid, ignore.
+
+			return 'Block ignored', 200
+
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
@@ -211,7 +303,7 @@ def register_nodes():
 	register a peer with the node.
 	"""
 
-	logging.info(
+	app.logger.info(
 		'Received API call "/nodes/register". Adding peer to node\'s peer list.'
 	)
 

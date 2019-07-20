@@ -17,6 +17,13 @@ class Block:
 		self.transactions = transactions
 		self.proof = proof	
 		self.previous_hash = previous_hash
+
+	def __eq__(self, other):
+		return (self.index == other.index
+			and self.timestamp == other.timestamp
+			and self.transactions == other.transactions
+			and self.proof == other.proof
+			and self.previous_hash == other.previous_hash)
 		
 	def hash(self):
 		"""
@@ -25,9 +32,12 @@ class Block:
 		:param block: Block
 		"""
 		block = self.toDict()
+		del block['timestamp']
+
 
 		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-		block_string = json.dumps(block,indent = 4,sortKeys = True,default = str).encode()
+		block_string = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
+
 		return hashlib.sha256(block_string).hexdigest()
 
 	def toDict(self):
