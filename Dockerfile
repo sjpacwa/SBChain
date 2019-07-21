@@ -14,7 +14,6 @@ ADD blockchain.py /app
 ADD controller.py /app
 ADD main.py /app
 ADD node.py /app
-ADD p2p.py /app
 
 EXPOSE 5000
 
