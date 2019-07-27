@@ -30,7 +30,7 @@ class Blockchain:
 		:return: True if valid, False if not
 		"""
 
-		print(chain)
+		logging.info(chain)
 
 		last_block = chain[0]
 		current_index = 1
@@ -109,7 +109,7 @@ class Blockchain:
 		:param last_block: <dict> last Block
 		:return: <int>
 		"""
-		print(last_block.hash())
+		logging.info(last_block.hash())
 
 		last_proof = last_block.proof
 		last_hash = last_block.hash()
