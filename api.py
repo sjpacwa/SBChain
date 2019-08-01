@@ -1,57 +1,50 @@
 """
 api.py
 
-This file is responsible for defining the API that is used for interacting with
-the node server as well as providing a way for peers to communicate with each
-other.
+This file is responsible for defining the API that is used to interact 
+with a node. It also provides functionality for nodes to communicate 
+with each other to automatically distribute info.
 """
 
 # Standard Library Imports
-import requests
+from datetime import datetime
+import hashlib
 import json
 import logging
-import hashlib
-import sys
 import os
-from datetime import datetime
+import sys
 
 # Third Party Imports
 from flask import Flask, jsonify, request
-from aiohttp import web,ClientSession
+import requests
 
 # Local Imports
 from node import Node
 from block import Block
 
-# Instantiate the local node Flask webserver.
+# Instantiate the Flask webserver.
 app = Flask(__name__)
 
-# Instatiate the node that this server represents.
+# Instatiate the local node.
 node = Node()
+
 
 @app.route('/mine', methods=['GET'])
 def mine():
 	"""
 	mine
-	This function handles a GET request to 0.0.0.0/mine. It will create a new 
-	block with a proof of concept and add it to the blockchain.
+
+	This function handles a GET request to /mine. It creates a new 
+	block with a valid proof and add it to the end of the blockchain. 
+	This block is then propogated to the node's peers.
 	"""
 
-	logging.info(
-		'Received API call "/mine". Generating a valid proof of work.'
-	)
-
-	# Run the proof of work algorithm to get a valid proof.
+	# Get a valid proof of work for the last block in the chain.
 	last_block = node.blockchain.last_block
 	proof = node.blockchain.proof_of_work(last_block)
-	logging.info(
-		'Valid proof of work generated based on previous block {}.'.format(
-			last_block.index
-		)
-	)
 
-	# Due to successful mining of the block, a reward is provided. A sender of
-	# "0" designates that this is a new coin.
+	# A reward is provided for a successful proof. This is marked as a 
+	# newly minted coin by setting the sender to '0'.
 	node.blockchain.new_transaction(
 		sender='0',
 		recipient=node.identifier,
@@ -59,189 +52,200 @@ def mine():
 		timestamp=datetime.now(),
 		port=os.environ['FLASK_PORT']
 	)
-	logging.info(
-		'New transaction added to block due to valid proof of work.'
-	)
 
 	# Create the new block and add it to the end of the chain.
-	previous_block_hash = last_block.hash()
-	block = node.blockchain.new_block(proof, previous_block_hash)
-	logging.info(
-		'New block created and added to the end of the chain.'
-	)
+	block = node.blockchain.new_block(proof, last_block.hash())
 
-	# Prepare a request for broadcasting.
+	# Prepare for broadcasting to peers.
 	target = 'http://{}/block/receive_block'
 	headers = {
 		'Content-type': 'application/json',
-		'Accept': 'text/plain',
+		'Accept': 'text/plain'
 	}
 	data = {
 		**block.toDict(),
 		'port': os.environ['FLASK_PORT']
 	}
 
-	replies = []
+	# Broadcast the message to peers. The response is ignored, because
+	# no further action is taken by this node.
 	for peer in node.nodes:
 		address = target.format(peer)
-		response = requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, default=str), headers=headers)
-		replies.append(response.text)
-
-
-
-	# TODO Broadcast the newly created block to peers. Stephen
-	# Sender: Send the new block to peer.
-	# Peer: Validate the new block and add to chain. Forward to other peers.
+		requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, 
+			default=str), headers=headers)
 
 	# Generate a response to report that block creation was successful.
 	response = {
-		'message': "New block forged.",
+		'message': "New block mined.",
 		'index': block.index,
 		'transactions': block.transactions,
 		'proof': block.proof,
-		'previous_hash': block.previous_hash,
-		'replies': replies 
+		'previous_hash': block.previous_hash
 	}
 	
-	return jsonify(response), 200
+	return jsonify(response), 201
+
 
 @app.route('/block/receive_block', methods=['POST'])
 def receive_block():
 	"""
 	receive_block
-	This function handles a POST request to 0.0.0.0/block/receive_block. It 
-	receive a block from a peer and forward it along to everyone but the 
-	original sender.
+
+	This function handles a POST request to /block/receive_block. It 
+	receives a block from a peer and forwards it along to everyone but 
+	the original sender.
 	"""
+
+	# Extract the values from the request.
 	values = request.get_json()
 
 	# Create a block from the sent data.
-	new_block = Block(values['index'], values['transactions'], values['proof'],
-		values['previous_hash'], values['timestamp'])
+	new_block = Block(
+		values['index'],
+		values['transactions'],
+		values['proof'],
+		values['previous_hash'],
+		values['timestamp']
+	)
 	
+	# Ensure that this block has not been added before.
 	for block in node.blockchain.chain:
 		if new_block == block:
-			# This is a duplicate block.
-			return "Duplicate Block", 200
+			return jsonify({'message': 'Duplicate block.'}), 200
 
 	else:
-		# Check that the proof of work is valid.
+		# The block has not been added before. The proof should be 
+		# checked.
 		last_proof = node.blockchain.last_block.proof
 		last_hash = node.blockchain.last_block.hash()
 		proof = values['proof']
 		transactions = values['transactions']
 
+		# Remove the reward from the block. If it is kept in, the proof 
+		# will not be the same.
 		block_reward = None
 		for transaction in transactions:
-			# Remove the payment for the block to be added later.
 			if transaction['sender'] == '0':
 				block_reward = transaction
 				break
-
 		transactions.remove(block_reward)
 
-		if node.blockchain.valid_proof(last_proof, proof, last_hash, transactions):
-			# Readd the reward transaction
+		if node.blockchain.valid_proof(last_proof, proof, last_hash, 
+			transactions):
+			# The proof is valid and the block can be added. The reward 
+			# transaction should be returned.
 			transactions.append(block_reward)
 
-			# Valid proof. Add the block and propogate it.
+			# Clear the pool of the transactions that are present in 
+			# the mined block.
 			for i in range(len(node.blockchain.current_transactions)):
 				for item in transcations:
 					if node.blockchain.current_transactions[i] == item:
-						node.blockchain.current_transactions.remove(node.blockchain.current_transactions[i])
+						node.blockchain.current_transactions.remove(
+							node.blockchain.current_transactions[i])
 
+			# Append the block to the chain.
 			node.blockchain.chain.append(new_block)
 			node.blockchain.chain_dict.append(new_block.toDict())
 
+			# Prepare for broadcasting to peers.
 			target = 'http://{}/block/receive_block'
 			headers = {
 				'Content-type': 'application/json',
-				'Accept': 'text/plain',
+				'Accept': 'text/plain'
 			}
 			data = {
 				**block.toDict(),
 				'port': os.environ['FLASK_PORT']
 			}
+
+			# Broadcast the message to peers except for the original 
+			# sender. The response is ignored, because no further 
+			# action is taken by this node.
+			sender = request.environ['REMOTE_ADDR'] + ':' + values['port']
 			for peer in node.nodes:
-				if peer != request.environ['REMOTE_ADDR'] + ":" + values['port']:
+				if peer != sender:
 					address = target.format(peer)
-					response = requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, default=str), headers=headers)
+					requests.post(address, data=json.dumps(data, indent=4, 
+						sort_keys=True, default=str), headers=headers)
 
-			return 'Block added', 200
+			return jsonify({'message': 'Block added.'}), 201
+
 		else:
-			# Proof is not valid, ignore.
-
-			return 'Block ignored', 200
+			# The proof is not valid and the block is ignored and not 
+			# propogated.
+			return jsonify({'message': 'Bad proof.'}), 200
 
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
 	"""
 	new_transaction
-	This function handles a POST request to 0.0.0.0/transactions/new. It will
-	create a new transaction and add it to the pool of transactions.
+
+	This function handles a POST request to /transactions/new. It 
+	creates a new transaction and adds it to the pool of transactions.
 	"""
-	# NOTE no current way of checking if transactions are valid or not, fake transactions allowed
-	logging.info(
-		'Received API call "/transactions/new". Adding transcation to pool.'
-	)
+	
+	# NOTE: Currently, all transactions are considered valid. This 
+	# means that 'fake' transactions will be added as well.
 
-	# Get the values from the request as JSON.
-	values = request.get_json()
+	# Extract the values from the request.
+	data = request.get_json()
 
-	# Check that all required fields are in the POST data.
+	# Ensure that the required values are in the request.
 	required = ['sender', 'recipient', 'amount']
-	if not all(k in values for k in required):
-		logging.warn('Received data did not include a required field.')
-		return 'Error: Missing values', 400
+	if not all(k in data for k in required):
+		return jsonify({'message': 'Missing values.'}), 400
 
-	values['timestamp'] = datetime.now()
-	values['port'] = os.environ['FLASK_PORT']
+	# Add the current time and the node's port to the values.
+	data['timestamp'] = datetime.now()
+	data['port'] = os.environ['FLASK_PORT']
+
 	# Create a new transaction from received data.
 	block_index = node.blockchain.new_transaction(
-		sender=values['sender'],
-		recipient=values['recipient'],
-		amount=values['amount'],
-		timestamp = values['timestamp'],
-		port = values['port']
+		sender=data['sender'],
+		recipient=data['recipient'],
+		amount=data['amount'],
+		timestamp=data['timestamp'],
+		port=data['port']
 	)
 
-	# Broadcast the transaction that was received to peers. Daniel
-	# Sender: Send the new transaction to peer.
-	# Peer: If not duplicate, add transaction to list and forward to other 
-	# peers.
-
-	msgs = []
-	for peer in node.nodes:
-		broadcast_transaction(peer,values)
-
-	# Generate a response to report that the transaction was added to pool.
-	response = {
-		'message': 'Transaction will be added to block {}.'.format(block_index),
+	# Prepare for broadcasting to peers.
+	target = 'http://{}/transactions/receive_transactions'
+	headers = {
+		'Content-type': 'application/json',
+		'Accept': 'text/plain'
 	}
-	response['msgs'] = msgs
+
+	# Broadcast the message to peers. The response is ignored, because
+	# no further action is taken by this node.
+	for peer in node.nodes:
+		address = target.format(peer)
+		requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, 
+			default=str), headers=headers)
+
+	# Generate a response to report that transaction creation was successful.
+	response = {
+		'message': 'Transaction will be added to block {}.'.format(block_index)
+	}
 
 	return jsonify(response), 201
 
-def broadcast_transaction(peer,transaction):
-	"""
-	broadcast_transaction
-	This function broadcasts a transaction that was received to peers
-	"""
-	endpoint = 'http://' + str(peer) + "/transactions/receive_transactions"
-	headers = {
-			'Content-type': 'application/json', 
-			'Accept': 'text/plain'
-	}
-
-	r = requests.post(url=endpoint,data=json.dumps(transaction, indent = 4, sort_keys = True, default = str),headers=headers)
-
-	return r, 200
 
 @app.route('/transactions/receive_transactions', methods=['POST'])
 def receive_transactions():
+	"""
+	receive_transaction
+
+	This function handles a POST request to /transactions/receive_transaction. 
+	It receives a transaction from a peer and forwards it along to everyone 
+	but the original sender.
+	"""
+
+	# Extract the values from the request.
 	values = request.get_json()
-	print("RECEIVE TRANSACTION",values)
+
+	# Create a new transaction.
 	transaction = {
 		'sender': values.get('sender'),
 		'recipient': values.get('recipient'),
@@ -250,100 +254,108 @@ def receive_transactions():
 		'port': values.get('port')
 	}
 
-	trnx_hash = hashlib.sha256(json.dumps(transaction).encode())
-	#check if transaction is a duplicate
-	for my_trnx in node.blockchain.current_transactions:
-		my_hash = hashlib.sha256(my_trnx)
-		# if duplicate, ignore
-		if my_hash == trnx_hash:
-			logging.warn( 'Received duplicate transaction {}'.format(node.identifier))
-			return "duplicate", 200
-	else:
-		logging.info(
-			'Received a new transaction, adding to current_transactions'
-		)
-		node.blockchain.new_transaction(transaction['sender'],transaction['recipient'],transaction['amount'],transaction['timestamp'],transaction['port'])
-		
-		#broadcast transaction
-		for peer in node.nodes:
-			print("NEW",request.environ['REMOTE_ADDR'] + ":" + transaction['port'])
-			print("PEER",peer)
-			#TODO what happens if port changes later?
-			if peer != request.environ['REMOTE_ADDR'] + ":" + transaction['port']:
-				print("Broadcasting!")
-				broadcast_transaction(peer,transaction)
+	# Compute the hash of the transaction for comparison.
+	transaction_hash = hashlib.sha256(json.dumps(transaction).encode())
+	
+	# Make sure that the transaction doesn't match a previous one.
+	for node_transaction in node.blockchain.current_transactions:
+		node_transaction_hash = hashlib.sha256(node_transaction)
+		if node_transaction_hash == transaction_hash:
+			return jsonify({'message': 'Duplicate transaction.'}), 200
 
-		return "new transaction", 200
+	else:
+		# The transaction was not found. Add to the pool.
+		node.blockchain.new_transaction(
+			sender=transaction['sender'],
+			recipient=transaction['recipient'],
+			amount=transaction['amount'],
+			timestamp=transaction['timestamp'],
+			port=transaction['port']
+		)
+
+		# Prepare for broadcasting to peers.
+		target = 'http://{}/transaction/receive_transaction'
+		headers = {
+			'Content-type': 'application/json',
+			'Accept': 'text/plain'
+		}
+		data = transaction
+
+		# Broadcast the message to peers except for the original 
+		# sender. The response is ignored, because no further 
+		# action is taken by this node.
+		sender = request.environ['REMOTE_ADDR'] + ':' + values['port']
+		for peer in node.nodes:
+			if peer != sender:
+				address = target.format(peer)
+				requests.post(address, data=json.dumps(data, indent=4, 
+					sort_keys=True, default=str), headers=headers)
+
+		return jsonify({'message': 'Transaction added.'}), 201
+
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
 	"""
 	full_chain
-	This function handles a GET request to 0.0.0.0/chain. It will return a copy
-	of the entire chain.
-	"""
 
-	logging.info(
-		'Received API call "/chain". Returning a copy of the blockchain.'
-	)
+	This function handles a GET request to /chain. It returns a copy of 
+	the entire chain.
+	"""
 
 	# Assemble the chain for the response.
 	response = {
 		'chain': node.blockchain.chain_dict,
-		'length': len(node.blockchain.chain_dict),
+		'length': len(node.blockchain.chain_dict)
 	}
 	
 	return jsonify(response), 200
+
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
 	"""
 	register_nodes
-	This function handles a POST request to 0.0.0.0/nodes/register. It will 
-	register a peer with the node.
+
+	This function handles a POST request to /nodes/register. It 
+	registers a peer with the node.
 	"""
 
-	app.logger.info(
-		'Received API call "/nodes/register". Adding peer to node\'s peer list.'
-	)
-
-	# Get the values from the request as JSON.
+	# Extract the values from the request.
 	values = request.get_json()
 
+	# Check that something was sent.
 	if values is None:
-		logging.warn('Did not receive a node list.')
-		return "Error: Please supply a valid list of nodes", 400
+		return jsonify({'message': 'No nodes supplied.'}), 400
+
 	# Retrieve the list of addresses from nodes.
 	nodes = values.get('nodes')
 
 	# Register the nodes that have been received.
-	for item in nodes:
-		node.register_node(item)
+	for peer in nodes:
+		node.register_node(peer)
 
-	# Generate a response to report that the transaction was added to pool.
+	# Generate a response to report that the peer was registered.
 	response = {
-		'message': 'New nodes have been added to peer list.',
-		'total_nodes': list(node.nodes),
+		'message': 'Nodes added to peer list.',
+		'total_nodes': list(node.nodes)
 	}
 
 	return jsonify(response), 201
+
 
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
 	"""
 	consensus
-	This function handles a GET request to 0.0.0.0/nodes/resolve. It will 
-	determine if the local chain is behind.
+
+	This function handles a GET request to /nodes/resolve. It checks
+	if the chain needs to be updated.
 	"""
 
-	logging.info(
-		'Received API call "/nodes/resolve". Checking if our list is valid.'
-	)
-
-	# TODO this needs to be returned to original algorithm. Daniel
 	replaced = node.resolve_conflicts()
 
-	# Based on conflicts, generate a response of which chain was valid.
+	# Based on conflicts, generate a response of which chain is valid.
 	if replaced:
 		response = {
 			'message': 'Our chain was replaced.',
