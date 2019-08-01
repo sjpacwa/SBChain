@@ -13,7 +13,7 @@ import json
 import logging
 import os
 import sys
-
+import requests
 # Third Party Imports
 from flask import Flask, jsonify, request
 
@@ -138,7 +138,7 @@ def receive_block():
 			# Clear the pool of the transactions that are present in 
 			# the mined block.
 			for i in range(len(node.blockchain.current_transactions)):
-				for item in transcations:
+				for item in transactions:
 					if node.blockchain.current_transactions[i] == item:
 						node.blockchain.current_transactions.remove(
 							node.blockchain.current_transactions[i])
