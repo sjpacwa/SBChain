@@ -304,8 +304,8 @@ def full_chain():
 
 	# Assemble the chain for the response.
 	response = {
-		'chain': node.blockchain.chain_dict,
-		'length': len(node.blockchain.chain_dict)
+		'chain': node.blockchain.get_chain(),
+		'length': len(node.blockchain.get_chain())
 	}
 	
 	return jsonify(response), 200
@@ -358,12 +358,12 @@ def consensus():
 	if replaced:
 		response = {
 			'message': 'Our chain was replaced.',
-			'new_chain': node.blockchain.chain_dict
+			'new_chain': node.blockchain.get_chain()
 		}
 	else:
 		response = {
 			'message': 'Our chain is authoritative.',
-			'chain': node.blockchain.chain_dict
+			'chain': node.blockchain.get_chain()
 		}
 
 	return jsonify(response), 200

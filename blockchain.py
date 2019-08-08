@@ -17,10 +17,17 @@ class Blockchain:
 	def __init__(self):
 		self.current_transactions = []
 		self.chain = []
-		self.chain_dict = []
 
 		# Create the genesis block
 		self.new_block(previous_hash='1', proof=100)
+
+	def get_chain(self):
+		json_chain = []
+
+		for block in self.chain:
+			json_chain.append(block.toDict())
+			
+		return json_chain
 
 	def valid_chain(self, chain):
 		"""
@@ -73,7 +80,6 @@ class Blockchain:
 		self.current_transactions = []
 
 		self.chain.append(block)
-		self.chain_dict.append(block.toDict())
 		return block
 
 	def new_transaction(self, sender, recipient, amount,timestamp,port):
@@ -109,7 +115,6 @@ class Blockchain:
 		:param last_block: <dict> last Block
 		:return: <int>
 		"""
-		logging.info(last_block.hash())
 
 		last_proof = last_block.proof
 		last_hash = last_block.hash()

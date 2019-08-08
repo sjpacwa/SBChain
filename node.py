@@ -52,11 +52,6 @@ class Node:
 
 		# Replace our chain if we discovered a new, valid chain longer than ours
 		if new_chain:
-			for item in new_chain:
-				# TODO make into helper function
-				self.blockchain.chain.append(Block(item['index'], 
-					item['timestamp'], item['transactions'], item['proof'],
-					item['previous_hash']))
 			self.blockchain.chain = new_chain
 			self.blockchain.chain_dict = new_chain
 			return True
