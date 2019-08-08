@@ -53,7 +53,6 @@ class Node:
 		# Replace our chain if we discovered a new, valid chain longer than ours
 		if new_chain:
 			self.blockchain.chain = new_chain
-			self.blockchain.chain_dict = new_chain
 			return True
 
 		return False
