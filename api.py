@@ -145,7 +145,6 @@ def receive_block():
 
 			# Append the block to the chain.
 			node.blockchain.chain.append(new_block)
-			node.blockchain.chain_dict.append(new_block.toDict())
 
 			# Prepare for broadcasting to peers.
 			target = 'http://{}/block/receive_block'
