@@ -37,8 +37,6 @@ class Blockchain:
 		:return: True if valid, False if not
 		"""
 
-		logging.info(chain)
-
 		last_block = chain[0]
 		current_index = 1
 
