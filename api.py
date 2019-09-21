@@ -33,6 +33,7 @@ def mine():
 	"""
 	mine
 
+	Public.
 	This function handles a GET request to /mine. It creates a new 
 	block with a valid proof and add it to the end of the blockchain. 
 	This block is then propogated to the node's peers.
@@ -90,6 +91,7 @@ def receive_block():
 	"""
 	receive_block
 
+	Internal.
 	This function handles a POST request to /block/receive_block. It 
 	receives a block from a peer and forwards it along to everyone but 
 	the original sender.
@@ -180,6 +182,7 @@ def new_transaction():
 	"""
 	new_transaction
 
+	Public.
 	This function handles a POST request to /transactions/new. It 
 	creates a new transaction and adds it to the pool of transactions.
 	"""
@@ -235,6 +238,7 @@ def receive_transactions():
 	"""
 	receive_transaction
 
+	Internal.
 	This function handles a POST request to /transactions/receive_transaction. 
 	It receives a transaction from a peer and forwards it along to everyone 
 	but the original sender.
@@ -297,6 +301,7 @@ def full_chain():
 	"""
 	full_chain
 
+	Public.
 	This function handles a GET request to /chain. It returns a copy of 
 	the entire chain.
 	"""
@@ -315,6 +320,7 @@ def register_nodes():
 	"""
 	register_nodes
 
+	Public.
 	This function handles a POST request to /nodes/register. It 
 	registers a peer with the node.
 	"""
@@ -347,6 +353,7 @@ def consensus():
 	"""
 	consensus
 
+	Public.
 	This function handles a GET request to /nodes/resolve. It checks
 	if the chain needs to be updated.
 	"""
