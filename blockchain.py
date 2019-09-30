@@ -11,12 +11,15 @@ import json
 
 # Local imports
 from block import Block
+import config
 
 
 class Blockchain:
 	def __init__(self):
 		self.current_transactions = []
 		self.chain = []
+
+		self.config = BlockchainConfig()
 
 		# Create the genesis block
 		self.new_block(previous_hash='1', proof=100)
@@ -139,4 +142,5 @@ class Blockchain:
 		guess_hash = hashlib.sha256(guess).hexdigest()
 		
 		# This is where difficulty is set.
-		return guess_hash[:4] == "0000"
+		difficulty = self.config.get_block_difficulty()
+		return guess_hash[:difficulty] == '0' * difficulty
