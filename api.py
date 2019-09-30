@@ -373,3 +373,35 @@ def consensus():
 		}
 
 	return jsonify(response), 200
+
+@app.route('/block/get_block', methods=['POST'])
+def get_block():
+	"""
+	get_block
+
+	Public.
+	This function ahdnesl a GET request to /block/get_block. It returns 
+	the block that has been requested.
+	"""
+
+	# Extract the values from the request.
+	values = request.get_json()
+
+	# Check that something was sent.
+	if values is None:
+		return jsonify({'message': 'No index supplied'}), 400
+
+	block = node.blockhain.get_block(values.get('index'))
+
+	if block is -1:
+		return jsonify({'message': 'Invalid index'}), 400
+	else
+		response = {
+			'message': "Block retrieved.",
+			'index': block.index,
+			'transactions': block.transactions,
+			'proof': block.proof,
+			'previous_hash': block.previous_hash
+		}
+		return jsonify(response), 200
+	

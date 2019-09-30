@@ -106,6 +106,12 @@ class Blockchain:
 	def last_block(self):
 		return self.chain[-1]
 
+	def get_block(self, index):
+		try:
+			return self.chain[index]
+		except:
+			return -1
+
 	def proof_of_work(self, last_block):
 		"""
 		Simple Proof of Work Algorithm:
