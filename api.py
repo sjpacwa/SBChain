@@ -395,7 +395,7 @@ def get_block():
 
 	if block is -1:
 		return jsonify({'message': 'Invalid index'}), 400
-	else
+	else:
 		response = {
 			'message': "Block retrieved.",
 			'index': block.index,
