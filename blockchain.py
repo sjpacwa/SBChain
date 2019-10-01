@@ -11,7 +11,7 @@ import json
 
 # Local imports
 from block import Block
-import config
+from blockchainConfig import BlockchainConfig
 
 
 class Blockchain:
