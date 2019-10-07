@@ -31,28 +31,30 @@ class Node:
 		:return: True if our chain was replaced, False if not
 		"""
 
-		neighbours = self.nodes
-		new_chain = None
+		neighbors = self.nodes
+		our_chain = self.blockchain.chain
+		replace_chain = None
 
 		# We're only looking for chains longer than ours
-		max_length = len(self.blockchain.chain)
+		our_length = len(our_chain)
 
 		# Grab and verify the chains from all the nodes in our network
-		for node in neighbours:
+		for node in neighbors:
 			response = requests.get(f'http://{node}/chain')
 
 			if response.status_code == 200:
-				length = response.json()['length']
-				chain = response.json()['chain']
+				neighbor_length = response.json()['length']
+				neighbor_chain = response.json()['chain']
 
-				# Check if the length is longer and the chain is valid
-				if length > max_length and self.blockchain.valid_chain(chain):
-					max_length = length
-					new_chain = chain
+				# Check if the neighbors chain is longer and if it is valid.
+				if (neighbor_length > our_length 
+					and self.blockchain.valid_chain(neighbor_chain)):
+					our_length = neighbor_length
+					replace_chain = neighbor_chain
 
 		# Replace our chain if we discovered a new, valid chain longer than ours
-		if new_chain:
-			self.blockchain.chain = new_chain
+		if replace_chain:
+			our_chain = replace_chain
 			return True
 
 		return False
