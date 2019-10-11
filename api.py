@@ -32,7 +32,8 @@ node = Node()
 def mine():
 	"""
 	mine
-
+	
+	# TODO make its own thread
 	Public.
 	This function handles a GET request to /mine. It creates a new 
 	block with a valid proof and add it to the end of the blockchain. 
@@ -159,6 +160,8 @@ def receive_block():
 				'port': os.environ['FLASK_PORT']
 			}
 
+			#TODO offload broadcast to another thread
+
 			# Broadcast the message to peers except for the original 
 			# sender. The response is ignored, because no further 
 			# action is taken by this node.
@@ -218,6 +221,7 @@ def new_transaction():
 		'Accept': 'text/plain'
 	}
 
+	# TODO offload broadcast to another thread
 	# Broadcast the message to peers. The response is ignored, because
 	# no further action is taken by this node.
 	for peer in node.nodes:
@@ -283,6 +287,8 @@ def receive_transactions():
 		}
 		data = transaction
 
+		#TODO Offload broadcast to a thread 
+
 		# Broadcast the message to peers except for the original 
 		# sender. The response is ignored, because no further 
 		# action is taken by this node.
@@ -319,11 +325,13 @@ def full_chain():
 def register_nodes():
 	"""
 	register_nodes
-
+	
 	Public.
 	This function handles a POST request to /nodes/register. It 
 	registers a peer with the node.
 	"""
+
+	# TODO register nodes with each other so that we don't have to call this twice  
 
 	# Extract the values from the request.
 	values = request.get_json()
@@ -350,6 +358,8 @@ def register_nodes():
 
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
+
+	# TODO make own thread
 	"""
 	consensus
 
