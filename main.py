@@ -7,7 +7,7 @@ starting the Flask webserver for the node.
 
 # Standard Library Imports
 from argparse import ArgumentParser
-from os import environ
+import logging
 
 # Local Imports
 from api import app
@@ -19,10 +19,6 @@ if __name__ == '__main__':
 		help='port to listen on')
 	args = parser.parse_args()
 	port = args.port
+	ip = 'local host'
 
-	# Add the port to the environment variables so the node knows what 
-	# port it is at.
-	environ['FLASK_PORT'] = str(port)
-
-	# Run the app on localhost.
-	app.run(host='0.0.0.0', port=port)
+	

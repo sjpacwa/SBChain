@@ -13,22 +13,30 @@ import json
 import logging
 import os
 import sys
-import requests
-# Third Party Imports
-from flask import Flask, jsonify, request
 
 # Local Imports
 from node import Node
 from block import Block
-
-# Instantiate the Flask webserver.
-app = Flask(__name__)
+from main import ip, port
 
 # Instatiate the local node.
 node = Node()
 
+def broadcast(name, args):
+	# Prepare for broadcasting to peers.
+	data = {
+		'name': name,
+		'args': args
+	}
+	# Broadcast the message to peers. The response is ignored, because
+	# no further action is taken by this node.
+	for peer in node.nodes:
+		if peer.address != ip and per.port != port
+			address = peer['address']
+			port = peer['port']
+			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
+			send(data,address,port)
 
-@app.route('/mine', methods=['GET'])
 def mine():
 	"""
 	mine
@@ -49,30 +57,14 @@ def mine():
 		sender='0',
 		recipient=node.identifier,
 		amount=1,
-		timestamp=datetime.now(),
-		port=os.environ['FLASK_PORT']
+		timestamp=datetime.now()
 	)
 
 	# Create the new block and add it to the end of the chain.
 	block = node.blockchain.new_block(proof, last_block.hash())
 
-	# Prepare for broadcasting to peers.
-	target = 'http://{}/block/receive_block'
-	headers = {
-		'Content-type': 'application/json',
-		'Accept': 'text/plain'
-	}
-	data = {
-		**block.toDict(),
-		'port': os.environ['FLASK_PORT']
-	}
-
-	# Broadcast the message to peers. The response is ignored, because
-	# no further action is taken by this node.
-	for peer in node.nodes:
-		address = target.format(peer)
-		requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, 
-			default=str), headers=headers)
+	thread = threading.Thread(target=broadcast,args=('receive_transaction',json.dumps(block.toDict()), ))
+	thread.start()
 
 	# Generate a response to report that block creation was successful.
 	response = {
@@ -82,12 +74,9 @@ def mine():
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	
-	return jsonify(response), 201
+	print(json.dumps(response))
 
-
-@app.route('/block/receive_block', methods=['POST'])
-def receive_block():
+def receive_block(index,transactions,proof,previous_hash,timestamp):
 	"""
 	receive_block
 
@@ -97,30 +86,26 @@ def receive_block():
 	the original sender.
 	"""
 
-	# Extract the values from the request.
-	values = request.get_json()
-
 	# Create a block from the sent data.
 	new_block = Block(
-		values['index'],
-		values['transactions'],
-		values['proof'],
-		values['previous_hash'],
-		values['timestamp']
+		index=index,
+		transactions=transactions,
+		proof=proof,
+		previous_hash=previous_hash,
+		timestamp=timestamp
 	)
 	
 	# Ensure that this block has not been added before.
 	for block in node.blockchain.chain:
 		if new_block == block:
-			return jsonify({'message': 'Duplicate block.'}), 200
+			print("Duplicate Block")
+			return
 
 	else:
 		# The block has not been added before. The proof should be 
 		# checked.
 		last_proof = node.blockchain.last_block.proof
 		last_hash = node.blockchain.last_block.hash()
-		proof = values['proof']
-		transactions = values['transactions']
 
 		# Remove the reward from the block. If it is kept in, the proof 
 		# will not be the same.
@@ -148,37 +133,19 @@ def receive_block():
 			# Append the block to the chain.
 			node.blockchain.chain.append(new_block)
 
-			# Prepare for broadcasting to peers.
-			target = 'http://{}/block/receive_block'
-			headers = {
-				'Content-type': 'application/json',
-				'Accept': 'text/plain'
-			}
-			data = {
-				**block.toDict(),
-				'port': os.environ['FLASK_PORT']
-			}
-
-			# Broadcast the message to peers except for the original 
-			# sender. The response is ignored, because no further 
-			# action is taken by this node.
-			sender = request.environ['REMOTE_ADDR'] + ':' + values['port']
-			for peer in node.nodes:
-				if peer != sender:
-					address = target.format(peer)
-					requests.post(address, data=json.dumps(data, indent=4, 
-						sort_keys=True, default=str), headers=headers)
-
-			return jsonify({'message': 'Block added.'}), 201
+			thread = threading.Thread(target=broadcast,args=('receive_block', json.dumps(block.toDict()), ))
+			thread.start()
+			
+			print("Block Added")
+			return 
 
 		else:
 			# The proof is not valid and the block is ignored and not 
 			# propogated.
-			return jsonify({'message': 'Bad proof.'}), 200
+			print("Bad Proof")
+			return 
 
-
-@app.route('/transactions/new', methods=['POST'])
-def new_transaction():
+def new_transaction(sender, recipient, amount):
 	"""
 	new_transaction
 
@@ -190,51 +157,35 @@ def new_transaction():
 	# NOTE: Currently, all transactions are considered valid. This 
 	# means that 'fake' transactions will be added as well.
 
-	# Extract the values from the request.
-	data = request.get_json()
-
-	# Ensure that the required values are in the request.
-	required = ['sender', 'recipient', 'amount']
-	if not all(k in data for k in required):
-		return jsonify({'message': 'Missing values.'}), 400
-
-	# Add the current time and the node's port to the values.
-	data['timestamp'] = datetime.now()
-	data['port'] = os.environ['FLASK_PORT']
-
+	timstamp = datetime.now()
 	# Create a new transaction from received data.
 	block_index = node.blockchain.new_transaction(
-		sender=data['sender'],
-		recipient=data['recipient'],
-		amount=data['amount'],
-		timestamp=data['timestamp'],
-		port=data['port']
+		sender=sender,
+		recipient=recipient,
+		amount=amount,
+		timestamp=timestamp,
+		port=port
 	)
 
-	# Prepare for broadcasting to peers.
-	target = 'http://{}/transactions/receive_transactions'
-	headers = {
-		'Content-type': 'application/json',
-		'Accept': 'text/plain'
+	args = {
+		'sender': sender,
+		'recipient': recipient,
+		'amount': amount,
+		'timestamp': timestamp,
+		'port': port
 	}
 
-	# Broadcast the message to peers. The response is ignored, because
-	# no further action is taken by this node.
-	for peer in node.nodes:
-		address = target.format(peer)
-		requests.post(address, data=json.dumps(data, indent=4, sort_keys=True, 
-			default=str), headers=headers)
+	thread = threading.Thread(target=broadcast,args=('receive_block',args, ))
+	thread.start()
 
 	# Generate a response to report that transaction creation was successful.
 	response = {
 		'message': 'Transaction will be added to block {}.'.format(block_index)
 	}
 
-	return jsonify(response), 201
+	print(json.dumps(response))
 
-
-@app.route('/transactions/receive_transactions', methods=['POST'])
-def receive_transactions():
+def receive_transactions(sender, recipient, amount, timestamp):
 	"""
 	receive_transaction
 
@@ -249,11 +200,11 @@ def receive_transactions():
 
 	# Create a new transaction.
 	transaction = {
-		'sender': values.get('sender'),
-		'recipient': values.get('recipient'),
-		'amount': values.get('amount'),
-		'timestamp': values.get('timestamp'),
-		'port': values.get('port')
+		'sender': sender,
+		'recipient': recipient,
+		'amount': amount,
+		'timestamp': timestamp,
+		'port': port
 	}
 
 	# Compute the hash of the transaction for comparison.
@@ -263,40 +214,23 @@ def receive_transactions():
 	for node_transaction in node.blockchain.current_transactions:
 		node_transaction_hash = hashlib.sha256(node_transaction)
 		if node_transaction_hash == transaction_hash:
-			return jsonify({'message': 'Duplicate transaction.'}), 200
+			print("Duplicate Transaction")
 
 	else:
 		# The transaction was not found. Add to the pool.
 		node.blockchain.new_transaction(
-			sender=transaction['sender'],
-			recipient=transaction['recipient'],
-			amount=transaction['amount'],
-			timestamp=transaction['timestamp'],
-			port=transaction['port']
+			sender=sender,
+			recipient=recipient,
+			amount=amount,
+			timestamp=timestamp,
+			port=port
 		)
 
-		# Prepare for broadcasting to peers.
-		target = 'http://{}/transaction/receive_transaction'
-		headers = {
-			'Content-type': 'application/json',
-			'Accept': 'text/plain'
-		}
-		data = transaction
+		thread = threading.Thread(target=broadcast,args=('receive_transaction', json.dumps(transaction), ))
+		thread.start()
 
-		# Broadcast the message to peers except for the original 
-		# sender. The response is ignored, because no further 
-		# action is taken by this node.
-		sender = request.environ['REMOTE_ADDR'] + ':' + values['port']
-		for peer in node.nodes:
-			if peer != sender:
-				address = target.format(peer)
-				requests.post(address, data=json.dumps(data, indent=4, 
-					sort_keys=True, default=str), headers=headers)
+		print("Transaction added")
 
-		return jsonify({'message': 'Transaction added.'}), 201
-
-
-@app.route('/chain', methods=['GET'])
 def full_chain():
 	"""
 	full_chain
