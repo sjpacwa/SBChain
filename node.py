@@ -64,6 +64,8 @@ class Node:
 		Add a new node to the list of nodes
 
 		:param address: Address of node. Eg. 'http://192.168.0.5:5000'
+
+		NOTE: We assume that nodes don't drop later in the blockchain's lifespan
 		"""
 
 		parsed_url = urlparse(address)

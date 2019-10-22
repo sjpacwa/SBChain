@@ -32,8 +32,8 @@ def broadcast_all(name,args):
 	# no further action is taken by this node.
 	for peer in node.nodes:
 		if peer.address != ip and per.port != port
-			p_address = peer['address']
-			p_port = peer['port']
+			p_address = peer[0]
+			p_port = peer[1]
 			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
 			create_connection(p_address,p_port,data)
 
