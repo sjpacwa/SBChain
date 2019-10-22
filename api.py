@@ -22,7 +22,7 @@ from main import ip, port
 # Instatiate the local node.
 node = Node()
 
-def broadcast_all(name, args):
+def broadcast_all(name,args):
 	# Prepare for broadcasting to ALL peers.
 	data = {
 		'name': name,
@@ -32,20 +32,29 @@ def broadcast_all(name, args):
 	# no further action is taken by this node.
 	for peer in node.nodes:
 		if peer.address != ip and per.port != port
-			address = peer['address']
-			port = peer['port']
+			p_address = peer['address']
+			p_port = peer['port']
 			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
-			send(address,port,data)
+			create_connection(p_address,p_port,data)
 
-def broadcast(connection,name, args):
+def broadcast_result(connection,data):
 	# Prepare for broadcasting to peer.
-	data = {
-		'name': name,
-		'args': json.dumps(args)
-	}
+
 	# Broadcast the message to peers. The response is ignored, because
 	# no further action is taken by this node.
-	send(connection,address,port,data)
+	if isInstance(data, dict):
+		send(connection,json.dumps(data))
+	else:
+		send(connection,data)
+
+def request_result(peer,data=None):
+	# Requesting data from peer.
+
+	# Request data from peers. 
+	if isInstance(data, dict):
+		return create_connection(peer[0],peer[1],json.dumps(data))
+	else:
+		return create_connection(peer[0],peer[1],data)
 
 def mine():
 	"""
@@ -84,9 +93,9 @@ def mine():
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	print(json.dumps(response))
+	print(json.dumps(block.toDict()))
 
-def receive_block(index,transactions,proof,previous_hash,timestamp):
+def receive_block(connection,index,transactions,proof,previous_hash,timestamp):
 	"""
 	receive_block
 
@@ -108,7 +117,8 @@ def receive_block(index,transactions,proof,previous_hash,timestamp):
 	# Ensure that this block has not been added before.
 	for block in node.blockchain.chain:
 		if new_block == block:
-			print("Duplicate Block")
+			thread = threading.Thread(target=broadcast,args=(connection,"Duplicate Block", ))
+			thread.start()
 			return
 
 	else:
@@ -145,7 +155,7 @@ def receive_block(index,transactions,proof,previous_hash,timestamp):
 
 			thread = threading.Thread(target=broadcast_all,args=('receive_block',block.toDict(), ))
 			thread.start()
-			
+
 			print("Block Added")
 			return 
 
@@ -234,7 +244,7 @@ def receive_transactions(sender, recipient, amount, timestamp):
 
 		print("Transaction added")
 
-def full_chain():
+def full_chain(connection):
 	"""
 	full_chain
 
@@ -248,12 +258,13 @@ def full_chain():
 		'chain': node.blockchain.get_chain(),
 		'length': len(node.blockchain.get_chain())
 	}
-	
-	return jsonify(response), 200
+	if connection:
+		thread = threading.Thread(target=broadcast,args=(connection,response, ))
+		thread.start()
+	else:	
+		print(json.dumps(response))
 
-
-@app.route('/nodes/register', methods=['POST'])
-def register_nodes():
+def register_nodes(connection,nodes):
 	"""
 	register_nodes
 
@@ -261,16 +272,11 @@ def register_nodes():
 	This function handles a POST request to /nodes/register. It 
 	registers a peer with the node.
 	"""
-
-	# Extract the values from the request.
-	values = request.get_json()
-
+	nodes = json.loads(nodes)
 	# Check that something was sent.
-	if values is None:
-		return jsonify({'message': 'No nodes supplied.'}), 400
-
-	# Retrieve the list of addresses from nodes.
-	nodes = values.get('nodes')
+	if nodes is None:
+		print("Error: No nodes supplied")
+		return
 
 	# Register the nodes that have been received.
 	for peer in nodes:
@@ -281,12 +287,9 @@ def register_nodes():
 		'message': 'Nodes added to peer list.',
 		'total_nodes': list(node.nodes)
 	}
+	print(response)
 
-	return jsonify(response), 201
-
-
-@app.route('/nodes/resolve', methods=['GET'])
-def consensus():
+def consensus(connection):
 	"""
 	consensus
 
@@ -309,29 +312,28 @@ def consensus():
 			'chain': node.blockchain.get_chain()
 		}
 
-	return jsonify(response), 200
+	print(response)
 
-@app.route('/block/get_block', methods=['POST'])
-def get_block():
+def get_block(connection,index):
 	"""
 	get_block
 
 	Public.
-	This function ahdnesl a GET request to /block/get_block. It returns 
+	This function handles a GET request to /block/get_block. It returns 
 	the block that has been requested.
 	"""
 
-	# Extract the values from the request.
-	values = request.get_json()
-
 	# Check that something was sent.
 	if values is None:
-		return jsonify({'message': 'No index supplied'}), 400
+		thread = threading.Thread(target=broadcast,args=(connection,"Error: No index found", ))
+		thread.start()
+		return
 
 	block = node.blockhain.get_block(values.get('index'))
 
 	if block is -1:
-		return jsonify({'message': 'Invalid index'}), 400
+		thread = threading.Thread(target=broadcast,args=(connection,"Error: Invalid Index", ))
+		thread.start()
 	else:
 		response = {
 			'message': "Block retrieved.",
@@ -340,5 +342,5 @@ def get_block():
 			'proof': block.proof,
 			'previous_hash': block.previous_hash
 		}
-		return jsonify(response), 200
-	
+		thread = threading.Thread(target=broadcast,args=(connection,response, ))
+		thread.start()

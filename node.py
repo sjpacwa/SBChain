@@ -9,9 +9,6 @@ import json
 from urllib.parse import urlparse
 from uuid import uuid4
 
-# Third party imports
-import requests
-
 # Local imports
 from blockchain import Blockchain
 from block import Block
@@ -40,17 +37,20 @@ class Node:
 
 		# Grab and verify the chains from all the nodes in our network
 		for node in neighbors:
-			response = requests.get(f'http://{node}/chain')
+			response = request_response(node)
 
-			if response.status_code == 200:
-				neighbor_length = response.json()['length']
-				neighbor_chain = response.json()['chain']
+			if "Error" not in response:
+				response = json.dumps(response)
+				neighbor_length = response['length']
+				neighbor_chain = response['chain']
 
 				# Check if the neighbors chain is longer and if it is valid.
 				if (neighbor_length > our_length 
 					and self.blockchain.valid_chain(neighbor_chain)):
 					our_length = neighbor_length
-					replace_chain = neighbor_chain
+					replace_chain = ""
+					for block in neighbor_chain:
+						replace_chain.append(Block(block['index'], block['transactions'], block['proof'], block['previous_hash'], block['timestamp']))
 
 		# Replace our chain if we discovered a new, valid chain longer than ours
 		if replace_chain:
@@ -59,7 +59,7 @@ class Node:
 
 		return False
 
-	def register_node(self, address):
+	def register_node(self, address,port):
 		"""
 		Add a new node to the list of nodes
 
@@ -68,9 +68,9 @@ class Node:
 
 		parsed_url = urlparse(address)
 		if parsed_url.netloc:
-			self.nodes.add(parsed_url.netloc)
+			self.nodes.add((parsed_url.netloc,port))
 		elif parsed_url.path:
 			# Accepts an URL without scheme like '192.168.0.5:5000'.
-			self.nodes.add(parsed_url.path)
+			self.nodes.add((parsed_url.path,port))
 		else:
 			raise ValueError('Invalid URL')
