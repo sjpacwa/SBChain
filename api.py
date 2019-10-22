@@ -22,11 +22,11 @@ from main import ip, port
 # Instatiate the local node.
 node = Node()
 
-def broadcast(name, args):
-	# Prepare for broadcasting to peers.
+def broadcast_all(name, args):
+	# Prepare for broadcasting to ALL peers.
 	data = {
 		'name': name,
-		'args': args
+		'args': json.dumps(args)
 	}
 	# Broadcast the message to peers. The response is ignored, because
 	# no further action is taken by this node.
@@ -35,7 +35,17 @@ def broadcast(name, args):
 			address = peer['address']
 			port = peer['port']
 			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
-			send(data,address,port)
+			send(address,port,data)
+
+def broadcast(connection,name, args):
+	# Prepare for broadcasting to peer.
+	data = {
+		'name': name,
+		'args': json.dumps(args)
+	}
+	# Broadcast the message to peers. The response is ignored, because
+	# no further action is taken by this node.
+	send(connection,address,port,data)
 
 def mine():
 	"""
@@ -63,7 +73,7 @@ def mine():
 	# Create the new block and add it to the end of the chain.
 	block = node.blockchain.new_block(proof, last_block.hash())
 
-	thread = threading.Thread(target=broadcast,args=('receive_transaction',json.dumps(block.toDict()), ))
+	thread = threading.Thread(target=broadcast_all,args=('receive_block',block.toDict(), ))
 	thread.start()
 
 	# Generate a response to report that block creation was successful.
@@ -133,7 +143,7 @@ def receive_block(index,transactions,proof,previous_hash,timestamp):
 			# Append the block to the chain.
 			node.blockchain.chain.append(new_block)
 
-			thread = threading.Thread(target=broadcast,args=('receive_block', json.dumps(block.toDict()), ))
+			thread = threading.Thread(target=broadcast_all,args=('receive_block',block.toDict(), ))
 			thread.start()
 			
 			print("Block Added")
@@ -163,19 +173,17 @@ def new_transaction(sender, recipient, amount):
 		sender=sender,
 		recipient=recipient,
 		amount=amount,
-		timestamp=timestamp,
-		port=port
+		timestamp=timestamp
 	)
 
 	args = {
 		'sender': sender,
 		'recipient': recipient,
 		'amount': amount,
-		'timestamp': timestamp,
-		'port': port
+		'timestamp': timestamp
 	}
 
-	thread = threading.Thread(target=broadcast,args=('receive_block',args, ))
+	thread = threading.Thread(target=broadcast_all,args=('receive_transactions',args, ))
 	thread.start()
 
 	# Generate a response to report that transaction creation was successful.
@@ -195,16 +203,12 @@ def receive_transactions(sender, recipient, amount, timestamp):
 	but the original sender.
 	"""
 
-	# Extract the values from the request.
-	values = request.get_json()
-
 	# Create a new transaction.
 	transaction = {
 		'sender': sender,
 		'recipient': recipient,
 		'amount': amount,
-		'timestamp': timestamp,
-		'port': port
+		'timestamp': timestamp
 	}
 
 	# Compute the hash of the transaction for comparison.
@@ -222,11 +226,10 @@ def receive_transactions(sender, recipient, amount, timestamp):
 			sender=sender,
 			recipient=recipient,
 			amount=amount,
-			timestamp=timestamp,
-			port=port
+			timestamp=timestamp
 		)
 
-		thread = threading.Thread(target=broadcast,args=('receive_transaction', json.dumps(transaction), ))
+		thread = threading.Thread(target=broadcast_all,args=('receive_transactions', transaction, ))
 		thread.start()
 
 		print("Transaction added")
