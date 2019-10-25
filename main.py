@@ -21,4 +21,6 @@ if __name__ == '__main__':
 	port = args.port
 	ip = 'local host'
 
+	network_event_loop()
+
 	
