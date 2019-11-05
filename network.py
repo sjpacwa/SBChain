@@ -125,8 +125,3 @@ class NetworkHandler():
 		logging.info('Message: %s', arguments['message'])
 		connection.close()
 
-
-logging.basicConfig(level=logging.INFO)
-
-nh = NetworkHandler('127.0.0.1', 5000, {})
-nh.event_loop()
