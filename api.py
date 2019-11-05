@@ -31,7 +31,7 @@ def broadcast_all(name,args):
 	# Broadcast the message to peers. The response is ignored, because
 	# no further action is taken by this node.
 	for peer in node.nodes:
-		if peer.address != ip and per.port != port
+		if peer.address != ip and peer.port != port
 			p_address = peer[0]
 			p_port = peer[1]
 			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
