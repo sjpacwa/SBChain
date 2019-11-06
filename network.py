@@ -2,7 +2,7 @@
 network.py
 
 This file is responsible for storing the class that is responsible for 
-socket-based network communication.
+the socket-based main network loop.
 """
 
 from math import ceil
