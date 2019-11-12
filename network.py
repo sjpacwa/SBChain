@@ -73,7 +73,8 @@ class NetworkHandler():
 		:return: (data size, number of buffer cycles needed)
 		"""
 
-		data_size = int(connection.recv(16))
+		data_size = int(connection.recv(16).decode())
+		connection.send(b'ACK')
 
 		return (data_size, ceil(data_size / self.BUFFER_SIZE))
 
@@ -123,5 +124,12 @@ class NetworkHandler():
 		:param arguments: JSON representation of the arguments.
 		"""
 		logging.info('Message: %s', arguments['message'])
+		connection.send(b'20')
+		connection.send(b'{"response": "resp"}')
 		connection.close()
 
+
+
+net = NetworkHandler('127.0.0.1', 5000, {})
+
+net.event_loop();
