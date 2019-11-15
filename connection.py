@@ -79,10 +79,10 @@ class ConnectionHandler():
 
 		self._send(data)
 
-conn = ConnectionHandler('127.0.0.1', 5000)
+#conn = ConnectionHandler('127.0.0.1', 5000)
 
-send_data = '{"name":"test", "args": {"message": "test2"} }'
+#send_data = '{"name":"test", "args": {"message": "test2"} }'
 
-data = conn.send_with_response(send_data)
+#data = conn.send_with_response(send_data)
 
-print(data)
+#print(data)
