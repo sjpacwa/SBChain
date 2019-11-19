@@ -13,6 +13,45 @@ from network import NetworkHandler
 # Local Imports
 from api import app
 
+def mine(network_handler):
+	"""
+	mine
+
+	Public.
+	This function handles a GET request to /mine. It creates a new 
+	block with a valid proof and add it to the end of the blockchain. 
+	This block is then propogated to the node's peers.
+	"""
+
+	#TODO 
+	# Get a valid proof of work for the last block in the chain.
+	last_block = node.blockchain.last_block
+	proof = node.blockchain.proof_of_work(last_block)
+
+	# A reward is provided for a successful proof. This is marked as a 
+	# newly minted coin by setting the sender to '0'.
+	network_handler.node.blockchain.new_transaction(
+		sender='0',
+		recipient=node.identifier,
+		amount=1,
+		timestamp=datetime.now()
+	)
+
+	# Create the new block and add it to the end of the chain.
+	block = node.blockchain.new_block(proof, last_block.hash())
+
+	network_handler._dispatch(RECEIVE_BLOCK(block.toDict()))
+
+	# Generate a response to report that block creation was successful.
+	response = {
+		'message': "New block mined.",
+		'index': block.index,
+		'transactions': block.transactions,
+		'proof': block.proof,
+		'previous_hash': block.previous_hash
+	}
+	logging.info(json.dumps(block.toDict()))
+
 if __name__ == '__main__':
 	# Parse command line arguments.
 	parser = ArgumentParser()
