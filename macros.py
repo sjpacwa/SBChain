@@ -1,14 +1,11 @@
 THREAD_FUNCTIONS = {
-	"receive_block": self.receive_block,
-	"broadcast": self.broadcast,
-	"broadcast_all": self.broadcast_all,
-    "request_result": self.request_result,
-    "new_transaction": self.new_transaction,
-    "receieve_transaction": self.receive_transaction,
-    "full_chain": self.full_chain,
-    "register_nodes": self.register_nodes,
-    "consensus": self.consensus,
-    "get_block": self.get_block
+	"receive_block": receive_block,
+    "new_transaction": new_transaction,
+    "receieve_transaction": receive_transaction,
+    "full_chain": full_chain,
+    "register_nodes": register_nodes,
+    "consensus": consensus,
+    "get_block": get_block
 }
 
 NO_INDEX_FOUND = {
