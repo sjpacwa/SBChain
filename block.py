@@ -33,6 +33,7 @@ class Block:
 		"""
 
 		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
+		# TODO Verify if sorting is necessary.
 		block_string = json.dumps(self.toDict(), indent=4, sort_keys=True, default=str).encode()
 
 		print(block_string)

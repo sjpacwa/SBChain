@@ -10,9 +10,9 @@ from socket import socket, AF_INET, SOCK_STREAM
 import json
 
 
-class ConnectionHandler():
+class SingleConnectionHandler():
 	"""
-	Connection Handler
+	Single Connection Handler
 	"""
 
 	def __init__(self, host, port, buffer_size=256):
@@ -78,11 +78,3 @@ class ConnectionHandler():
 		data = data.encode()
 
 		self._send(data)
-
-#conn = ConnectionHandler('127.0.0.1', 5000)
-
-#send_data = '{"name":"test", "args": {"message": "test2"} }'
-
-#data = conn.send_with_response(send_data)
-
-#print(data)
