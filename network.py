@@ -320,7 +320,7 @@ class NetworkHandler():
 		nodes = arguments['nodes']
 		# Check that something was sent.
 		if nodes is None:
-			print("Error: No nodes supplied")
+			logging.info("Error: No nodes supplied")
 			return
 
 		# Register the nodes that have been received.
