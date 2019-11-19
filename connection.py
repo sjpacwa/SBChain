@@ -32,11 +32,11 @@ class ConnectionHandler():
 		print(test)
 		self.sock.send(data)
 
-	def _get_datagram_size(self, connection):
+	def _get_data_size(self, connection):
 		"""
-		_get_datagram_size
+		_get_data_size
 		This function will listen on the connection for the size of the 
-		future datagram.
+		future data.
 
 		:param connection: The new connection.
 
@@ -47,10 +47,10 @@ class ConnectionHandler():
 
 		return (data_size, ceil(data_size / self.BUFFER_SIZE))
 
-	def _get_datagram(self, connection, data_size, num_buffers):
+	def _get_data(self, connection, data_size, num_buffers):
 		"""
-		_get_datagram
-		This function will listen on the connection for the datagram.
+		_get_data
+		This function will listen on the connection for the data.
 
 		:param connection: The new connection.
 		:param data_size: The size of the incoming datagram.
@@ -69,8 +69,8 @@ class ConnectionHandler():
 		data = data.encode()
 
 		self._send(data)
-		data_size, num_buffers = self._get_datagram_size(self.sock)
-		data = self._get_datagram(self.sock, data_size, num_buffers)
+		data_size, num_buffers = self._get_data_size(self.sock)
+		data = self._get_data(self.sock, data_size, num_buffers)
 		
 		return data
 

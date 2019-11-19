@@ -68,16 +68,16 @@ class NetworkHandler():
 			logging.info('Created connection to %s:%s', client[0], 
 				client[1])
 
-			data_size, num_buffers = self._get_datagram_size(connection)
-			data = self._get_datagram(connection, data_size, num_buffers)
+			data_size, num_buffers = self._get_data_size(connection)
+			data = self._get_data(connection, data_size, num_buffers)
 
 			self._dispatch_thread(connection, data)
 
-	def _get_datagram_size(self, connection):
+	def _get_data_size(self, connection):
 		"""
-		_get_datagram_size
+		_get_data_size
 		This function will listen on the connection for the size of the 
-		future datagram.
+		future data.
 
 		:param connection: The new connection.
 
@@ -89,13 +89,13 @@ class NetworkHandler():
 
 		return (data_size, ceil(data_size / self.BUFFER_SIZE))
 
-	def _get_datagram(self, connection, data_size, num_buffers):
+	def _get_data(self, connection, data_size, num_buffers):
 		"""
-		_get_datagram
-		This function will listen on the connection for the datagram.
+		_get_data
+		This function will listen on the connection for the data.
 
 		:param connection: The new connection.
-		:param data_size: The size of the incoming datagram.
+		:param data_size: The size of the incoming data.
 		:param num_buffers: The number of buffer cycles required.
 
 		:return: JSON representation of the data.
@@ -123,7 +123,7 @@ class NetworkHandler():
 
 			logging.info('Dispatching function %s', function_name)
 
-			th = Thread(target=self.T_FUNCTIONS['function_name'], args=(connection, function_args,))
+			th = Thread(target=self.T_FUNCTIONS[function_name], args=(connection, function_args,))
 			th.start()
 		except:
 			logging.error(data)
