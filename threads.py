@@ -59,6 +59,7 @@ def receive_block(self, connection,arguments):
 			self.node.blockchain.chain.append(new_block)
 
 
+			# TODO This should be done with multicast.
 			self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_BLOCK(new_block.toDict()))
 
 			logging.info("Block Added")
@@ -94,6 +95,7 @@ def new_transaction(self, connection, arguments):
 		timestamp=timestamp
 	)
 
+	# TODO This should be done with multicast.
 	self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_TRANSACTION(transaction))
 
 	logging.info(TRANSACTION_ADDED(block_index))
@@ -129,6 +131,7 @@ def receive_transactions(self,connection,arguments):
 			timestamp=arguments['timestamp']
 		)
 
+		# TODO This should be done with multicast.
 		self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_TRANSACTION(transaction))
 
 		logging.info("Transaction added")
@@ -142,6 +145,8 @@ def full_chain(self,connection,arguments):
 	This function handles a GET request to /chain. It returns a copy of 
 	the entire chain.
 	"""
+
+	# TODO This needs to reply to the socket that is passed, it does not communicate to any other nodes, just returns local chain on socket.
 
 	# Assemble the chain for the response.
 	if connection:
@@ -182,6 +187,8 @@ def consensus(self,connection,arguments):
 	if the chain needs to be updated.
 	"""
 
+	# TODO See what the standard is for this in bitcoin.
+
 	replaced = self.node.resolve_conflicts()
 
 	# Based on conflicts, generate a response of which chain is valid.
@@ -199,6 +206,8 @@ def get_block(self,connection,arguments):
 	This function handles a GET request to /block/get_block. It returns 
 	the block that has been requested.
 	"""
+
+	# TODO Just need to respond to the connection.
 
 	# Check that something was sent.
 	if arguments['values'] is None:

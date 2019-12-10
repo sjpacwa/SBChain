@@ -37,6 +37,8 @@ class Node:
 
 		# Grab and verify the chains from all the nodes in our network
 		for node in neighbors:
+			# TODO Change to new connections.
+			# Should be handled by network handler.
 			response = request_response(node)
 
 			if "Error" not in response:
