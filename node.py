@@ -12,7 +12,7 @@ from uuid import uuid4
 # Local imports
 from blockchain import Blockchain
 from block import Block
-
+from multicast import MulticastHandler
 
 class Node:
 	def __init__(self):
@@ -36,11 +36,9 @@ class Node:
 		our_length = len(our_chain)
 
 		# Grab and verify the chains from all the nodes in our network
-		for node in neighbors:
+		for response in MulticastHandler(neighbors)
 			# TODO Change to new connections.
-			# Should be handled by connection.py.
-			response = request_response(node)
-
+			# Should be handled by connection.py
 			if "Error" not in response:
 				response = json.dumps(response)
 				neighbor_length = response['length']

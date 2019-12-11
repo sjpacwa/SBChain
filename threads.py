@@ -1,4 +1,4 @@
-from connection import ConnectionHandler
+from connection import SingleConnectionHandler
 from multicast import MulticastHandler
 
 

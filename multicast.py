@@ -8,6 +8,7 @@ socket-based network communication.
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
+from connection import SingleConnectionHandler
 
 
 class MulticastHandler():
