@@ -13,6 +13,7 @@ from uuid import uuid4
 from blockchain import Blockchain
 from block import Block
 from multicast import MulticastHandler
+from macros import FULL_CHAIN
 
 class Node:
 	def __init__(self):
@@ -35,8 +36,9 @@ class Node:
 		# We're only looking for chains longer than ours
 		our_length = len(our_chain)
 
+		responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN)
 		# Grab and verify the chains from all the nodes in our network
-		for response in MulticastHandler(neighbors)
+		for response in responses:
 			# TODO Change to new connections.
 			# Should be handled by connection.py
 			if "Error" not in response:

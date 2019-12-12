@@ -29,7 +29,7 @@ class Blockchain:
 		json_chain = []
 
 		for block in self.chain:
-			json_chain.append(block.toDict())
+			json_chain.append(block.to_json())
 			
 		return json_chain
 

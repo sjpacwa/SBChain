@@ -24,12 +24,12 @@ class MulticastHandler():
 	def multicast_with_response(self, data):
 		peer_response = {}
 		
-		for peer_connection in peer_connections:
+		for peer_connection in self.peer_connections:
 			response = peer_connection.send_with_response(data)
 			peer_response[peer_connection] = response
 
 		return peer_response
 
 	def multicast_wout_response(self, data):
-		for peer_connection in peer_connections:
+		for peer_connection in self.peer_connections:
 			peer_connection.send_wout_response(data)

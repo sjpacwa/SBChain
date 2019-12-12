@@ -8,10 +8,15 @@ starting the Flask webserver for the node.
 # Standard Library Imports
 from argparse import ArgumentParser
 import logging
-from network import NetworkHandler
+from threading import Thread
+import json
 
-# Local Imports
-from api import app
+#local imports
+from network import NetworkHandler
+from multicast import MulticastHandler
+from datetime import datetime
+from macros import NEIGHBORS, RECEIVE_BLOCK
+from block import datetime_converter
 
 def mine(network_handler):
 	"""
@@ -25,22 +30,24 @@ def mine(network_handler):
 
 	#TODO 
 	# Get a valid proof of work for the last block in the chain.
-	last_block = node.blockchain.last_block
-	proof = node.blockchain.proof_of_work(last_block)
+	last_block = network_handler.node.blockchain.last_block
+	proof = network_handler.node.blockchain.proof_of_work(last_block)
 
 	# A reward is provided for a successful proof. This is marked as a 
 	# newly minted coin by setting the sender to '0'.
 	network_handler.node.blockchain.new_transaction(
 		sender='0',
-		recipient=node.identifier,
+		recipient=network_handler.node.identifier,
 		amount=1,
 		timestamp=datetime.now()
 	)
 
 	# Create the new block and add it to the end of the chain.
-	block = node.blockchain.new_block(proof, last_block.hash())
+	block = network_handler.node.blockchain.new_block(proof, last_block.hash())
 
-	network_handler._dispatch(RECEIVE_BLOCK(block.toDict()))
+	MulticastHandler(network_handler.node.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json()))
+
+	network_handler.consensus()
 
 	# Generate a response to report that block creation was successful.
 	response = {
@@ -50,7 +57,13 @@ def mine(network_handler):
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	logging.info(json.dumps(block.toDict()))
+	logging.info(json.dumps(block.to_json()))
+
+def mine_loop(network_handler):
+	while network_handler.isActive():
+		th = Thread(target=mine, args=(network_handler,))
+		th.start()
+		th.join()
 
 if __name__ == '__main__':
 	# Parse command line arguments.
@@ -65,8 +78,12 @@ if __name__ == '__main__':
 
 	logging.basicConfig(level=logging.INFO)
 
-
 	nh = NetworkHandler(ip, port, {})
+
+	nh.register_nodes(NEIGHBORS)
+	th = Thread(target=mine_loop, args=(nh,))
+	th.start()
 	nh.event_loop()
+
 
 	

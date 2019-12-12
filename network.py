@@ -7,7 +7,7 @@ the socket-based main network loop.
 
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
-from threading import Thread
+from threading import Thread, Lock
 import json
 import logging
 from datetime import datetime
@@ -18,8 +18,9 @@ import hashlib
 # Local Imports
 from node import Node
 from block import Block
-from connection import ConnectionHandler
+from connection import SingleConnectionHandler
 from macros import *
+from threads import *
 
 class NetworkHandler():
 	"""
@@ -46,6 +47,60 @@ class NetworkHandler():
 		self.BUFFER_SIZE = buffer_size
 
 		self.node = Node()
+		self.active_lock = Lock()
+		self.active = True
+
+	def isActive(self):
+		status = ""
+		self.active_lock.acquire()
+		status = self.active
+		self.active_lock.release()
+		return status
+	def setActive(self,status):
+		self.active_lock.acquire()
+		self.active_lock = status
+		self.active_lock.release()
+
+	def register_nodes(self,peers):
+		"""
+		register_nodes
+
+		Public.
+		This function handles a POST request to /nodes/register. It 
+		registers a peer with the node.
+		"""
+		# Check that something was sent.
+		if peers is None:
+			print("Error: No nodes supplied")
+			return
+
+		# Register the nodes that have been received.
+		for peer in peers:
+			if peer[0] != self.host and peer[1] != self.port:
+				self.node.register_node(peer.address,peer.port)
+
+		# Generate a response to report that the peer was registered.
+
+		logging.info(NODES(list(self.node.nodes)))
+
+	def consensus(self):
+		"""
+		consensus
+
+		Public.
+		This function handles a GET request to /nodes/resolve. It checks
+		if the chain needs to be updated.
+		"""
+
+		# TODO See what the standard is for this in bitcoin.
+
+		replaced = self.node.resolve_conflicts()
+
+		# Based on conflicts, generate a response of which chain is valid.
+		if replaced:
+			logging.info(REPLACED(self.node.blockchain.get_chain()))
+		else:
+			logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
 
 	def event_loop(self):
 		"""
@@ -60,7 +115,7 @@ class NetworkHandler():
 		self.sock.bind((self.host, self.port))
 
 		# Block while waiting for connections.
-		while True:
+		while self.isActive():
 			logging.info('Waiting for new connections')
 			self.sock.listen(1)
 
@@ -127,3 +182,6 @@ class NetworkHandler():
 			th.start()
 		except:
 			logging.error(data)
+			self.setActive(False)
+
+

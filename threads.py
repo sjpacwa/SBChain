@@ -1,7 +1,6 @@
 from connection import SingleConnectionHandler
 from multicast import MulticastHandler
 
-
 def receive_block(self, connection,arguments):
 	"""
 	receive_block
@@ -60,7 +59,7 @@ def receive_block(self, connection,arguments):
 
 
 			# TODO This should be done with multicast.
-			self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_BLOCK(new_block.toDict()))
+			MulticastHandler(self.peers).multicast_wout_response(BROADCAST_ALL_RECEIVE_BLOCK(new_block.to_json()))
 
 			logging.info("Block Added")
 			return 
@@ -96,7 +95,7 @@ def new_transaction(self, connection, arguments):
 	)
 
 	# TODO This should be done with multicast.
-	self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_TRANSACTION(transaction))
+	MulticastHandler(self.peers).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
 	logging.info(TRANSACTION_ADDED(block_index))
 
@@ -132,7 +131,7 @@ def receive_transactions(self,connection,arguments):
 		)
 
 		# TODO This should be done with multicast.
-		self._dispatch_thread(connection,BROADCAST_ALL_RECEIVE_TRANSACTION(transaction))
+		MulticastHandler(self.peers).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
 		logging.info("Transaction added")
 
@@ -149,54 +148,7 @@ def full_chain(self,connection,arguments):
 	# TODO This needs to reply to the socket that is passed, it does not communicate to any other nodes, just returns local chain on socket.
 
 	# Assemble the chain for the response.
-	if connection:
-		self._dispatch_thread(connection,CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain())))
-	else:	
-		logging.info(CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain())))
-
-
-def register_nodes(self,connection,arguments):
-	"""
-	register_nodes
-
-	Public.
-	This function handles a POST request to /nodes/register. It 
-	registers a peer with the node.
-	"""
-	nodes = arguments['nodes']
-	# Check that something was sent.
-	if nodes is None:
-		print("Error: No nodes supplied")
-		return
-
-	# Register the nodes that have been received.
-	for peer in nodes:
-		self.node.register_node(peer.address,peer.port)
-
-	# Generate a response to report that the peer was registered.
-
-	logging.info(NODES(list(self.node.nodes)))
-
-
-def consensus(self,connection,arguments):
-	"""
-	consensus
-
-	Public.
-	This function handles a GET request to /nodes/resolve. It checks
-	if the chain needs to be updated.
-	"""
-
-	# TODO See what the standard is for this in bitcoin.
-
-	replaced = self.node.resolve_conflicts()
-
-	# Based on conflicts, generate a response of which chain is valid.
-	if replaced:
-		logging.info(REPLACED(self.node.blockchain.get_chain()))
-	else:
-		logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
-
+	return CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
 
 def get_block(self,connection,arguments):
 	"""
@@ -216,7 +168,14 @@ def get_block(self,connection,arguments):
 
 	block = self.node.blockchain.get_block(arguments['values'].get('index'))
 
-	if block is -1:
-		self._dispatch_thread(connection,INVALID_INDEX)
-	else:
-		self._dispatch_thread(connection,BLOCK_RECEIVED(block.index,block.transactions,block.proof,block.previous_hash))
+	return BLOCK_RECEIVED(block.index,block.transactions,block.proof,block.previous_hash)
+
+THREAD_FUNCTIONS = {
+	"receive_block": receive_block,
+    "new_transaction": new_transaction,
+    "receieve_transactions": receive_transactions,
+    "full_chain": full_chain,
+    "get_block": get_block
+}
+
+

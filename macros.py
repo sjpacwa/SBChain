@@ -1,13 +1,3 @@
-THREAD_FUNCTIONS = {
-	"receive_block": receive_block,
-    "new_transaction": new_transaction,
-    "receieve_transaction": receive_transaction,
-    "full_chain": full_chain,
-    "register_nodes": register_nodes,
-    "consensus": consensus,
-    "get_block": get_block
-}
-
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {
@@ -16,32 +6,37 @@ NO_INDEX_FOUND = {
 }
 
 INVALID_INDEX = {
-    'name': 'broadcast',
     'args': {
        "Error: Invalid Index"
     }
 }
 
-def BROADCAST_ALL_RECEIVE_BLOCK(block):
+NEIGHBORS = (
+    ('localhost',5000),
+    ('localhost',5001)
+)
+
+def RECEIVE_BLOCK(block):
     return {
-        'name': 'broadcast_all',
-	    'args': {
-		    'name': 'receieve_block',
-		    'args': block
-        }
+        'name': 'receieve_block',
+		'args': block
     }
 
-def BROADCAST_ALL_RECEIVE_TRANSACTION(transaction):
+def RECEIVE_TRANSACTION(transaction):
     return {
-        'name': 'broadcast_all',
+        'name': 'receieve_transactions', 
         'args': {
-            'name': 'receieve_transactions', 
-            'args': {
                 'sender': transaction['sender'],
                 'recipient': transaction['recipient'],
                 'amount': transaction['amount'],
                 'timestamp': transaction['timestamp']
             }
+    }
+
+def FULL_CHAIN():
+    return {
+        'name': 'full_chain',
+        'args': { 
         }
     }
 

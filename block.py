@@ -9,12 +9,9 @@ import hashlib
 import json
 from datetime import datetime
 
-json_object
+#block = Block(**json_object)
 
-block = Block(**json_object)
-
-block.to_json()
-
+#block.to_json()
 
 class Block:
 	def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
@@ -35,7 +32,7 @@ class Block:
 			'proof': self.proof,
 			'previous_hash': self.previous_hash,
 			# TODO See how timestamps are handled.
-			'timestamp': self.timestamp
+			'timestamp': self.timestamp.strftime("%m-%d-%Y %H:%M:%S")
 		}
 
 	def hash(self):
@@ -62,4 +59,6 @@ class Block:
 			and self.transactions == other.transactions
 			and self.proof == other.proof
 			and self.previous_hash == other.previous_hash)
+
+ 
 

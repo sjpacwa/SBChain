@@ -31,7 +31,7 @@ def broadcast_all(name,args):
 	# Broadcast the message to peers. The response is ignored, because
 	# no further action is taken by this node.
 	for peer in node.nodes:
-		if peer.address != ip and peer.port != port
+		if peer.address != ip and peer.port != port:
 			p_address = peer[0]
 			p_port = peer[1]
 			# TODO Socket abstraction so that we don't have to deal with sockets in api.py
@@ -82,7 +82,7 @@ def mine():
 	# Create the new block and add it to the end of the chain.
 	block = node.blockchain.new_block(proof, last_block.hash())
 
-	thread = threading.Thread(target=broadcast_all,args=('receive_block',block.toDict(), ))
+	thread = threading.Thread(target=broadcast_all,args=('receive_block',block.to_json(), ))
 	thread.start()
 
 	# Generate a response to report that block creation was successful.
@@ -93,7 +93,7 @@ def mine():
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	print(json.dumps(block.toDict()))
+	print(json.dumps(block.to_json()))
 
 def receive_block(connection,index,transactions,proof,previous_hash,timestamp):
 	"""
@@ -153,7 +153,7 @@ def receive_block(connection,index,transactions,proof,previous_hash,timestamp):
 			# Append the block to the chain.
 			node.blockchain.chain.append(new_block)
 
-			thread = threading.Thread(target=broadcast_all,args=('receive_block',block.toDict(), ))
+			thread = threading.Thread(target=broadcast_all,args=('receive_block',block.to_json(), ))
 			thread.start()
 
 			print("Block Added")
