@@ -16,7 +16,6 @@ from network import NetworkHandler
 from multicast import MulticastHandler
 from datetime import datetime
 from macros import NEIGHBORS, RECEIVE_BLOCK
-from block import datetime_converter
 
 def mine(network_handler):
 	"""
@@ -57,7 +56,7 @@ def mine(network_handler):
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	logging.info(json.dumps(block.to_json()))
+	logging.info(json.dumps(block.to_json(), indent=4, sort_keys=True, default=str))
 
 def mine_loop(network_handler):
 	while network_handler.isActive():

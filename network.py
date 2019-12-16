@@ -21,7 +21,7 @@ from block import Block
 from connection import SingleConnectionHandler
 from macros import *
 from threads import *
-
+from blockchain import config
 class NetworkHandler():
 	"""
 	Network Handler
@@ -98,9 +98,17 @@ class NetworkHandler():
 
 		# Based on conflicts, generate a response of which chain is valid.
 		if replaced:
-			logging.info(REPLACED(self.node.blockchain.get_chain()))
+			logging.info("------------------------------------------------------------------------------------------------------------------------")
+			logging.info("REPLACED")
+			#logging.info(REPLACED(self.node.blockchain.get_chain()))
+			logging.info("------------------------------------------------------------------------------------------------------------------------")
+
 		else:
-			logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
+			logging.info("------------------------------------------------------------------------------------------------------------------------")
+			#logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
+			logging.info("authoritative")
+			logging.info("------------------------------------------------------------------------------------------------------------------------")
+
 
 	def event_loop(self):
 		"""
@@ -112,6 +120,7 @@ class NetworkHandler():
 		logging.info("Setting up socket and binding to %s:%s", self.host, 
 			self.port)
 		self.sock = socket(AF_INET, SOCK_STREAM)
+		self.sock.settimeout(config.get_timeout())
 		self.sock.bind((self.host, self.port))
 
 		# Block while waiting for connections.

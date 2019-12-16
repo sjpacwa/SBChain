@@ -9,6 +9,7 @@ from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
 
+from blockchain import config
 
 class SingleConnectionHandler():
 	"""
@@ -23,6 +24,7 @@ class SingleConnectionHandler():
 
 		self.sock = socket(AF_INET, SOCK_STREAM)
 		self.sock.connect((self.host, self.port))
+		self.sock.settimeout(config.get_timeout())
 
 	def _send(self, data):
 		data_size = len(data)

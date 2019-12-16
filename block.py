@@ -9,10 +9,6 @@ import hashlib
 import json
 from datetime import datetime
 
-#block = Block(**json_object)
-
-#block.to_json()
-
 class Block:
 	def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
 		"""
