@@ -13,5 +13,3 @@ class BlockchainConfig:
 		if difficulty > 256:
 			return 256
 		return difficulty
-	def get_timeout(self):
-		return self.parser.getint('General','timeout')

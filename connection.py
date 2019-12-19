@@ -8,7 +8,7 @@ socket-based network communication.
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
-
+import logging
 from blockchain import config
 
 class SingleConnectionHandler():
@@ -20,18 +20,29 @@ class SingleConnectionHandler():
 		self.host = host
 		self.port = port
 
-		self.BUFFER_SIZE = buffer_size
+		self.BUFFER_SIZE = int(buffer_size)
 
 		self.sock = socket(AF_INET, SOCK_STREAM)
-		self.sock.connect((self.host, self.port))
-		self.sock.settimeout(config.get_timeout())
+	
+	def socket_connect(self):
+		try:
+			self.sock.connect((self.host, self.port))
+			return True
+		except:
+			return False
+
 
 	def _send(self, data):
+		logging.debug("Sending data (single_connection_handler)")
+		logging.debug("Data:")
+		logging.debug(data)
 		data_size = len(data)
+		logging.debug("Data size:")
+		logging.debug(data_size)
 
 		self.sock.send(str(data_size).encode())
 		test = self.sock.recv(16).decode()
-		print(test)
+		logging.debug(test)
 		self.sock.send(data)
 
 	def _get_data_size(self, connection):
@@ -46,6 +57,8 @@ class SingleConnectionHandler():
 		"""
 
 		data_size = int(self.sock.recv(16).decode())
+
+		#logging.debug("Buffer Size Type {}".format(type(self.BUFFER_SIZE)))
 
 		return (data_size, ceil(data_size / self.BUFFER_SIZE))
 
@@ -68,15 +81,16 @@ class SingleConnectionHandler():
 		return json.loads(data[:data_size])
 
 	def send_with_response(self, data):
-		data = data.encode()
-
+		data = json.dumps(data, indent=4, sort_keys=True, default=str).encode()
 		self._send(data)
 		data_size, num_buffers = self._get_data_size(self.sock)
 		data = self._get_data(self.sock, data_size, num_buffers)
-		
+
 		return data
 
 	def send_wout_response(self, data):
-		data = data.encode()
-
+		# Data receieved is a dictionary
+		data = json.dumps(data, indent=4, sort_keys=True, default=str).encode()
+		logging.debug("Sending w/o response")
 		self._send(data)
+		

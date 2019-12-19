@@ -18,13 +18,13 @@ NEIGHBORS = (
 
 def RECEIVE_BLOCK(block):
     return {
-        'name': 'receieve_block',
+        'name': 'receive_block',
 		'args': block
     }
 
 def RECEIVE_TRANSACTION(transaction):
     return {
-        'name': 'receieve_transactions', 
+        'name': 'receive_transactions', 
         'args': {
                 'sender': transaction['sender'],
                 'recipient': transaction['recipient'],

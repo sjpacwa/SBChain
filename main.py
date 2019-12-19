@@ -43,10 +43,11 @@ def mine(network_handler):
 
 	# Create the new block and add it to the end of the chain.
 	block = network_handler.node.blockchain.new_block(proof, last_block.hash())
-
+	logging.debug("Mine peers:")
+	logging.debug(network_handler.node.nodes)
 	MulticastHandler(network_handler.node.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json()))
-
 	network_handler.consensus()
+
 
 	# Generate a response to report that block creation was successful.
 	response = {
@@ -56,7 +57,7 @@ def mine(network_handler):
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	logging.info(json.dumps(block.to_json(), indent=4, sort_keys=True, default=str))
+	#logging.info(json.dumps(block.to_json(), indent=4, sort_keys=True, default=str))
 
 def mine_loop(network_handler):
 	while network_handler.isActive():
@@ -71,13 +72,17 @@ if __name__ == '__main__':
 		help='port to listen on')
 	parser.add_argument('-ip', '--ip', default='localhost', type=str, 
 		help='ip to listen on')
+	parser.add_argument('--debug',default = False,action='store_true')	
 	args = parser.parse_args()
 	port = args.port
 	ip = args.ip
 
-	logging.basicConfig(level=logging.INFO)
+	if args.debug:
+		logging.basicConfig(level=logging.DEBUG)
+	else:
+		logging.basicConfig(level=logging.INFO)
 
-	nh = NetworkHandler(ip, port, {})
+	nh = NetworkHandler(ip, port)
 
 	nh.register_nodes(NEIGHBORS)
 	th = Thread(target=mine_loop, args=(nh,))

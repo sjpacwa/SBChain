@@ -42,7 +42,7 @@ class Block:
 		# TODO Verify if sorting is necessary.
 		block_string = json.dumps(self.to_json(), indent=4, sort_keys=True, default=str).encode()
 
-		print(block_string)
+		#print(block_string)
 
 		return hashlib.sha256(block_string).hexdigest()
 

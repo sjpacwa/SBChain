@@ -8,6 +8,7 @@ specific information.
 import json
 from urllib.parse import urlparse
 from uuid import uuid4
+import logging
 
 # Local imports
 from blockchain import Blockchain
@@ -17,7 +18,7 @@ from macros import FULL_CHAIN
 
 class Node:
 	def __init__(self):
-		self.nodes = set()
+		self.nodes = []
 		self.blockchain = Blockchain()
 		self.identifier = str(uuid4()).replace('-', '')
 
@@ -36,7 +37,8 @@ class Node:
 		# We're only looking for chains longer than ours
 		our_length = len(our_chain)
 
-		responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN)
+		responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN())
+
 		# Grab and verify the chains from all the nodes in our network
 		for response in responses:
 			# TODO Change to new connections.
@@ -71,10 +73,12 @@ class Node:
 		"""
 
 		parsed_url = urlparse(address)
+		logging.debug("Parsed url")
+		logging.debug(parsed_url)
 		if parsed_url.netloc:
-			self.nodes.add((parsed_url.netloc,port))
+			self.nodes.append((parsed_url.netloc,port))
 		elif parsed_url.path:
 			# Accepts an URL without scheme like '192.168.0.5:5000'.
-			self.nodes.add((parsed_url.path,port))
+			self.nodes.append((parsed_url.path,port))
 		else:
 			raise ValueError('Invalid URL')

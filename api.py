@@ -93,7 +93,7 @@ def mine():
 		'proof': block.proof,
 		'previous_hash': block.previous_hash
 	}
-	print(json.dumps(block.to_json()))
+	#print(json.dumps(block.to_json()))
 
 def receive_block(connection,index,transactions,proof,previous_hash,timestamp):
 	"""
@@ -201,7 +201,7 @@ def new_transaction(sender, recipient, amount):
 		'message': 'Transaction will be added to block {}.'.format(block_index)
 	}
 
-	print(json.dumps(response))
+	#print(json.dumps(response))
 
 def receive_transactions(sender, recipient, amount, timestamp):
 	"""
@@ -262,7 +262,7 @@ def full_chain(connection):
 		thread = threading.Thread(target=broadcast,args=(connection,response, ))
 		thread.start()
 	else:	
-		print(json.dumps(response))
+		#print(json.dumps(response))
 
 def register_nodes(connection,nodes):
 	"""
@@ -287,7 +287,7 @@ def register_nodes(connection,nodes):
 		'message': 'Nodes added to peer list.',
 		'total_nodes': list(node.nodes)
 	}
-	print(response)
+	#print(response)
 
 def consensus(connection):
 	"""
@@ -312,7 +312,7 @@ def consensus(connection):
 			'chain': node.blockchain.get_chain()
 		}
 
-	print(response)
+	#print(response)
 
 def get_block(connection,index):
 	"""
