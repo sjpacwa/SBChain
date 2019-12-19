@@ -358,7 +358,8 @@ class NetworkHandler():
 		chain = json.dumps(chain, indent=4, sort_keys=True, default=str).encode()
 		data_len = len(chain)
 		connection.send(str(data_len).encode())
-		connection.send(b'ACK')
+		test = connection.recv(16).decode()
+		logging.debug(test)		
 		connection.send(chain)
 
 	def get_block(self,connection,arguments):
