@@ -9,7 +9,6 @@ from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
 import logging
-from blockchain import config
 
 class SingleConnectionHandler():
 	"""
@@ -77,13 +76,14 @@ class SingleConnectionHandler():
 		data = ''
 		for i in range(num_buffers):
 			data += self.sock.recv(self.BUFFER_SIZE).decode()
-
+		logging.debug(data)
 		return json.loads(data[:data_size])
 
 	def send_with_response(self, data):
 		data = json.dumps(data, indent=4, sort_keys=True, default=str).encode()
 		self._send(data)
 		data_size, num_buffers = self._get_data_size(self.sock)
+		self.sock.send(b'ACK')
 		data = self._get_data(self.sock, data_size, num_buffers)
 
 		return data

@@ -44,7 +44,6 @@ class Node:
 			# TODO Change to new connections.
 			# Should be handled by connection.py
 			if "Error" not in response:
-				response = json.dumps(response)
 				neighbor_length = response['length']
 				neighbor_chain = response['chain']
 

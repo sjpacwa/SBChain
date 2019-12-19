@@ -8,6 +8,7 @@ blocks that are stored in the blockchain.
 import hashlib
 import json
 from datetime import datetime
+import logging
 
 class Block:
 	def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
@@ -37,12 +38,12 @@ class Block:
 
 		:param block: Block
 		"""
-
+		logging.debug("Hash function")
 		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
 		# TODO Verify if sorting is necessary.
 		block_string = json.dumps(self.to_json(), indent=4, sort_keys=True, default=str).encode()
 
-		#print(block_string)
+		logging.debug(block_string)
 
 		return hashlib.sha256(block_string).hexdigest()
 

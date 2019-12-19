@@ -19,8 +19,6 @@ import hashlib
 from node import Node
 from block import Block
 from macros import *
-from threads import *
-from blockchain import config
 class NetworkHandler():
 	"""
 	Network Handler
@@ -72,7 +70,7 @@ class NetworkHandler():
 		logging.debug("Registering Nodes")
 		logging.debug(peers)
 		if peers is None:
-			print("Error: No nodes supplied")
+			logging.error("Error: No nodes supplied")
 			return
 
 		# Register the nodes that have been received.
@@ -136,6 +134,7 @@ class NetworkHandler():
 				client[1])
 
 			data_size, num_buffers = self._get_data_size(connection)
+			connection.send(b'ACK')
 			data = self._get_data(connection, data_size, num_buffers)
 
 			self._dispatch_thread(connection, data)
@@ -152,11 +151,10 @@ class NetworkHandler():
 		"""
 
 		data_size = int(connection.recv(16).decode())
-		logging.info("Data size received:")
-		logging.info(data_size)
-		connection.send(b'ACK')
+		logging.debug("Data size received:")
+		logging.debug(data_size)
 		
-		logging.info("Buffer Size Type {}".format(type(self.BUFFER_SIZE)))
+		logging.debug("Buffer Size Type {}".format(type(self.BUFFER_SIZE)))
 
 		return (data_size, ceil(data_size / self.BUFFER_SIZE))
 
@@ -176,8 +174,8 @@ class NetworkHandler():
 		for i in range(num_buffers):
 			data += connection.recv(self.BUFFER_SIZE).decode()
 		
-		logging.info("Data Receieved")
-		logging.info(data)
+		logging.debug("Data Receieved")
+		logging.debug(data)
 
 		return json.loads(data[:data_size])
 
@@ -202,6 +200,7 @@ class NetworkHandler():
 				th = Thread(target=self.T_FUNCTIONS[function_name], args=(self,connection,function_args,))
 				th.start()
 		except:
+			logging.error("ERROR IN DISPATCHER")
 			logging.error(data)
 			self.setActive(False)
 
