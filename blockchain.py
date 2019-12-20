@@ -8,6 +8,7 @@ test push
 # Standard library imports
 import hashlib
 import json
+import logging
 
 # Local imports
 from block import Block
@@ -41,21 +42,41 @@ class Blockchain:
 		:return: True if valid, False if not
 		"""
 
+		logging.info("Valid Chain Function")
+
 		# This will hold the current previous block.
 		prev_block = chain[0]
+		# Remove the reward from the prev_block. If it is kept in, the proof 
+		# will not be the same.
+		for transaction in range(len(prev_block['transactions'])):
+			if prev_block['transactions'][transaction]['sender'] == '0':
+				del prev_block['transactions'][transaction]
+				break
 
 		for cur_block in chain[1:]:
 			# Check that the hash is correct.
 			prev_block_string = json.dumps(prev_block, indent=4, sort_keys=True, default=str).encode()
 			prev_block_hash = hashlib.sha256(prev_block_string).hexdigest()
 
+			# Remove the reward from the prev_block. If it is kept in, the proof 
+			# will not be the same.
+			for transaction in range(len(prev_block['transactions'])):
+				if prev_block['transactions'][transaction]['sender'] == '0':
+					del prev_block['transactions'][transaction]
+					break
+
 			if cur_block['previous_hash'] != prev_block_hash:
+				logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
 				return False
 
 			# Check that the proof of work is correct.
-			if not self.valid_proof(prev_block['proof'], cur_block['proof'], prev_block_hash, self.current_transactions):
+			if not self.valid_proof(prev_block['proof'], cur_block['proof'], prev_block_hash, cur_block['transactions']):
+				logging.error("Bad Chain, Proof of work failed")
 				return False
+			prev_block = cur_block
 
+		
+		logging.info("Good Chain")
 		return True
 
 	def new_block(self, proof, previous_hash):

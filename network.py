@@ -19,6 +19,7 @@ import hashlib
 from node import Node
 from block import Block
 from macros import *
+from multicast import MulticastHandler
 class NetworkHandler():
 	"""
 	Network Handler
@@ -82,8 +83,8 @@ class NetworkHandler():
 				self.node.register_node(peer[0],peer[1])
 
 		# Generate a response to report that the peer was registered.
-
-		#logging.info(NODES(list(self.node.nodes)))
+		logging.debug("Peers")
+		logging.debug(NODES(list(self.node.nodes)))
 
 	def consensus(self):
 		"""
@@ -106,10 +107,10 @@ class NetworkHandler():
 			logging.info("------------------------------------------------------------------------------------------------------------------------")
 
 		else:
-			logging.info("------------------------------------------------------------------------------------------------------------------------")
+			#logging.info("------------------------------------------------------------------------------------------------------------------------")
 			#logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
-			logging.info("authoritative")
-			logging.info("------------------------------------------------------------------------------------------------------------------------")
+			logging.info("Authoritative")
+			#logging.info("------------------------------------------------------------------------------------------------------------------------")
 
 
 	def event_loop(self):
@@ -226,7 +227,7 @@ class NetworkHandler():
 		# Ensure that this block has not been added before.
 		for block in self.node.blockchain.chain:
 			if new_block == block:
-				logging.info("Duplicate Block")
+				logging.debug("Duplicate Block")
 				return
 
 		else:
@@ -242,13 +243,16 @@ class NetworkHandler():
 				if transaction['sender'] == '0':
 					block_reward = transaction
 					break
-			arguments['transactions'].remove(block_reward)
+			if block_reward:
+				arguments['transactions'].remove(block_reward)
+			#logging.info("Arguments transactions")
 
 			if self.node.blockchain.valid_proof(last_proof, arguments['proof'], last_hash, 
 				arguments['transactions']):
 				# The proof is valid and the block can be added. The reward 
 				# transaction should be returned.
-				arguments['transactions'].append(block_reward)
+				if block_reward:
+					arguments['transactions'].append(block_reward)
 
 				# Clear the pool of the transactions that are present in 
 				# the mined block.
@@ -299,9 +303,9 @@ class NetworkHandler():
 		)
 
 		# TODO This should be done with multicast.
-		MulticastHandler(self.peers).multicast_connect().multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+		MulticastHandler(self.node.nodes).multicast_connect().multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
-		#logging.info(TRANSACTION_ADDED(block_index))
+		logging.debug(TRANSACTION_ADDED(block_index))
 
 
 	def receive_transactions(self,connection,arguments):
@@ -318,7 +322,7 @@ class NetworkHandler():
 		# Create a new transaction.
 		transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],arguments['timestamp'])
 		# Compute the hash of the transaction for comparison.
-		transaction_hash = hashlib.sha256(json.dumps(transaction).encode())
+		transaction_hash = hashlib.sha256(json.dumps(transaction, indent=4, sort_keys=True, default=str).encode())
 		
 		# Make sure that the transaction doesn't match a previous one.
 		for node_transaction in self.node.blockchain.current_transactions:
@@ -336,7 +340,7 @@ class NetworkHandler():
 			)
 
 			# TODO This should be done with multicast.
-			MulticastHandler(self.peers).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+			MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 			logging.info("Transaction added")
 
 
@@ -374,16 +378,15 @@ class NetworkHandler():
 		"""
 
 		# TODO Just need to respond to the connection.
-
-		# Check that something was sent.
-		if arguments['values'] is None:
-			self._dispatch_thread(connection,NO_INDEX_FOUND)
-			return
-
 		block = self.node.blockchain.get_block(arguments['values'].get('index'))
 
-		return BLOCK_RECEIVED(block.index,block.transactions,block.proof,block.previous_hash)
-
+		block = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
+		data_len = len(block)
+		connection.send(str(data_len).encode())
+		test = connection.recv(16).decode()
+		logging.debug(test)		
+		connection.send(block)
+		
 	THREAD_FUNCTIONS = {
 		"receive_block": receive_block,
 		"new_transaction": new_transaction,

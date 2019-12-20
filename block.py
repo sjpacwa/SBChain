@@ -29,7 +29,7 @@ class Block:
 			'proof': self.proof,
 			'previous_hash': self.previous_hash,
 			# TODO See how timestamps are handled.
-			'timestamp': self.timestamp.strftime("%m-%d-%Y %H:%M:%S")
+			'timestamp': self.timestamp
 		}
 
 	def hash(self):

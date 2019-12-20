@@ -47,11 +47,15 @@ class Node:
 				neighbor_length = response['length']
 				neighbor_chain = response['chain']
 
+				# Remove the reward from the block. If it is kept in, the proof 
+				# will not be the same.
+
 				# Check if the neighbors chain is longer and if it is valid.
 				if (neighbor_length > our_length 
 					and self.blockchain.valid_chain(neighbor_chain)):
 					our_length = neighbor_length
-					replace_chain = ""
+
+					replace_chain = []
 					for block in neighbor_chain:
 						replace_chain.append(Block(block['index'], block['transactions'], block['proof'], block['previous_hash'], block['timestamp']))
 

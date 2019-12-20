@@ -97,7 +97,7 @@ class TestHashingAndProofs(BlockchainTestCase):
         self.create_block()
 
         new_block = self.blockchain.last_block
-        new_block_json = json.dumps(self.blockchain.last_block, sort_keys=True).encode()
+        new_block_json = json.dumps(self.blockchain.last_block, indent=4, sort_keys=True, default=str).encode()
         new_hash = hashlib.sha256(new_block_json).hexdigest()
 
         assert len(new_hash) == 64
