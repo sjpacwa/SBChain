@@ -46,6 +46,8 @@ class Blockchain:
 
 		# This will hold the current previous block.
 		prev_block = chain[0]
+
+		#TODO something's wrong in this function
 		# Remove the reward from the prev_block. If it is kept in, the proof 
 		# will not be the same.
 		for transaction in range(len(prev_block['transactions'])):

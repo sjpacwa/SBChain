@@ -41,14 +41,9 @@ class Node:
 
 		# Grab and verify the chains from all the nodes in our network
 		for response in responses:
-			# TODO Change to new connections.
-			# Should be handled by connection.py
 			if "Error" not in response:
 				neighbor_length = response['length']
 				neighbor_chain = response['chain']
-
-				# Remove the reward from the block. If it is kept in, the proof 
-				# will not be the same.
 
 				# Check if the neighbors chain is longer and if it is valid.
 				if (neighbor_length > our_length 

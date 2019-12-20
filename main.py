@@ -42,6 +42,7 @@ def mine(network_handler):
 		last_block.transactions.remove(block_reward)
 
 	#TODO potential problem where receieving transactions during/after proof is set, undefined behavior?
+	# I.E proof created with missing transactions
 	#my_transactions = network_handler.node.blockchain.current_transactions
 	proof = network_handler.node.blockchain.proof_of_work(last_block)
 
@@ -104,6 +105,7 @@ if __name__ == '__main__':
 
 	nh = NetworkHandler(ip, port)
 
+	# TODO decide who gets to register nodes, might need a centralized source that returns a random set of nodes to be neighbors
 	nh.register_nodes(NEIGHBORS)
 	th = Thread(target=mine_loop, args=(nh,))
 	th.start()

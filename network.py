@@ -265,8 +265,6 @@ class NetworkHandler():
 				# Append the block to the chain.
 				self.node.blockchain.chain.append(new_block)
 
-
-				# TODO This should be done with multicast.
 				MulticastHandler(self.peers).multicast_wout_response(BROADCAST_ALL_RECEIVE_BLOCK(new_block.to_json()))
 
 				logging.info("Block Added")
@@ -302,7 +300,6 @@ class NetworkHandler():
 			timestamp=timestamp
 		)
 
-		# TODO This should be done with multicast.
 		MulticastHandler(self.node.nodes).multicast_connect().multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
 		logging.debug(TRANSACTION_ADDED(block_index))
@@ -325,12 +322,16 @@ class NetworkHandler():
 		transaction_hash = hashlib.sha256(json.dumps(transaction, indent=4, sort_keys=True, default=str).encode())
 		
 		# Make sure that the transaction doesn't match a previous one.
+		# TODO need to implement a routing algorithm or verify transactions or we'll run into problems
+		# I.E: Z nodes, node A creates transaction and adds to its block, forwards to all other blocks, Block Z gets transaction and forwards to Block A which is on a new blcok, Block A will add this transaction 
+		# not realising that it was already added in another block
 		for node_transaction in self.node.blockchain.current_transactions:
 			node_transaction_hash = hashlib.sha256(node_transaction)
 			if node_transaction_hash == transaction_hash:
 				logging.info("Duplicate Transaction")
 
 		else:
+			#TODO add locks for thread safety? (for everything)
 			# The transaction was not found. Add to the pool.
 			self.node.blockchain.new_transaction(
 				sender=arguments['sender'],
@@ -339,7 +340,6 @@ class NetworkHandler():
 				timestamp=arguments['timestamp']
 			)
 
-			# TODO This should be done with multicast.
 			MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 			logging.info("Transaction added")
 
