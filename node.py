@@ -33,6 +33,7 @@ class Node:
 		neighbors = self.nodes
 		our_chain = self.blockchain.chain
 		replace_chain = None
+		index = None
 
 		# We're only looking for chains longer than ours
 		our_length = len(our_chain)
@@ -40,7 +41,7 @@ class Node:
 		responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN())
 
 		# Grab and verify the chains from all the nodes in our network
-		for response in responses:
+		for response in range(len(responses)):
 			if "Error" not in response:
 				neighbor_length = response['length']
 				neighbor_chain = response['chain']
@@ -49,16 +50,14 @@ class Node:
 				if (neighbor_length > our_length 
 					and self.blockchain.valid_chain(neighbor_chain)):
 					our_length = neighbor_length
-
-					replace_chain = []
-					for block in neighbor_chain:
-						replace_chain.append(Block(block['index'], block['transactions'], block['proof'], block['previous_hash'], block['timestamp']))
-
-		# Replace our chain if we discovered a new, valid chain longer than ours
-		if replace_chain:
-			our_chain = replace_chain
+					index = response
+		if index:
+			# Replace our chain if we discovered a new, valid chain longer than ours
+			replace_chain = []
+			for block in responses[index]['chain']:
+				replace_chain.append(Block(block['index'], block['transactions'], block['proof'], block['previous_hash'], block['timestamp']))
+			self.blockchain.chain = replace_chain
 			return True
-
 		return False
 
 	def register_node(self, address,port):
