@@ -11,156 +11,164 @@ import json
 import logging
 
 # Local imports
-from block import Block
+from block import Block, block_from_json
 from blockchainConfig import BlockchainConfig
 
 config = BlockchainConfig()
 
 
 class Blockchain:
-	def __init__(self):
-		self.current_transactions = []
-		self.chain = []
+    def __init__(self):
+        self.current_transactions = []
+        self.chain = []
 
 
-		# Create the genesis block
-		self.new_block(previous_hash='1', proof=100)
+        # Create the genesis block
+        self.new_block(previous_hash='1', proof=100)
 
-	def get_chain(self):
-		json_chain = []
+    def get_chain(self):
+        json_chain = []
 
-		for block in self.chain:
-			json_chain.append(block.to_json())
-			
-		return json_chain
+        for block in self.chain:
+            json_chain.append(block.to_json)
+            
+        return json_chain
 
-	def valid_chain(self, chain):
-		"""
-		Determine if a given blockchain is valid
+    def valid_chain(self, chain):
+        """
+        Determine if a given blockchain is valid
 
-		:param chain: A blockchain
-		:return: True if valid, False if not
-		"""
+        :param chain: A blockchain
+        :return: True if valid, False if not
+        """
 
-		logging.info("Valid Chain Function")
+        logging.info("Valid Chain Function")
 
-		# This will hold the current previous block.
-		prev_block = chain[0]
+        # This will hold the Genesis Block.
+        prev_block = chain[0]
 
-		#TODO something's wrong in this function
-		# Remove the reward from the prev_block. If it is kept in, the proof 
-		# will not be the same.
-		for transaction in range(len(prev_block['transactions'])):
-			if prev_block['transactions'][transaction]['sender'] == '0':
-				del prev_block['transactions'][transaction]
-				break
+        #TODO something's wrong in this function
+        for cur_block in chain[1:]:
+            # Check that the hash is correct.
+            prev_block_hash = block_from_json(prev_block).hash
 
-		for cur_block in chain[1:]:
-			# Check that the hash is correct.
-			prev_block_string = json.dumps(prev_block, indent=4, sort_keys=True, default=str).encode()
-			prev_block_hash = hashlib.sha256(prev_block_string).hexdigest()
+            # Remove the reward from the prev_block. If it is kept in, the proof 
+            # will not be the same.
+            for transaction in range(len(cur_block['transactions'])):
+                if cur_block['transactions'][transaction]['sender'] == '0':
+                    del cur_block['transactions'][transaction]
+                    break
 
-			# Remove the reward from the prev_block. If it is kept in, the proof 
-			# will not be the same.
-			for transaction in range(len(prev_block['transactions'])):
-				if prev_block['transactions'][transaction]['sender'] == '0':
-					del prev_block['transactions'][transaction]
-					break
+            if cur_block['previous_hash'] != prev_block_hash:
+                logging.error("Prev Block #")
+                logging.error(prev_block['index'])
+                logging.error("Prev Block Proof")
+                logging.error(prev_block['proof'])
+                logging.error("Cur Block #:")
+                logging.error(cur_block['index'])
+                logging.error("Cur Block proof")
+                logging.error(cur_block['proof'])
+                logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
+                return False
 
-			if cur_block['previous_hash'] != prev_block_hash:
-				logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
-				return False
+            # Check that the proof of work is correct.
+            logging.info("Prev Proof:")
+            logging.info(prev_block['proof'])
+            logging.info("Cur Proof:")
+            logging.info(cur_block['proof'])
+            logging.info("Prev Hash:")
+            logging.info(prev_block_hash)
+            logging.info("Cur Transactions")
+            logging.info(cur_block['transactions'])
 
-			# Check that the proof of work is correct.
-			if not self.valid_proof(prev_block['proof'], cur_block['proof'], prev_block_hash, cur_block['transactions']):
-				logging.error("Bad Chain, Proof of work failed")
-				return False
-			prev_block = cur_block
+            if not self.valid_proof(prev_block['proof'], cur_block['proof'], prev_block_hash, cur_block['transactions']):
+                logging.error("Bad Chain, Proof of work failed")
+                return False
+            prev_block = cur_block
 
-		
-		logging.info("Good Chain")
-		return True
+        
+        logging.info("Good Chain")
+        return True
 
-	def new_block(self, proof, previous_hash):
-		"""
-		Create a new Block in the Blockchain
+    def new_block(self, proof, previous_hash):
+        """
+        Create a new Block in the Blockchain
 
-		:param proof: The proof given by the Proof of Work algorithm
-		:param previous_hash: Hash of previous Block
-		:return: New Block
-		"""
-		
-		block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash())
+        :param proof: The proof given by the Proof of Work algorithm
+        :param previous_hash: Hash of previous Block
+        :return: New Block
+        """
+        
+        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash)
 
-		# Reset the current list of transactions
-		self.current_transactions = []
+        # Reset the current list of transactions
+        self.current_transactions = []
 
-		self.chain.append(block)
-		return block
+        self.chain.append(block)
+        return block
 
-	def new_transaction(self, sender, recipient, amount,timestamp):
-		"""
-		Creates a new transaction to go into the next mined Block
+    def new_transaction(self, sender, recipient, amount,timestamp):
+        """
+        Creates a new transaction to go into the next mined Block
 
-		:param sender: Address of the Sender
-		:param recipient: Address of the Recipient
-		:param amount: Amount
-		:return: The index of the Block that will hold this transaction
-		"""
-		self.current_transactions.append({
-			'sender': sender,
-			'recipient': recipient,
-			'amount': amount,
-			'timestamp': timestamp
-		})
+        :param sender: Address of the Sender
+        :param recipient: Address of the Recipient
+        :param amount: Amount
+        :return: The index of the Block that will hold this transaction
+        """
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+            'timestamp': timestamp
+        })
 
-		return self.last_block.index + 1
+        return self.last_block.index + 1
 
-	@property
-	def last_block(self):
-		return self.chain[-1]
+    @property
+    def last_block(self):
+        return self.chain[-1]
 
-	def get_block(self, index):
-		try:
-			return self.chain[index]
-		except:
-			return -1
+    def get_block(self, index):
+        try:
+            return self.chain[index]
+        except:
+            return -1
 
-	def proof_of_work(self, last_block):
-		"""
-		Simple Proof of Work Algorithm:
+    def proof_of_work(self, last_block):
+        """
+        Simple Proof of Work Algorithm:
 
-		 - Find a number p' such that hash(pp') contains leading 4 zeroes
-		 - Where p is the previous proof, and p' is the new proof
-		 
-		:param last_block: <dict> last Block
-		:return: <int>
-		"""
+         - Find a number p' such that hash(pp') contains leading 4 zeroes
+         - Where p is the previous proof, and p' is the new proof
+         
+        :param last_block: <Block> last Block
+        :return: <int>
+        """
+        last_proof = last_block.proof
+        last_hash = last_block.hash
 
-		last_proof = last_block.proof
-		last_hash = last_block.hash()
+        proof = 0
+        while self.valid_proof(last_proof, proof, last_hash, self.current_transactions) is False:
+            proof += 1
 
-		proof = 0
-		while self.valid_proof(last_proof, proof, last_hash, self.current_transactions) is False:
-			proof += 1
+        return proof
 
-		return proof
+    @staticmethod
+    def valid_proof(last_proof, proof, last_hash, current_transactions):
+        """
+        Validates the Proof
 
-	@staticmethod
-	def valid_proof(last_proof, proof, last_hash, current_transactions):
-		"""
-		Validates the Proof
+        :param last_proof: <int> Previous Proof
+        :param proof: <int> Current Proof
+        :param last_hash: <str> The hash of the Previous Block
+        :return: <bool> True if correct, False if not.
 
-		:param last_proof: <int> Previous Proof
-		:param proof: <int> Current Proof
-		:param last_hash: <str> The hash of the Previous Block
-		:return: <bool> True if correct, False if not.
+        """
 
-		"""
-
-		guess = f'{last_proof}{proof}{last_hash}{current_transactions}'.encode()
-		guess_hash = hashlib.sha256(guess).hexdigest()
-		
-		# This is where difficulty is set.
-		difficulty = config.get_block_difficulty()
-		return guess_hash[:difficulty] == '0' * difficulty
+        guess = f'{last_proof}{proof}{last_hash}{current_transactions}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        
+        # This is where difficulty is set.
+        difficulty = config.get_block_difficulty()
+        return guess_hash[:difficulty] == '0' * difficulty
