@@ -9,7 +9,7 @@ test push
 import hashlib
 import json
 import logging
-
+from datetime import datetime
 # Local imports
 from block import Block, block_from_json
 from blockchainConfig import BlockchainConfig
@@ -44,46 +44,58 @@ class Blockchain:
 
         logging.info("Valid Chain Function")
 
+        logging.debug("Received Chain")
+        logging.debug(chain)
+
         # This will hold the Genesis Block.
         prev_block = chain[0]
 
         #TODO something's wrong in this function
         for cur_block in chain[1:]:
+            block_reward_prev = None
+            for transaction in prev_block['transactions']:
+                if transaction['sender'] == '0':
+                    block_reward_prev = transaction
+                    break
+            if block_reward_prev:
+                prev_block['transactions'].remove(block_reward_prev)
+
+            block_reward_cur = None
+            for transaction in cur_block['transactions']:
+                if transaction['sender'] == '0':
+                    block_reward_cur = transaction
+                    break
+            if block_reward_cur:
+                cur_block['transactions'].remove(block_reward_cur)
+
             # Check that the hash is correct.
             prev_block_hash = block_from_json(prev_block).hash
 
-            # Remove the reward from the prev_block. If it is kept in, the proof 
-            # will not be the same.
-            for transaction in range(len(cur_block['transactions'])):
-                if cur_block['transactions'][transaction]['sender'] == '0':
-                    del cur_block['transactions'][transaction]
-                    break
-
             if cur_block['previous_hash'] != prev_block_hash:
-                logging.error("Prev Block #")
-                logging.error(prev_block['index'])
-                logging.error("Prev Block Proof")
-                logging.error(prev_block['proof'])
-                logging.error("Cur Block #:")
-                logging.error(cur_block['index'])
-                logging.error("Cur Block proof")
-                logging.error(cur_block['proof'])
                 logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
+                logging.debug("Previous Block")
+                logging.debug(block_from_json(prev_block).to_json)
+                logging.debug("Prev Block #")
+                logging.debug(prev_block['index'])
+                logging.debug("Prev Block Proof")
+                logging.debug(prev_block['proof'])
+                logging.debug("Current Block")
+                logging.debug(block_from_json(cur_block).to_json)
+                logging.debug("Cur Block #:")
+                logging.debug(cur_block['index'])
+                logging.debug("Cur Block proof")
+                logging.debug(cur_block['proof'])
                 return False
 
             # Check that the proof of work is correct.
-            logging.info("Prev Proof:")
-            logging.info(prev_block['proof'])
-            logging.info("Cur Proof:")
-            logging.info(cur_block['proof'])
-            logging.info("Prev Hash:")
-            logging.info(prev_block_hash)
-            logging.info("Cur Transactions")
-            logging.info(cur_block['transactions'])
-
             if not self.valid_proof(prev_block['proof'], cur_block['proof'], prev_block_hash, cur_block['transactions']):
                 logging.error("Bad Chain, Proof of work failed")
                 return False
+
+            if block_reward_cur:
+                cur_block['transactions'].append(block_reward_cur)
+            if block_reward_prev:
+                prev_block['transactions'].append(block_reward_prev)
             prev_block = cur_block
 
         
@@ -98,8 +110,7 @@ class Blockchain:
         :param previous_hash: Hash of previous Block
         :return: New Block
         """
-        
-        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash)
+        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
         # Reset the current list of transactions
         self.current_transactions = []
@@ -116,6 +127,11 @@ class Blockchain:
         :param amount: Amount
         :return: The index of the Block that will hold this transaction
         """
+
+        try:
+            timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+        except:
+            pass
         self.current_transactions.append({
             'sender': sender,
             'recipient': recipient,

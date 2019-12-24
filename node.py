@@ -12,7 +12,7 @@ import logging
 
 # Local imports
 from blockchain import Blockchain
-from block import Block
+from block import Block, block_from_json
 from multicast import MulticastHandler
 from macros import FULL_CHAIN
 
@@ -33,8 +33,9 @@ class Node:
         neighbors = self.nodes
         our_chain = self.blockchain.chain
         replace_chain = None
-        index = None
+        chain = None
 
+        logging.info("Resolve Conflicts")
         # We're only looking for chains longer than ours
         our_length = len(our_chain)
 
@@ -52,12 +53,14 @@ class Node:
                 if (neighbor_length > our_length 
                     and self.blockchain.valid_chain(neighbor_chain)):
                     our_length = neighbor_length
-                    index = response
-        if index:
+                    chain = response['chain']
+        if chain:
+            logging.debug("Replaced chain")
+            logging.debug(chain)
             # Replace our chain if we discovered a new, valid chain longer than ours
             replace_chain = []
-            for block in responses[index]['chain']:
-                replace_chain.append(Block(block['index'], block['transactions'], block['proof'], block['previous_hash'], block['timestamp']))
+            for block in chain:
+                replace_chain.append(block_from_json(block))
             self.blockchain.chain = replace_chain
             return True
         return False
@@ -71,6 +74,7 @@ class Node:
         NOTE: We assume that nodes don't drop later in the blockchain's lifespan
         """
 
+        logging.info("Registering Nodes")
         parsed_url = urlparse(address)
         logging.debug("Parsed url")
         logging.debug(parsed_url)

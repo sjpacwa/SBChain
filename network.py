@@ -265,7 +265,7 @@ class NetworkHandler():
                 # Append the block to the chain.
                 self.node.blockchain.chain.append(new_block)
 
-                MulticastHandler(self.peers).multicast_wout_response(BROADCAST_ALL_RECEIVE_BLOCK(new_block.to_json))
+                MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
 
                 logging.info("Block Added")
 
@@ -289,7 +289,7 @@ class NetworkHandler():
         # means that 'fake' transactions will be added as well.
         
         logging.info("Creating new transaction (from dispatcher)")
-        timestamp = datetime.now()
+        timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],timestamp)
 
         # Create a new transaction from received data.
@@ -300,7 +300,7 @@ class NetworkHandler():
             timestamp=timestamp
         )
 
-        MulticastHandler(self.node.nodes).multicast_connect().multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+        MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
         logging.debug(TRANSACTION_ADDED(block_index))
 

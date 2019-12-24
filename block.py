@@ -31,7 +31,7 @@ class Block:
         self.transactions = transactions
         self.proof = proof
         self.previous_hash = previous_hash
-        self.timestamp = datetime.min if timestamp == -1 else timestamp
+        self.timestamp = datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ') if timestamp == -1 else timestamp
     @property
     def to_json(self):
         """
@@ -45,10 +45,10 @@ class Block:
         
         return {
             'index': self.index,
-            'transactions': self.transactions,
-            'proof': self.proof,
             'previous_hash': self.previous_hash,
-            'timestamp': self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+            'proof': self.proof,
+            'timestamp': self.timestamp,
+            'transactions': self.transactions
         }
     @property
     def to_string(self):
@@ -65,7 +65,7 @@ class Block:
             self.to_json,
             indent=4,
             sort_keys=True,
-            default= str
+            default=str
         )
     @property
     def hash(self):
@@ -118,8 +118,8 @@ def block_from_json(data):
             raise KeyError('{} not found during block creation'.format(key))
 
     # Check that the timestamp is a datetime not a string
-    if isinstance(data['timestamp'],str):
-        data['timestamp'] = datetime.strptime(data['timestamp'],'%Y-%m-%dT%H:%M:%SZ')
+    #if isinstance(data['timestamp'],str):
+    #    data['timestamp'] = datetime.strptime(data['timestamp'],'%Y-%m-%dT%H:%M:%SZ')
 
     return Block(
         data['index'],
