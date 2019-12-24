@@ -72,7 +72,9 @@ class Blockchain:
             prev_block_hash = block_from_json(prev_block).hash
 
             if cur_block['previous_hash'] != prev_block_hash:
+                logging.error("-------------------------------------------")
                 logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
+                logging.error("-------------------------------------------")
                 logging.debug("Previous Block")
                 logging.debug(block_from_json(prev_block).to_json)
                 logging.debug("Prev Block #")
@@ -98,8 +100,9 @@ class Blockchain:
                 prev_block['transactions'].append(block_reward_prev)
             prev_block = cur_block
 
-        
+        logging.info("--------------------")
         logging.info("Good Chain")
+        logging.info("--------------------")
         return True
 
     def new_block(self, proof, previous_hash):
