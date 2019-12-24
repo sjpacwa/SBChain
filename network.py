@@ -267,9 +267,9 @@ class NetworkHandler():
 
                 MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
 
-				logging.info("-------------------")
+                logging.info("-------------------")
                 logging.info("Block Added")
-				logging.info("-------------------")
+                logging.info("-------------------")
 
             else:
                 # The proof is not valid and the block is ignored and not 

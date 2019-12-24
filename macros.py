@@ -19,7 +19,7 @@ NEIGHBORS = (
 def RECEIVE_BLOCK(block):
     return {
         'name': 'receive_block',
-		'args': block
+        'args': block
     }
 
 def RECEIVE_TRANSACTION(transaction):
@@ -47,17 +47,17 @@ def TRANSACTION_ADDED(block_index):
 
 def TRANSACTION(sender,recipient,amount,timestamp):
     return {
-			'sender': sender,
-			'recipient': recipient,
-			'amount': amount,
-			'timestamp': timestamp
-		}
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+            'timestamp': timestamp
+        }
 
 def CHAIN(chain,length):
     return {
         'chain': chain,
         'length': length
-		}
+        }
 
 def NODES(nodes):
     return {
@@ -78,7 +78,7 @@ def AUTHORITATIVE(chain):
     }
 
 def BLOCK_RECEIVED(index,transactions,proof,previous_hash):
-   	return{
+       return{
         'message': "Block retrieved.",
         'index': index,
         'transactions': transactions,
