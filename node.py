@@ -28,6 +28,7 @@ class Node:
         by replacing our chain with the longest one in the network.
 
         :return: True if our chain was replaced, False if not
+        TODO: decide when to lock, what to do if resources are lcoked
         """
 
         neighbors = self.nodes

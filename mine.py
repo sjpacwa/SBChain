@@ -18,6 +18,7 @@ def mine(network_handler):
     This function handles a GET request to /mine. It creates a new 
     block with a valid proof and add it to the end of the blockchain. 
     This block is then propogated to the node's peers.
+    TODO: Decide when to lock resources, what to do if resources are already locked
     """
 
     #TODO 

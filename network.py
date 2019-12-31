@@ -23,6 +23,7 @@ from multicast import MulticastHandler
 class NetworkHandler():
     """
     Network Handler
+    TODO: decide when to lock, what to do with locks
     """
 
     def __init__(self, host, port, buffer_size=256):

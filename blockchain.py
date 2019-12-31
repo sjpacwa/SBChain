@@ -115,6 +115,7 @@ class Blockchain:
         """
         block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
+        #TODO LOCK transactions and Block - if someone else has the lock then ?
         # Reset the current list of transactions
         self.current_transactions = []
 
@@ -131,6 +132,7 @@ class Blockchain:
         :return: The index of the Block that will hold this transaction
         """
 
+        # TODO Lock transactions
         try:
             timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
         except:
@@ -146,9 +148,11 @@ class Blockchain:
 
     @property
     def last_block(self):
+        # TODO lock chain? 
         return self.chain[-1]
 
     def get_block(self, index):
+        #TODO lock block?
         try:
             return self.chain[index]
         except:
@@ -163,6 +167,7 @@ class Blockchain:
          
         :param last_block: <Block> last Block
         :return: <int>
+        #TODO lock transactions here? or lock in caller function?
         """
         last_proof = last_block.proof
         last_hash = last_block.hash
