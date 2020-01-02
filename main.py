@@ -8,13 +8,14 @@ starting the Flask webserver for the node.
 # Standard Library Imports
 from argparse import ArgumentParser
 import logging
-from threading import Thread
+from threading import Thread, Lock
 
 #local imports
 from network import NetworkHandler
 from multicast import MulticastHandler
 from macros import NEIGHBORS
 from mine import mine_loop
+from node import Node
 
 if __name__ == '__main__':
     # Parse command line arguments.
@@ -33,13 +34,23 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.INFO)
 
-    nh = NetworkHandler(ip, port)
+    # Create location to keep track of received block.
+    received_block = (Lock(), False, None)
 
-    # TODO decide who gets to register nodes, might need a centralized source that returns a random set of nodes to be neighbors
-    nh.register_nodes(NEIGHBORS)
-    th = Thread(target=mine_loop, args=(nh,))
+    # Create the node.
+    node = Node()
+
+    # Create the network handler.
+    nh = NetworkHandler(ip, port, node)
+
+    # Start the mining thread.
+    th = Thread(target=mine_loop, args=(nh, received_block))
     th.start()
+
+    # Automatically register neighbors.
+    # TODO Remove this.
+    nh.register_nodes(NEIGHBORS)
+
+    # Start the network handler
     nh.event_loop()
 
-
-    

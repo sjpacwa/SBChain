@@ -158,26 +158,6 @@ class Blockchain:
         except:
             return -1
 
-    def proof_of_work(self, last_block):
-        """
-        Simple Proof of Work Algorithm:
-
-         - Find a number p' such that hash(pp') contains leading 4 zeroes
-         - Where p is the previous proof, and p' is the new proof
-         
-        :param last_block: <Block> last Block
-        :return: <int>
-        #TODO lock transactions here? or lock in caller function?
-        """
-        last_proof = last_block.proof
-        last_hash = last_block.hash
-
-        proof = 0
-        while self.valid_proof(last_proof, proof, last_hash, self.current_transactions) is False:
-            proof += 1
-
-        return proof
-
     @staticmethod
     def valid_proof(last_proof, proof, last_hash, current_transactions):
         """

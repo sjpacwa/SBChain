@@ -20,32 +20,34 @@ from node import Node
 from block import Block
 from macros import *
 from multicast import MulticastHandler
-class NetworkHandler():
-    """
-    Network Handler
-    TODO: decide when to lock, what to do with locks
-    """
 
-    def __init__(self, host, port, buffer_size=256):
+
+class NetworkHandler():
+    def __init__(self, host, port, node, buffer_size=256):
         """
         __init__
-        Constructor for the NetworkHandler class.
+        
+        The constructor for a NetworkHandler object.
 
-        :param host: The IP address that the socket should be bound to.
-        :param port: The port that the socket should be bound to.
-        :param thread_functions: A dictionary that allows a Thread to 
-            lookup a function object with a function name.
-        :param buffer_size: The size of the buffer used in data 
+        :param host: (string) The IP address that the socket should be 
+            bound to.
+        :param port: (int) The port that the socket should be bound to.
+        :param thread_functions: (dict) A dictionary that allows a 
+            Thread to lookup a function object with a function name.
+        :param buffer_size: (int) The size of the buffer used in data 
             transmission.
         """
 
         self.host = host
         self.port = port
 
+        # TODO Update the thread functions to be supported as original.
         self.T_FUNCTIONS = self.THREAD_FUNCTIONS
         self.BUFFER_SIZE = int(buffer_size)
 
-        self.node = Node()
+        self.node = node
+
+        # TODO What is this lock doing.
         self.active_lock = Lock()
         self.active = True
 
@@ -117,6 +119,7 @@ class NetworkHandler():
     def event_loop(self):
         """
         event_loop
+        
         This function will setup the socket and wait for incoming 
         connections.
         """
@@ -144,12 +147,12 @@ class NetworkHandler():
     def _get_data_size(self, connection):
         """
         _get_data_size
+        
         This function will listen on the connection for the size of the 
         future data.
 
-        :param connection: The new connection.
-
-        :return: (data size, number of buffer cycles needed)
+        :param connection: (Socket) The new connection.
+        :returns: (tuple) (data size, number of buffer cycles needed)
         """
 
         data_size = int(connection.recv(16).decode())
@@ -194,7 +197,17 @@ class NetworkHandler():
         try:
             function_name = data['name']
             function_args = data['args']
+
             logging.info('Dispatching function %s', function_name)
+            th = Thread(
+                target=self.T_FUNCTIONS[function_name],
+                 args=(self.connection,) if not function_args else (self.connection, function_args,)
+            )
+            th.start()
+        except Exception as e:
+            logging.error('Dispatcher error: {}'.format(e))
+            logging.error(data)
+
             if not function_args:
                 th = Thread(target=self.T_FUNCTIONS[function_name], args=(self,connection,))
                 th.start()
