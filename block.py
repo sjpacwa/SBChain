@@ -37,6 +37,7 @@ class Block:
 
 		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
 		block_string = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
+		print(block_string)
 
 		return hashlib.sha256(block_string).hexdigest()
 

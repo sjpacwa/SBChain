@@ -13,13 +13,13 @@ import json
 from block import Block
 from blockchainConfig import BlockchainConfig
 
+config = BlockchainConfig()
+
 
 class Blockchain:
 	def __init__(self):
 		self.current_transactions = []
 		self.chain = []
-
-		self.config = BlockchainConfig()
 
 		# Create the genesis block
 		self.new_block(previous_hash='1', proof=100)
@@ -52,19 +52,38 @@ class Blockchain:
 			print("\n-----------\n")
 			
 			# Check that the hash of the block is correct
-			block_string = json.dumps(last_block, sort_keys=True).encode()
+			last_block = dict(last_block)
+			del last_block['timestamp']
+			block_string = json.dumps(last_block, indent=4, sort_keys=True, default=str).encode()
+			print(block_string)
 			last_block_hash = hashlib.sha256(block_string).hexdigest()
 			if block['previous_hash'] != last_block_hash:
+				print(last_block_hash)
+				print(block['previous_hash'])
+				print('here')
 				return False
 
+			transactions = block['transactions']
+
+			block_reward = None
 			# Check that the Proof of Work is correct
-			if not self.valid_proof(last_block['proof'], block['proof'], last_block_hash):
+			for transaction in transactions:
+				if transaction['sender'] == '0':
+					block_reward = transaction
+					break
+			transactions.remove(block_reward)
+
+			if not self.valid_proof(last_block['proof'], block['proof'], last_block_hash, transactions):
+				transactions.append(block_reward)
+				print('here2')
 				return False
+
+			transactions.append(block_reward)
 
 			last_block = block
 			current_index += 1
 
-		return True
+		return True, ''
 
 	def new_block(self, proof, previous_hash):
 		"""
@@ -148,5 +167,5 @@ class Blockchain:
 		guess_hash = hashlib.sha256(guess).hexdigest()
 		
 		# This is where difficulty is set.
-		difficulty = self.config.get_block_difficulty()
+		difficulty = config.get_block_difficulty()
 		return guess_hash[:difficulty] == '0' * difficulty
