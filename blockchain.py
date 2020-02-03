@@ -40,8 +40,8 @@ class Blockchain:
 		:return: True if valid, False if not
 		"""
 
-		last_block = chain[0]
-		current_index = 1
+		# This will hold the current previous block.
+		prev_block = chain[0]
 
 		while current_index < len(chain):
 			block = chain[current_index]

@@ -13,7 +13,7 @@ from datetime import datetime
 class Block:
 	def __init__(self,index,transactions,proof,previous_hash, timestamp = -1):
 		self.index = index
-		self.timestamp = datetime.now() if timestamp == -1 else timestamp
+		self.timestamp = datetime.min if timestamp == -1 else timestamp
 		self.transactions = transactions
 		self.proof = proof	
 		self.previous_hash = previous_hash
@@ -31,12 +31,9 @@ class Block:
 
 		:param block: Block
 		"""
-		block = self.toDict()
-		del block['timestamp']
-
 
 		# We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-		block_string = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
+		block_string = json.dumps(self.toDict(), indent=4, sort_keys=True, default=str).encode()
 		print(block_string)
 
 		return hashlib.sha256(block_string).hexdigest()
@@ -44,7 +41,7 @@ class Block:
 	def toDict(self):
 		return {
 			'index': self.index,
-			'timestamp': self.timestamp,
+			'timestamp': str(self.timestamp),
 			'transactions': self.transactions,
 			'proof': self.proof,
 			'previous_hash': self.previous_hash,
