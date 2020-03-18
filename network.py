@@ -9,10 +9,9 @@ from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
 import json
-import logging
 from datetime import datetime
 import hashlib
-#import os
+import logging
 #import sys
 
 # Local Imports
@@ -21,9 +20,8 @@ from block import Block
 from macros import *
 from multicast import MulticastHandler
 
-
 class NetworkHandler():
-    def __init__(self, host, port, node, buffer_size=256):
+    def __init__(self, host, port, node, debug, buffer_size=256):
         """
         __init__
         
@@ -47,9 +45,12 @@ class NetworkHandler():
 
         self.node = node
 
-        # TODO What is this lock doing.
+        # TODO stop all threads waiting on things, need to send SIGKILL or something.
         self.active_lock = Lock()
         self.active = True
+
+        self.debug = debug
+        self.sh = None
 
     def isActive(self):
         status = ""
@@ -71,7 +72,7 @@ class NetworkHandler():
         registers a peer with the node.
         """
         # Check that something was sent.
-        logging.debug("Registering Nodes")
+        logging.info("Registering Nodes")
         logging.debug(peers)
         if peers is None:
             logging.error("Error: No nodes supplied")
@@ -86,8 +87,8 @@ class NetworkHandler():
                 self.node.register_node(peer[0],peer[1])
 
         # Generate a response to report that the peer was registered.
-        logging.debug("Peers")
-        logging.debug(NODES(list(self.node.nodes)))
+        logging.info("Peers")
+        logging.info(NODES(list(self.node.nodes)))
 
     def consensus(self):
         """
@@ -104,15 +105,15 @@ class NetworkHandler():
 
         # Based on conflicts, generate a response of which chain is valid.
         if replaced:
-            logging.info("------------------------------------------------------------------------------------------------------------------------")
+            #logging.info("------------------------------------------------------------------------------------------------------------------------")
             logging.info("REPLACED")
-            #logging.info(REPLACED(self.node.blockchain.get_chain()))
-            logging.info("------------------------------------------------------------------------------------------------------------------------")
+            logging.info(REPLACED(self.node.blockchain.get_chain()))
+            #logging.info("------------------------------------------------------------------------------------------------------------------------")
 
         else:
             #logging.info("------------------------------------------------------------------------------------------------------------------------")
-            #logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
             logging.info("Authoritative")
+            logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
             #logging.info("------------------------------------------------------------------------------------------------------------------------")
 
 
@@ -201,7 +202,7 @@ class NetworkHandler():
             logging.info('Dispatching function %s', function_name)
             th = Thread(
                 target=self.T_FUNCTIONS[function_name],
-                 args=(self.connection,) if not function_args else (self.connection, function_args,)
+                 args=(connection,) if not function_args else (connection, function_args,)
             )
             th.start()
         except Exception as e:
@@ -237,6 +238,7 @@ class NetworkHandler():
             previous_hash=arguments['previous_hash'],
             timestamp=arguments['timestamp']
         )
+        logging.info(new_block.to_string)
         
         # Ensure that this block has not been added before.
         for block in self.node.blockchain.chain:
@@ -375,6 +377,7 @@ class NetworkHandler():
         # Assemble the chain for the response.
         chain = CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
         chain = json.dumps(chain, indent=4, sort_keys=True, default=str).encode()
+        logging.info(chain)
         data_len = len(chain)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
@@ -397,18 +400,50 @@ class NetworkHandler():
         block = self.node.blockchain.get_block(arguments['values'].get('index'))
 
         block = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
+        logging.info(block)
+
         data_len = len(block)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
         logging.debug(test)        
         connection.send(block)
+    
+    def open_log(self,connection,arguments):
+        host = arguments['host']
+        port = arguments['port']
+
+        logger = logging.getLogger()
+        logger.handlers.pop()
+        self.sh = logging.handlers.SocketHandler(host,port) # handler to write to socket
+        logger.addHandler(self.sh)
+
+    def close_log(self,connection,arguments):
+        node_id = self.node.identifier
+        logger = logging.getLogger()
+
+        logger.removeHandler(self.sh)
+        self.sh.close()
+        self.sh = None
         
+        logs_path = "logs/" + node_id +".log"
+
+        f_handler = logging.FileHandler(logs_path)
+        log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        if self.debug:
+            f_handler.setLevel(logging.DEBUG)
+        else:
+            f_handler.setLevel(logging.INFO)
+        f_handler.setFormatter(log_format)
+        logger.addHandler(f_handler)
+   
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
         "new_transaction": new_transaction,
         "receieve_transactions": receive_transactions,
         "full_chain": full_chain,
-        "get_block": get_block
+        "get_block": get_block,
+        "open_log": open_log,
+        "close_log": close_log
     }
 
 

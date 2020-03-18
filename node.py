@@ -9,6 +9,7 @@ import json
 from urllib.parse import urlparse
 from uuid import uuid4
 import logging
+from threading import Lock
 
 # Local imports
 from blockchain import Blockchain
@@ -17,10 +18,10 @@ from multicast import MulticastHandler
 from macros import FULL_CHAIN
 
 class Node:
-    def __init__(self):
+    def __init__(self,node_id):
         self.nodes = []
         self.blockchain = Blockchain()
-        self.identifier = str(uuid4()).replace('-', '')
+        self.identifier = node_id
 
     def resolve_conflicts(self):
         """
@@ -36,13 +37,12 @@ class Node:
         replace_chain = None
         chain = None
 
-        logging.info("Resolve Conflicts")
         # We're only looking for chains longer than ours
         our_length = len(our_chain)
 
         responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN())
-        #logging.info("Responses")
-        #logging.info(responses)
+        logging.debug("Responses")
+        logging.debug(responses)
 
         # Grab and verify the chains from all the nodes in our network
         for response in responses:
@@ -56,8 +56,8 @@ class Node:
                     our_length = neighbor_length
                     chain = response['chain']
         if chain:
-            logging.debug("Replaced chain")
-            logging.debug(chain)
+            logging.info("Replaced chain")
+            logging.info(chain)
             # Replace our chain if we discovered a new, valid chain longer than ours
             replace_chain = []
             for block in chain:
@@ -75,14 +75,17 @@ class Node:
         NOTE: We assume that nodes don't drop later in the blockchain's lifespan
         """
 
-        logging.info("Registering Nodes")
+        logging.debug("Registering Node")
         parsed_url = urlparse(address)
         logging.debug("Parsed url")
         logging.debug(parsed_url)
         if parsed_url.netloc:
             self.nodes.append((parsed_url.netloc,port))
+            logging.debug(parsed_url.netloc,port)
         elif parsed_url.path:
             # Accepts an URL without scheme like '192.168.0.5:5000'.
             self.nodes.append((parsed_url.path,port))
+            logging.debug(parsed_url.path,port)
         else:
+            logging.error('Invalid URL')
             raise ValueError('Invalid URL')

@@ -143,7 +143,6 @@ def mine(network_handler, node):
         amount=1,
         timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
     )
-
     # Create the new block and add it to the end of the chain.
     block = node.blockchain.new_block(proof, last_block.hash)
 
@@ -161,6 +160,8 @@ def mine(network_handler, node):
 
     logging.debug("My Chain")
     logging.debug(node.blockchain.get_chain())
+    logging.info("Mined a Block")
+
 
 
 def mine_loop(network_handler, received_block):
