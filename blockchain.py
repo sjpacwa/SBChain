@@ -121,7 +121,7 @@ class Blockchain:
         self.current_transactions = []
 
         self.chain.append(block)
-        logging.info(block)
+        logging.info(block.to_json)
         return block
 
     def new_transaction(self, sender, recipient, amount,timestamp):
@@ -146,7 +146,7 @@ class Blockchain:
             'timestamp': timestamp
         })
         logging.info("New Transaction")
-        logging.info(json.dumps(self.current_transactions[-1]))
+        logging.info(self.current_transactions[-1])
         return self.last_block.index + 1
 
     @property

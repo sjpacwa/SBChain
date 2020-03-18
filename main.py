@@ -18,6 +18,7 @@ from macros import NEIGHBORS
 from mine import mine_loop
 from node import Node
 from uuid import uuid4
+from logger import initialize_log
 
 if __name__ == '__main__':
     # Parse command line arguments.
@@ -34,38 +35,8 @@ if __name__ == '__main__':
     ip = args.ip
     node_id = args.id
     debug = None
-
-    try:
-        mkdir("logs")
-    except OSError:
-        pass
-    except:
-        raise
-    logs_path = "logs/" + node_id +".log"
-
-    logger = logging.getLogger()
-    # Create handlers
-    f_handler = logging.FileHandler(logs_path)
-    c_handler = logging.StreamHandler()
-
-    log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    if args.debug:
-        debug = True
-        f_handler.setLevel(logging.DEBUG)
-        c_handler.setLevel(logging.DEBUG)
-    else:
-        debug = False
-        f_handler.setLevel(logging.INFO)
-        c_handler.setLevel(logging.INFO)
-
-    c_handler.setFormatter(log_format)
-    logger.addHandler(c_handler)
-    
-    f_handler.setFormatter(log_format)
-    logger.addHandler(f_handler)
    
-
+    initialize_log(node_id,args.debug)
     # Create location to keep track of received block.
     received_block = (Lock(), False, None)
 
