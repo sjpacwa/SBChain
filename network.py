@@ -39,6 +39,8 @@ class NetworkHandler():
         self.host = host
         self.port = port
 
+        self.sock = None
+
         # TODO Update the thread functions to be supported as original.
         self.T_FUNCTIONS = self.THREAD_FUNCTIONS
         self.BUFFER_SIZE = int(buffer_size)
@@ -202,7 +204,7 @@ class NetworkHandler():
             logging.info('Dispatching function %s', function_name)
             th = Thread(
                 target=self.T_FUNCTIONS[function_name],
-                 args=(connection,) if not function_args else (connection, function_args,)
+                 args=(self,connection,) if not function_args else (self,connection, function_args,)
             )
             th.start()
         except Exception as e:
