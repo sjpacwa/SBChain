@@ -75,7 +75,7 @@ class NetworkHandler():
         """
         # Check that something was sent.
         logging.info("Registering Nodes")
-        logging.debug(peers)
+        logging.info(peers)
         if peers is None:
             logging.error("Error: No nodes supplied")
             return
@@ -90,7 +90,7 @@ class NetworkHandler():
 
         # Generate a response to report that the peer was registered.
         logging.info("Peers")
-        logging.info(NODES(list(self.node.nodes)))
+        logging.info(json.dumps(NODES(list(self.node.nodes))))
 
     def consensus(self):
         """
