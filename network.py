@@ -430,9 +430,8 @@ class NetworkHandler():
         logger.removeHandler(self.sh)
         self.sh.close()
         self.sh = None
-        
-        logs_path = "logs/" + node_id +".log"
-   
+        self.open_log = False
+           
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
         "new_transaction": new_transaction,
