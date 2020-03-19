@@ -419,7 +419,7 @@ class NetworkHandler():
         logger.addHandler(self.sh)
         self.open_log = True
 
-    def close_log(self,connection,arguments):
+    def close_log(self,connection):
         node_id = self.node.identifier
         logger = logging.getLogger()
 
