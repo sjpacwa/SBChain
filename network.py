@@ -21,7 +21,7 @@ from macros import *
 from multicast import MulticastHandler
 
 class NetworkHandler():
-    def __init__(self, host, port, node, debug, buffer_size=256):
+    def __init__(self, host, port, node, buffer_size=256):
         """
         __init__
         
@@ -51,8 +51,8 @@ class NetworkHandler():
         self.active_lock = Lock()
         self.active = True
 
-        self.debug = debug
         self.sh = None
+        self.open_log = False
 
     def isActive(self):
         status = ""
@@ -415,28 +415,23 @@ class NetworkHandler():
         port = arguments['port']
 
         logger = logging.getLogger()
-        logger.handlers.pop()
         self.sh = logging.handlers.SocketHandler(host,port) # handler to write to socket
         logger.addHandler(self.sh)
+        self.open_log = True
 
     def close_log(self,connection,arguments):
         node_id = self.node.identifier
         logger = logging.getLogger()
+
+        if not open_log:
+            logging.info("Log is not open over socket, please open the log")
+            return
 
         logger.removeHandler(self.sh)
         self.sh.close()
         self.sh = None
         
         logs_path = "logs/" + node_id +".log"
-
-        f_handler = logging.FileHandler(logs_path)
-        log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        if self.debug:
-            f_handler.setLevel(logging.DEBUG)
-        else:
-            f_handler.setLevel(logging.INFO)
-        f_handler.setFormatter(log_format)
-        logger.addHandler(f_handler)
    
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
@@ -447,8 +442,3 @@ class NetworkHandler():
         "open_log": open_log,
         "close_log": close_log
     }
-
-
-
-
-

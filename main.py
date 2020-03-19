@@ -44,7 +44,7 @@ if __name__ == '__main__':
     node = Node(node_id)
 
     # Create the network handler.
-    nh = NetworkHandler(ip, port, node, debug)
+    nh = NetworkHandler(ip, port, node)
 
     # Start the mining thread.
     th = Thread(target=mine_loop, args=(nh, received_block))
