@@ -221,6 +221,19 @@ class NetworkHandler():
             logging.error("ERROR IN DISPATCHER")
             logging.error(data)
             self.setActive(False)
+    
+    def register_new_peers(self,connection,arguments):
+        """
+        register_new_peers
+
+        Public.
+        This function handles a request fro mthe dispatcher. It 
+        registers a peer with the node during runtime.
+        """
+        peers = arguments['peers']
+        logging.info("Registering peers from dispatcher")
+
+        self.register_nodes(peers)
 
     def receive_block(self, connection,arguments):
         """
@@ -322,7 +335,7 @@ class NetworkHandler():
 
         MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
-        logging.debug(TRANSACTION_ADDED(block_index))
+        logging.info(TRANSACTION_ADDED(block_index))
 
 
     def receive_transactions(self,connection,arguments):
@@ -338,8 +351,10 @@ class NetworkHandler():
 
         # Create a new transaction.
         transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],arguments['timestamp'])
+
+        logging.info(transaction)
         # Compute the hash of the transaction for comparison.
-        transaction_hash = hashlib.sha256(json.dumps(transaction, indent=4, sort_keys=True, default=str).encode())
+        transaction_hash = hashlib.sha256(json.dumps(transaction, default=str).encode())
         
         # Make sure that the transaction doesn't match a previous one.
         # TODO need to implement a routing algorithm or verify transactions or we'll run into problems
@@ -378,8 +393,8 @@ class NetworkHandler():
 
         # Assemble the chain for the response.
         chain = CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
-        chain = json.dumps(chain, indent=4, sort_keys=True, default=str).encode()
         logging.info(chain)
+        chain = json.dumps(chain, default=str).encode()
         data_len = len(chain)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
@@ -400,9 +415,8 @@ class NetworkHandler():
 
         # TODO Just need to respond to the connection.
         block = self.node.blockchain.get_block(arguments['values'].get('index'))
-
-        block = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
-        logging.info(block)
+        logging.info(block.to_json)
+        block = json.dumps(block, default=str).encode()
 
         data_len = len(block)
         connection.send(str(data_len).encode())
@@ -439,5 +453,6 @@ class NetworkHandler():
         "full_chain": full_chain,
         "get_block": get_block,
         "open_log": open_log,
-        "close_log": close_log
+        "close_log": close_log,
+        "register_new_peers": register_new_peers
     }

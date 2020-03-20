@@ -61,7 +61,7 @@ class Miner():
         self.network_handler.consensus()
 
         logging.debug("Response:")
-        logging.debug(json.dumps(block.to_json, indent=4, sort_keys=True, default=str))
+        logging.debug(block.to_json)
 
         logging.debug("My Chain")
         logging.debug(self.blockchain.get_chain())

@@ -26,11 +26,6 @@ $ virtualenv -p python venv
 $ .\venv\Scripts\activate
 ```
 
-7. Install the project requirements.
-```
-$ pip install -r requirements.txt
-``` 
-
 8. Run the server:
     * `$ python main.py` 
     * `$ python main.py -p 5001`
@@ -61,74 +56,55 @@ $ python main -p 5001
 $ python main -p 5002
 ```
 
-3. Register the nodes with each other through the `/nodes/register` API call. This must be done from both ends, so node:5000 must be registered with node:5001 and node:5001 must be registered with node:5000.
-
-## Docker (untested in current version)
-
-Another option for running this blockchain program is to use Docker.  Follow the instructions below to create a local Docker container:
-
-1. Clone this repository
-
-2. Build the docker container
-```
-$ docker build -t blockchain .
-```
-
-3. Run the container
-```
-$ docker run --rm -p 80:5000 blockchain
-```
-
-4. To add more instances, vary the public port number before the colon:
-```
-$ docker run --rm -p 81:5000 blockchain
-$ docker run --rm -p 82:5000 blockchain
-$ docker run --rm -p 83:5000 blockchain
-```
+NOTE: the current main.py is currently a skeleton for a fully operational node. Please make your own main.py file to better suit your needs.
 
 ## API
 
-The following API calls can be used to interact with the nodes in the blockchain. Ensure that the port number matches the port that the node is running on. 
+The following public API calls can be used to interact with the nodes in the blockchain. Ensure that the port number matches the port that the node is running on. Note that a socket connection must be established to send commands. The following commands specify the data format that is accepted by the dispatcher on the Blockchain node. 
 
-If you are running the nodes on a Unix machine, the following curl commands should work. If you are using Windows, consider using [Postman](https://www.getpostman.com/) to organize your API calls.
+NOTE: The following JSON can be in any acceptable JSON format, this specific format is to make it easier to read.
 
-### GET /mine
+### new_transaction
 
-Tell the node to mine a new block.
+Creates a new transaction at a node at the current block.
 ```
-$ curl -X GET "http://localhost:5000/mine"
+{
+    name: new_transaction,
+    args: {
+            sender: "sender",
+            recipient: "recipient",
+            amount: "amount"
+    }
+}
 ```
 
-### GET /chain
+### register_new_peers
+
+Registers peers with node through dispatcher thread
+```
+{
+    name: register_new_peers,
+    args: [
+            (ip1,port1),
+            (ip2,port2)
+    ]
+}
+```
+
+### get_chain
 
 Return the full blockchain
 ```
-$ curl -X GET "http://localhost:5000/chain"
+{
+    name: get_chain
+}
 ```
 
-### POST /transactions/new
+### get_block
 
-Create a new transaction in the current block.
+Returns the current block of the given node
 ```
-$ curl -X POST -H "Content-Type: application/json" -d '{  
- "sender": "your-address",  
- "recipient": "someone-other-address",  
- "amount": 5  
-}' "http://localhost:5000/transactions/new"
-```
-
-### POST /nodes/register
-
-Add a new node to the list of peers for this node.
-```
-$ curl -X POST -H "Content-Type: application/json" -d '{
- "nodes": ["127.0.0.1"]
-}' "https://localhost:5000/transactions/new"
-```
-
-### GET /nodes/resolve
-
-Resolve conflicts and keep the chain that is longer.
-```
-$ curl -X GET "http://localhost:5000/nodes/resolve"
+{
+    name: get_block
+}
 ```
