@@ -145,7 +145,6 @@ class NetworkHandler():
                 data = self._get_data(connection, data_size, num_buffers)
 
                 self._dispatch_thread(connection, data)
-                connection.close()
             except ValueError:
                 logging.error("Receieved invalid data format. Check README for description")
                 connection.close()
@@ -237,6 +236,7 @@ class NetworkHandler():
         logging.info("Registering peers from dispatcher")
 
         self.register_nodes(peers)
+        connection.close()
 
     def receive_block(self, connection,arguments):
         """
@@ -262,6 +262,7 @@ class NetworkHandler():
         for block in self.node.blockchain.chain:
             if new_block == block:
                 logging.debug("Duplicate Block")
+                connection.close()
                 return
 
         else:
@@ -309,6 +310,7 @@ class NetworkHandler():
                 # The proof is not valid and the block is ignored and not 
                 # propogated.
                 logging.info("Bad Proof")
+        connection.close()
                 
 
 
@@ -339,6 +341,7 @@ class NetworkHandler():
         MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
         logging.info(TRANSACTION_ADDED(block_index))
+        connection.close()
 
 
     def receive_transactions(self,connection,arguments):
@@ -380,6 +383,7 @@ class NetworkHandler():
 
             MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
             logging.info("Transaction added")
+        connection.close()
 
 
     def full_chain(self,connection):
@@ -403,6 +407,7 @@ class NetworkHandler():
         test = connection.recv(16).decode()
         logging.debug(test)        
         connection.send(chain)
+        connection.close()
 
     def get_block(self,connection,arguments):
         
@@ -426,6 +431,7 @@ class NetworkHandler():
         test = connection.recv(16).decode()
         logging.debug(test)        
         connection.send(block)
+        connection.close()
     
     def open_log(self,connection,arguments):
         host = arguments['host']
@@ -435,6 +441,7 @@ class NetworkHandler():
         self.sh = logging.handlers.SocketHandler(host,port) # handler to write to socket
         logger.addHandler(self.sh)
         self.open_log = True
+        connection.close()
 
     def close_log(self,connection):
         node_id = self.node.identifier
@@ -448,6 +455,7 @@ class NetworkHandler():
         self.sh.close()
         self.sh = None
         self.open_log = False
+        connection.close()
            
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
