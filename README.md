@@ -62,6 +62,12 @@ NOTE: the current main.py is currently a skeleton for a fully operational node. 
 
 The following public API calls can be used to interact with the nodes in the blockchain. Ensure that the port number matches the port that the node is running on. Note that a socket connection must be established to send commands. The following commands specify the data format that is accepted by the dispatcher on the Blockchain node. 
 
+To execute any of these commands.
+1. Initiate a connection wit hthe node
+2. Send the total length fo the JSON string that you want to send
+3. Recieve an ACK from the node
+4. Send the JSON string
+
 NOTE: The following JSON can be in any acceptable JSON format, this specific format is to make it easier to read.
 
 ### new_transaction
