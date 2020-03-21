@@ -136,17 +136,18 @@ class NetworkHandler():
         while self.isActive():
             logging.info('Waiting for new connections')
             self.sock.listen(1)
-
             connection, client = self.sock.accept()
             logging.info('Created connection to %s:%s', client[0], 
                 client[1])
+            try:
+                data_size, num_buffers = self._get_data_size(connection)
+                connection.send(b'ACK')
+                data = self._get_data(connection, data_size, num_buffers)
 
-            data_size, num_buffers = self._get_data_size(connection)
-            connection.send(b'ACK')
-            data = self._get_data(connection, data_size, num_buffers)
-
-            self._dispatch_thread(connection, data)
-
+                self._dispatch_thread(connection, data)
+            except ValueError as error:
+                logging.error("Receieved invalid data format. Check README for description")
+                
     def _get_data_size(self, connection):
         """
         _get_data_size
