@@ -145,9 +145,9 @@ class NetworkHandler():
                 data = self._get_data(connection, data_size, num_buffers)
 
                 self._dispatch_thread(connection, data)
-            except ValueError as error:
+            except ValueError:
                 logging.error("Receieved invalid data format. Check README for description")
-                
+
     def _get_data_size(self, connection):
         """
         _get_data_size
