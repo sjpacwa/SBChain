@@ -42,7 +42,7 @@ class Blockchain:
         :return: True if valid, False if not
         """
 
-        logging.info("Valid Chain Function")
+        logging.debug("Valid Chain Function")
 
         logging.debug("Received Chain")
         logging.debug(chain)
@@ -100,9 +100,9 @@ class Blockchain:
                 prev_block['transactions'].append(block_reward_prev)
             prev_block = cur_block
 
-        logging.info("--------------------")
-        logging.info("Good Chain")
-        logging.info("--------------------")
+        logging.debug("--------------------")
+        logging.debug("Good Chain")
+        logging.debug("--------------------")
         return True
 
     def new_block(self, proof, previous_hash):
@@ -113,6 +113,7 @@ class Blockchain:
         :param previous_hash: Hash of previous Block
         :return: New Block
         """
+        logging.info("New Block")
         block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
         #TODO LOCK transactions and Block - if someone else has the lock then ?
@@ -120,6 +121,7 @@ class Blockchain:
         self.current_transactions = []
 
         self.chain.append(block)
+        logging.info(block.to_json)
         return block
 
     def new_transaction(self, sender, recipient, amount,timestamp):
@@ -143,7 +145,8 @@ class Blockchain:
             'amount': amount,
             'timestamp': timestamp
         })
-
+        logging.info("New Transaction")
+        logging.info(self.current_transactions[-1])
         return self.last_block.index + 1
 
     @property

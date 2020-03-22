@@ -9,6 +9,7 @@ starting the Flask webserver for the node.
 from argparse import ArgumentParser
 import logging
 from threading import Thread, Lock
+from os import mkdir
 
 #local imports
 from network import NetworkHandler
@@ -16,6 +17,8 @@ from multicast import MulticastHandler
 from macros import NEIGHBORS
 from mine import mine_loop
 from node import Node
+from uuid import uuid4
+from logger import initialize_log
 
 if __name__ == '__main__':
     # Parse command line arguments.
@@ -24,21 +27,21 @@ if __name__ == '__main__':
         help='port to listen on')
     parser.add_argument('-ip', '--ip', default='localhost', type=str, 
         help='ip to listen on')
+    parser.add_argument('-id', '--id', default=str(uuid4()).replace('-', ''), type=str, 
+        help='id of node')
     parser.add_argument('--debug',default = False,action='store_true')    
     args = parser.parse_args()
     port = args.port
     ip = args.ip
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
+    node_id = args.id
+    debug = None
+   
+    initialize_log(node_id,args.debug)
     # Create location to keep track of received block.
     received_block = (Lock(), False, None)
 
     # Create the node.
-    node = Node()
+    node = Node(node_id)
 
     # Create the network handler.
     nh = NetworkHandler(ip, port, node)

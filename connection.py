@@ -80,7 +80,7 @@ class SingleConnectionHandler():
 		return json.loads(data[:data_size])
 
 	def send_with_response(self, data):
-		data = json.dumps(data, indent=4, sort_keys=True, default=str).encode()
+		data = json.dumps(data, default=str).encode()
 		self._send(data)
 		data_size, num_buffers = self._get_data_size(self.sock)
 		self.sock.send(b'ACK')
@@ -90,7 +90,7 @@ class SingleConnectionHandler():
 
 	def send_wout_response(self, data):
 		# Data receieved is a dictionary
-		data = json.dumps(data, indent=4, sort_keys=True, default=str).encode()
+		data = json.dumps(data, sort_keys=True, default=str).encode()
 		logging.debug("Sending w/o response")
 		self._send(data)
 		

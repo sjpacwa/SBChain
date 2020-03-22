@@ -9,10 +9,9 @@ from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
 import json
-import logging
 from datetime import datetime
 import hashlib
-#import os
+import logging
 #import sys
 
 # Local Imports
@@ -20,7 +19,6 @@ from node import Node
 from block import Block
 from macros import *
 from multicast import MulticastHandler
-
 
 class NetworkHandler():
     def __init__(self, host, port, node, buffer_size=256):
@@ -41,15 +39,20 @@ class NetworkHandler():
         self.host = host
         self.port = port
 
+        self.sock = None
+
         # TODO Update the thread functions to be supported as original.
         self.T_FUNCTIONS = self.THREAD_FUNCTIONS
         self.BUFFER_SIZE = int(buffer_size)
 
         self.node = node
 
-        # TODO What is this lock doing.
+        # TODO stop all threads waiting on things, need to send SIGKILL or something.
         self.active_lock = Lock()
         self.active = True
+
+        self.sh = None
+        self.open_log = False
 
     def isActive(self):
         status = ""
@@ -71,8 +74,8 @@ class NetworkHandler():
         registers a peer with the node.
         """
         # Check that something was sent.
-        logging.debug("Registering Nodes")
-        logging.debug(peers)
+        logging.info("Registering Nodes")
+        logging.info(peers)
         if peers is None:
             logging.error("Error: No nodes supplied")
             return
@@ -86,8 +89,8 @@ class NetworkHandler():
                 self.node.register_node(peer[0],peer[1])
 
         # Generate a response to report that the peer was registered.
-        logging.debug("Peers")
-        logging.debug(NODES(list(self.node.nodes)))
+        logging.info("Peers")
+        logging.info(json.dumps(NODES(list(self.node.nodes))))
 
     def consensus(self):
         """
@@ -104,15 +107,15 @@ class NetworkHandler():
 
         # Based on conflicts, generate a response of which chain is valid.
         if replaced:
-            logging.info("------------------------------------------------------------------------------------------------------------------------")
+            #logging.info("------------------------------------------------------------------------------------------------------------------------")
             logging.info("REPLACED")
-            #logging.info(REPLACED(self.node.blockchain.get_chain()))
-            logging.info("------------------------------------------------------------------------------------------------------------------------")
+            logging.info(REPLACED(self.node.blockchain.get_chain()))
+            #logging.info("------------------------------------------------------------------------------------------------------------------------")
 
         else:
             #logging.info("------------------------------------------------------------------------------------------------------------------------")
-            #logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
             logging.info("Authoritative")
+            logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
             #logging.info("------------------------------------------------------------------------------------------------------------------------")
 
 
@@ -133,16 +136,18 @@ class NetworkHandler():
         while self.isActive():
             logging.info('Waiting for new connections')
             self.sock.listen(1)
-
             connection, client = self.sock.accept()
             logging.info('Created connection to %s:%s', client[0], 
                 client[1])
+            try:
+                data_size, num_buffers = self._get_data_size(connection)
+                connection.send(b'ACK')
+                data = self._get_data(connection, data_size, num_buffers)
 
-            data_size, num_buffers = self._get_data_size(connection)
-            connection.send(b'ACK')
-            data = self._get_data(connection, data_size, num_buffers)
-
-            self._dispatch_thread(connection, data)
+                self._dispatch_thread(connection, data)
+            except ValueError:
+                logging.error("Receieved invalid data format. Check README for description")
+                connection.close()
 
     def _get_data_size(self, connection):
         """
@@ -201,7 +206,7 @@ class NetworkHandler():
             logging.info('Dispatching function %s', function_name)
             th = Thread(
                 target=self.T_FUNCTIONS[function_name],
-                 args=(self.connection,) if not function_args else (self.connection, function_args,)
+                 args=(self,connection,) if not function_args else (self,connection, function_args,)
             )
             th.start()
         except Exception as e:
@@ -218,6 +223,20 @@ class NetworkHandler():
             logging.error("ERROR IN DISPATCHER")
             logging.error(data)
             self.setActive(False)
+    
+    def register_new_peers(self,connection,arguments):
+        """
+        register_new_peers
+
+        Public.
+        This function handles a request fro mthe dispatcher. It 
+        registers a peer with the node during runtime.
+        """
+        peers = arguments['peers']
+        logging.info("Registering peers from dispatcher")
+
+        self.register_nodes(peers)
+        connection.close()
 
     def receive_block(self, connection,arguments):
         """
@@ -237,11 +256,13 @@ class NetworkHandler():
             previous_hash=arguments['previous_hash'],
             timestamp=arguments['timestamp']
         )
+        logging.info(new_block.to_string)
         
         # Ensure that this block has not been added before.
         for block in self.node.blockchain.chain:
             if new_block == block:
                 logging.debug("Duplicate Block")
+                connection.close()
                 return
 
         else:
@@ -289,6 +310,7 @@ class NetworkHandler():
                 # The proof is not valid and the block is ignored and not 
                 # propogated.
                 logging.info("Bad Proof")
+        connection.close()
                 
 
 
@@ -318,7 +340,8 @@ class NetworkHandler():
 
         MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
-        logging.debug(TRANSACTION_ADDED(block_index))
+        logging.info(TRANSACTION_ADDED(block_index))
+        connection.close()
 
 
     def receive_transactions(self,connection,arguments):
@@ -334,8 +357,10 @@ class NetworkHandler():
 
         # Create a new transaction.
         transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],arguments['timestamp'])
+
+        logging.info(transaction)
         # Compute the hash of the transaction for comparison.
-        transaction_hash = hashlib.sha256(json.dumps(transaction, indent=4, sort_keys=True, default=str).encode())
+        transaction_hash = hashlib.sha256(json.dumps(transaction, default=str).encode())
         
         # Make sure that the transaction doesn't match a previous one.
         # TODO need to implement a routing algorithm or verify transactions or we'll run into problems
@@ -358,6 +383,7 @@ class NetworkHandler():
 
             MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
             logging.info("Transaction added")
+        connection.close()
 
 
     def full_chain(self,connection):
@@ -374,12 +400,14 @@ class NetworkHandler():
 
         # Assemble the chain for the response.
         chain = CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
-        chain = json.dumps(chain, indent=4, sort_keys=True, default=str).encode()
+        logging.info(chain)
+        chain = json.dumps(chain, default=str).encode()
         data_len = len(chain)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
         logging.debug(test)        
         connection.send(chain)
+        connection.close()
 
     def get_block(self,connection,arguments):
         
@@ -395,23 +423,47 @@ class NetworkHandler():
 
         # TODO Just need to respond to the connection.
         block = self.node.blockchain.get_block(arguments['values'].get('index'))
+        logging.info(block.to_json)
+        block = json.dumps(block, default=str).encode()
 
-        block = json.dumps(block, indent=4, sort_keys=True, default=str).encode()
         data_len = len(block)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
         logging.debug(test)        
         connection.send(block)
-        
+        connection.close()
+    
+    def open_log(self,connection,arguments):
+        host = arguments['host']
+        port = arguments['port']
+
+        logger = logging.getLogger()
+        self.sh = logging.handlers.SocketHandler(host,port) # handler to write to socket
+        logger.addHandler(self.sh)
+        self.open_log = True
+        connection.close()
+
+    def close_log(self,connection):
+        node_id = self.node.identifier
+        logger = logging.getLogger()
+
+        if not open_log:
+            logging.info("Log is not open over socket, please open the log")
+            return
+
+        logger.removeHandler(self.sh)
+        self.sh.close()
+        self.sh = None
+        self.open_log = False
+        connection.close()
+           
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
         "new_transaction": new_transaction,
         "receieve_transactions": receive_transactions,
         "full_chain": full_chain,
-        "get_block": get_block
+        "get_block": get_block,
+        "open_log": open_log,
+        "close_log": close_log,
+        "register_new_peers": register_new_peers
     }
-
-
-
-
-

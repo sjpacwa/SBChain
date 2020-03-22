@@ -63,8 +63,6 @@ class Block:
 
         return json.dumps(
             self.to_json,
-            indent=4,
-            sort_keys=True,
             default=str
         )
     @property
