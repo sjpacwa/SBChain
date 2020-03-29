@@ -30,6 +30,8 @@ if __name__ == '__main__':
     parser.add_argument('-id', '--id', default=str(uuid4()).replace('-', ''), type=str, 
         help='id of node')
     parser.add_argument('--debug',default = False,action='store_true')    
+    parser.add_argument('--test',default = False,action='store_true')    
+
     args = parser.parse_args()
     port = args.port
     ip = args.ip
@@ -46,9 +48,10 @@ if __name__ == '__main__':
     # Create the network handler.
     nh = NetworkHandler(ip, port, node)
 
-    # Start the mining thread.
-    th = Thread(target=mine_loop, args=(nh, received_block))
-    th.start()
+    if not args.test:
+        # Start the mining thread.
+        th = Thread(target=mine_loop, args=(nh, received_block))
+        th.start()
 
     # Automatically register neighbors.
     # TODO Remove this.

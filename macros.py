@@ -85,3 +85,9 @@ def BLOCK_RECEIVED(index,transactions,proof,previous_hash):
         'proof': proof,
         'previous_hash': previous_hash
     }
+
+def GET_BLOCK(index):
+    return {
+        'name':"get_block",
+        'args': index
+    }

@@ -21,7 +21,7 @@ from macros import *
 from multicast import MulticastHandler
 
 class NetworkHandler():
-    def __init__(self, host, port, node, buffer_size=256):
+    def __init__(self, host, port, node, log_host = None, log_port = None, buffer_size=256):
         """
         __init__
         
@@ -53,6 +53,12 @@ class NetworkHandler():
 
         self.sh = None
         self.open_log = False
+
+        if log_host and log_port:
+            logger = logging.getLogger()
+            self.sh = logging.handlers.SocketHandler(log_host,log_port) # handler to write to socket
+            logger.addHandler(self.sh)
+            self.open_log = True
 
     def isActive(self):
         status = ""
@@ -147,6 +153,9 @@ class NetworkHandler():
                 self._dispatch_thread(connection, data)
             except ValueError:
                 logging.error("Receieved invalid data format. Check README for description")
+                logging.error("data size:"+data_size)
+                logging.error("num buffers:"+num_buffers)
+                logging.error("data:"+data)
                 connection.close()
 
     def _get_data_size(self, connection):
@@ -422,15 +431,22 @@ class NetworkHandler():
         """
 
         # TODO Just need to respond to the connection.
-        block = self.node.blockchain.get_block(arguments['values'].get('index'))
-        logging.info(block.to_json)
-        block = json.dumps(block, default=str).encode()
+        block = self.node.blockchain.get_block(int(arguments))
 
-        data_len = len(block)
+        if isinstance(block,int):
+            logging.error("Invalid block index")
+            connection.close()
+            return
+
+        logging.info(block.to_string)
+
+        block_to_string = block.to_string
+
+        data_len = len(block_to_string)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
         logging.debug(test)        
-        connection.send(block)
+        connection.send(block_to_string.encode())
         connection.close()
     
     def open_log(self,connection,arguments):
