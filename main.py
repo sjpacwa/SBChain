@@ -46,7 +46,7 @@ if __name__ == '__main__':
     node = Node(node_id)
 
     # Create the network handler.
-    nh = NetworkHandler(ip, port, node)
+    nh = NetworkHandler(ip, port, node,args.test)
 
     if not args.test:
         # Start the mining thread.

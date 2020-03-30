@@ -21,7 +21,7 @@ from macros import *
 from multicast import MulticastHandler
 
 class NetworkHandler():
-    def __init__(self, host, port, node, log_host = None, log_port = None, buffer_size=256):
+    def __init__(self, host, port, node, test, log_host = None, log_port = None, buffer_size=256):
         """
         __init__
         
@@ -59,6 +59,8 @@ class NetworkHandler():
             self.sh = logging.handlers.SocketHandler(log_host,log_port) # handler to write to socket
             logger.addHandler(self.sh)
             self.open_log = True
+        if test:
+            self.THREAD_FUNCTIONS['mine'] = mine
 
     def isActive(self):
         status = ""
@@ -471,6 +473,10 @@ class NetworkHandler():
         self.sh.close()
         self.sh = None
         self.open_log = False
+        connection.close()
+    
+    def mine(self,connection):
+        # handle mining
         connection.close()
            
     THREAD_FUNCTIONS = {
