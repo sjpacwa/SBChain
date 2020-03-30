@@ -16,6 +16,16 @@ class SingleConnectionHandler():
 	"""
 
 	def __init__(self, host, port, buffer_size=256):
+		"""
+        __init__
+        
+        The constructor for a Single Connection Handler object
+
+		:param host: <str> IP address of peer.
+        :param port: <int> Port of peer.
+        :param buffer_size: <int> Size of buffer (optional).
+    
+        """
 		self.host = host
 		self.port = port
 
@@ -24,6 +34,15 @@ class SingleConnectionHandler():
 		self.sock = socket(AF_INET, SOCK_STREAM)
 	
 	def socket_connect(self):
+		"""
+		socket_connect()
+
+		Not Thread Safe
+
+		Attempt to connect to peer
+
+		:return: <bool> True if connection established, else False
+		"""
 		try:
 			self.sock.connect((self.host, self.port))
 			return True
@@ -32,6 +51,13 @@ class SingleConnectionHandler():
 
 
 	def _send(self, data):
+		"""
+		_send()
+
+		Not Thread Safe
+
+		Send data to peer
+		"""
 		logging.debug("Sending data (single_connection_handler)")
 		logging.debug("Data:")
 		logging.debug(data)
@@ -46,13 +72,16 @@ class SingleConnectionHandler():
 
 	def _get_data_size(self, connection):
 		"""
-		_get_data_size
+		_get_data_size()
+
+		Not Thread Safe
+
 		This function will listen on the connection for the size of the 
 		future data.
 
 		:param connection: The new connection.
 
-		:return: (data size, number of buffer cycles needed)
+		:return: <int> data size, <int> number of buffer cycles needed
 		"""
 
 		data_size = int(self.sock.recv(16).decode())
@@ -80,6 +109,17 @@ class SingleConnectionHandler():
 		return json.loads(data[:data_size])
 
 	def send_with_response(self, data):
+		"""
+		send_with_response()
+
+		Not Thread Safe
+
+		Send data and expect a response from peer
+
+		:param data: <str> data to send.
+
+		:return: <json> JSON representation of the data.
+		"""
 		data = json.dumps(data, default=str).encode()
 		self._send(data)
 		data_size, num_buffers = self._get_data_size(self.sock)
@@ -89,7 +129,17 @@ class SingleConnectionHandler():
 		return data
 
 	def send_wout_response(self, data):
-		# Data receieved is a dictionary
+		"""
+		send_wout_response()
+
+		Not Thread Safe
+
+		Send data and don't expect a response back
+
+		:param data: <str> data to send.
+
+		:return: <json> JSON representation of the data.
+		"""
 		data = json.dumps(data, sort_keys=True, default=str).encode()
 		logging.debug("Sending w/o response")
 		self._send(data)

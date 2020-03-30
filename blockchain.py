@@ -19,6 +19,13 @@ config = BlockchainConfig()
 
 class Blockchain:
     def __init__(self):
+        """
+        __init__
+    
+        The constructor for a Blockchain object.
+    
+        """
+
         self.current_transactions = []
         self.chain = []
 
@@ -27,6 +34,18 @@ class Blockchain:
         self.new_block(previous_hash='1', proof=100)
 
     def get_chain(self):
+        """
+        get_chain()
+        
+        Internal 
+        
+        get_chain function
+
+        Not Thread Safe 
+
+        :returns: <list> list of json representation of chain
+        """
+
         json_chain = []
 
         for block in self.chain:
@@ -36,10 +55,16 @@ class Blockchain:
 
     def valid_chain(self, chain):
         """
+        valid_chain()
+
+        Internal
+
         Determine if a given blockchain is valid
 
+        Not Thread Safe
+
         :param chain: A blockchain
-        :return: True if valid, False if not
+        :return: <bool> True if valid, False if not
         """
 
         logging.debug("Valid Chain Function")
@@ -109,9 +134,14 @@ class Blockchain:
         """
         Create a new Block in the Blockchain
 
+        Internal
+
+        Not Thread Safe
+
         :param proof: The proof given by the Proof of Work algorithm
         :param previous_hash: Hash of previous Block
-        :return: New Block
+        
+        :return: <Block Object> New Block
         """
         logging.info("New Block")
         block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
@@ -128,17 +158,23 @@ class Blockchain:
         """
         Creates a new transaction to go into the next mined Block
 
+        Internal
+
+        Not Thread Safe
+
         :param sender: Address of the Sender
         :param recipient: Address of the Recipient
         :param amount: Amount
-        :return: The index of the Block that will hold this transaction
+        :param timestamp: Timestamp of the transaction
+
+        :return: <int> The index of the Block that will hold this transaction
         """
 
         # TODO Lock transactions
-        try:
-            timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
-        except:
-            pass
+        # try:
+        #     timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+        # except:
+        #     pass
         self.current_transactions.append({
             'sender': sender,
             'recipient': recipient,
@@ -151,14 +187,36 @@ class Blockchain:
 
     @property
     def last_block(self):
+        """
+        last_block
+
+        Internal
+
+        Returns the last block in the chain
+
+        Not Thread Safe
+
+        :return: <Block Object> last block in the chain
+        """
         # TODO lock chain? 
         return self.chain[-1]
 
     def get_block(self, index):
+        """
+        get_block()
+
+        Returns the block in the chain at a given index
+
+        Not Thread Safe
+
+        :return: <Block Object> block at a given index if exists
+        else
+        :return: <int> -1 if Block Index error
+        """
         #TODO lock block?
         try:
             return self.chain[index]
-        except:
+        except IndexError:
             return -1
 
     @staticmethod
@@ -166,9 +224,16 @@ class Blockchain:
         """
         Validates the Proof
 
+        Internal
+
+        Not Thread Safe
+
         :param last_proof: <int> Previous Proof
         :param proof: <int> Current Proof
         :param last_hash: <str> The hash of the Previous Block
+        :param last_hash: <str> The hash of the Previous Block
+        :param current_transactions: <list> List of current transactions
+
         :return: <bool> True if correct, False if not.
 
         """

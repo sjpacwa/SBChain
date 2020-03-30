@@ -19,11 +19,11 @@ class Block:
         
         The constructor for a Block object.
 
-        :param index: (int) The index of the block.
-        :param transactions: (list) A list of transactions in the block.
-        :param proof: (str) The proof of the block.
-        :param previous_hash: (str) The hash of the previous block.
-        :param timestamp: (datetime) The datetime of block creation. It 
+        :param index: <int> The index of the block.
+        :param transactions: <list> A list of transactions in the block.
+        :param proof: <str> The proof of the block.
+        :param previous_hash: <str> The hash of the previous block.
+        :param timestamp: <datetime> The datetime of block creation. It 
             is set to datetime.min for the genesis block.
         """
 
@@ -37,10 +37,12 @@ class Block:
         """
         to_json
 
+        Not Thread Safe
+
         Converts a Block object into JSON-object form, (i.e. it is 
         composed of dictionaries and lists).
 
-        :returns: (dict) JSON-object form of Block.
+        :returns: <dict> JSON-object form of Block.
         """
         
         return {
@@ -55,10 +57,12 @@ class Block:
         """
         to_string
 
+        Not Thread Safe
+
         Converts a Block object into JSON-string form, (i.e. it is 
         composed of a string). The resulting string is always ordered.
 
-        :returns: (str) JSON-string form of Block.
+        :returns: <str> JSON-string form of Block.
         """
 
         return json.dumps(
@@ -70,6 +74,8 @@ class Block:
         """
         hash
 
+        Not Thread Safe
+
         Creates a SHA-256 hash of a Block from its string form.
         """
         
@@ -79,9 +85,11 @@ class Block:
         """
         __eq__
 
+        Not Thread Safe
+
         Checks to see if two Blocks are equal.
 
-        :param other: (Block) The Block to compare to.
+        :param other: <Block Object> The Block to compare to.
         """
         return (self.index == other.index
             and self.timestamp == other.timestamp
@@ -96,10 +104,12 @@ def block_from_json(data):
 
     Converts a JSON-object form into a Block object.
 
-    :param data: (dict) The JSON-object form of a block.
-    :returns: (Block) A new object.
+    Not Thread Safe
 
-    :raises: (KeyError) If the proper keys have not been supplied.
+    :param data: <dict> The JSON-object form of a block.
+    :returns: <Block Object> A new object.
+
+    :raises: <KeyError> If the proper keys have not been supplied.
     """
 
     # Check that the proper keys have been provided.
@@ -115,10 +125,6 @@ def block_from_json(data):
         if key not in data:
             raise KeyError('{} not found during block creation'.format(key))
 
-    # Check that the timestamp is a datetime not a string
-    #if isinstance(data['timestamp'],str):
-    #    data['timestamp'] = datetime.strptime(data['timestamp'],'%Y-%m-%dT%H:%M:%SZ')
-
     return Block(
         data['index'],
         data['transactions'],
@@ -132,12 +138,14 @@ def block_from_string(data):
     """
     block_from_string
 
+    Not Thread Safe
+
     Converts a JSON-string form into a Block object.
 
-    :param data: (str) The JSON-string form of a block.
-    :returns: (Block) A new object.
+    :param data: <str> The JSON-string form of a block.
+    
+    :returns: <Block Object> A new object.
 
-    :raises: (KeyError) If the proper keys have not been supplied.
     """
 
     return block_from_json(json.loads(data))
