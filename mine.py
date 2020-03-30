@@ -56,7 +56,6 @@ class Miner():
         logging.debug("Mine peers:")
         logging.debug(self.node.nodes)
         MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json))
-        # self.network_handler.consensus()
 
         logging.debug("Response:")
         logging.debug(block.to_json)
