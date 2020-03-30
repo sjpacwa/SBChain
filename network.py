@@ -19,6 +19,7 @@ from node import Node
 from block import Block
 from macros import *
 from multicast import MulticastHandler
+from mine import Miner
 
 class NetworkHandler():
     def __init__(self, host, port, node, test, log_host = None, log_port = None, buffer_size=256):
@@ -60,6 +61,7 @@ class NetworkHandler():
             logger.addHandler(self.sh)
             self.open_log = True
         if test:
+            self.miner = Miner()
             self.THREAD_FUNCTIONS['mine'] = mine
 
     def isActive(self):
@@ -476,7 +478,7 @@ class NetworkHandler():
         connection.close()
     
     def mine(self,connection):
-        # handle mining
+        self.miner.mine()
         connection.close()
            
     THREAD_FUNCTIONS = {
