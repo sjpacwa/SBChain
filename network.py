@@ -61,9 +61,9 @@ class NetworkHandler():
             logger.addHandler(self.sh)
             self.open_log = True
         if test:
-            self.miner = Miner()
-            self.THREAD_FUNCTIONS['mine'] = mine
-
+            self.received_block = (Lock(), False, None)
+            self.miner = Miner(node,self.received_block)
+            
     def isActive(self):
         status = ""
         self.active_lock.acquire()
@@ -157,9 +157,6 @@ class NetworkHandler():
                 self._dispatch_thread(connection, data)
             except ValueError:
                 logging.error("Receieved invalid data format. Check README for description")
-                logging.error("data size:"+data_size)
-                logging.error("num buffers:"+num_buffers)
-                logging.error("data:"+data)
                 connection.close()
 
     def _get_data_size(self, connection):
@@ -211,7 +208,8 @@ class NetworkHandler():
         :param connection: The new connection.
         :param data: JSON representation of the data.
         """
-
+        function_name = None
+        function_args = None
         try:
             function_name = data['name']
             function_args = data['args']
@@ -223,9 +221,6 @@ class NetworkHandler():
             )
             th.start()
         except Exception as e:
-            logging.error('Dispatcher error: {}'.format(e))
-            logging.error(data)
-
             if not function_args:
                 th = Thread(target=self.T_FUNCTIONS[function_name], args=(self,connection,))
                 th.start()
@@ -489,5 +484,6 @@ class NetworkHandler():
         "get_block": get_block,
         "open_log": open_log,
         "close_log": close_log,
-        "register_new_peers": register_new_peers
+        "register_new_peers": register_new_peers,
+        "mine": mine
     }

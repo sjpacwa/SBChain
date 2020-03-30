@@ -7,7 +7,6 @@ import json
 
 #local imports
 from macros import NEIGHBORS, RECEIVE_BLOCK
-from network import NetworkHandler
 from multicast import MulticastHandler
 
 class Miner():
