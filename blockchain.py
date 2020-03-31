@@ -27,12 +27,10 @@ class Blockchain:
         __init__
     
         The constructor for a Blockchain object.
-    
         """
 
         self.current_transactions = []
         self.chain = []
-
 
         # Create the genesis block
         self.new_block(previous_hash='1', proof=100)
@@ -47,7 +45,7 @@ class Blockchain:
 
         Not Thread Safe 
 
-        :returns: <list> list of json representation of chain
+        :return: <list> list of json representation of chain
         """
 
         json_chain = []
@@ -68,6 +66,7 @@ class Blockchain:
         Not Thread Safe
 
         :param chain: A blockchain
+
         :return: <bool> True if valid, False if not
         """
 
