@@ -15,7 +15,6 @@ class SingleConnectionHandler():
 	"""
 	Single Connection Handler
 	"""
-
 	def __init__(self, host, port, buffer_size=256):
 		"""
         __init__

@@ -95,6 +95,8 @@ class Miner():
 
 		Proof of work algorithm
 
+        TODO: consider including reward with the proof -> percentage of the transaction amount or other schema
+
 		:return: <int> proof
 		"""
         last_proof = last_block.proof
