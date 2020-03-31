@@ -1,23 +1,23 @@
 """
-connection.py
+multicast.py
 
-This file is responsible for storing the class that is responsible for 
+This file is responsible for multicast
 socket-based network communication.
 """
 
+# Standard Library Imports
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
-from connection import SingleConnectionHandler
-
 import logging
 
+# Local Imports
+from connection import SingleConnectionHandler
 
 class MulticastHandler():
 	"""
 	Multicast Handler
 	"""
-
 	def __init__(self, peers, buffer_size=256):
 		logging.debug("Multicast INIT")
 		logging.debug("Peers:")

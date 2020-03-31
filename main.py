@@ -48,6 +48,7 @@ if __name__ == '__main__':
     # Create the network handler.
     nh = NetworkHandler(ip, port, node,args.test)
 
+    # if not testing mode, start up the mine loop
     if not args.test:
         # Start the mining thread.
         th = Thread(target=mine_loop, args=(nh, received_block))

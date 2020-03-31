@@ -13,6 +13,9 @@ from datetime import datetime
 
 
 class Block:
+    """
+    Block
+	"""
     def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
         """
         __init__
@@ -104,8 +107,6 @@ def block_from_json(data):
 
     Converts a JSON-object form into a Block object.
 
-    Not Thread Safe
-
     :param data: <dict> The JSON-object form of a block.
     :returns: <Block Object> A new object.
 
@@ -137,8 +138,6 @@ def block_from_json(data):
 def block_from_string(data):
     """
     block_from_string
-
-    Not Thread Safe
 
     Converts a JSON-string form into a Block object.
 

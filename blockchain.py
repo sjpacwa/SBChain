@@ -1,8 +1,8 @@
 """
 blockchain.py
+
 This file defines the Blockchain class which is used to manage information 
 related to the chain.
-test push
 """
 
 # Standard library imports
@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 from datetime import datetime
+
 # Local imports
 from block import Block, block_from_json
 from blockchainConfig import BlockchainConfig
@@ -18,6 +19,9 @@ config = BlockchainConfig()
 
 
 class Blockchain:
+    """
+    Blockchain
+	"""
     def __init__(self):
         """
         __init__
@@ -223,10 +227,6 @@ class Blockchain:
     def valid_proof(last_proof, proof, last_hash, current_transactions):
         """
         Validates the Proof
-
-        Internal
-
-        Not Thread Safe
 
         :param last_proof: <int> Previous Proof
         :param proof: <int> Current Proof

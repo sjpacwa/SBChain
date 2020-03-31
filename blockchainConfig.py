@@ -1,7 +1,16 @@
+"""
+blockchainConfig.py
+
+This file retrieves the Blockchain configuration
+"""
+
+# Standard library imports
 import configparser
 
-
 class BlockchainConfig:
+	"""
+	Blockchain Config
+	"""
 	def __init__(self):
 		"""
         __init__

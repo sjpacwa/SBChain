@@ -1,3 +1,10 @@
+"""
+blockchain.py
+
+This file defines the Blockchain class which is used to manage information 
+related to the chain.
+"""
+
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {
@@ -16,6 +23,10 @@ NEIGHBORS = (
     ('localhost',5001)
 )
 
+GET_CHAIN = {
+    'name': "full-chain"
+}
+
 def RECEIVE_BLOCK(block):
     return {
         'name': 'receive_block',
@@ -31,13 +42,6 @@ def RECEIVE_TRANSACTION(transaction):
                 'amount': transaction['amount'],
                 'timestamp': transaction['timestamp']
             }
-    }
-
-def FULL_CHAIN():
-    return {
-        'name': 'full_chain',
-        'args': { 
-        }
     }
 
 def TRANSACTION_ADDED(block_index):

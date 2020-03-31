@@ -1,7 +1,26 @@
+"""
+logger.py
+This file is responsible for handling of the logging module
+"""
+
+# Standard library imports
 import logging
 from os import mkdir
 
+
 def initialize_log(node_id,debug):
+    """
+    initialize_log()
+
+    Not Thread Safe
+
+    Initializes the folder and the logs for the respective node.
+
+    Initializes the file and console handlers
+
+    :param node_id: <str> Node ID.
+    :param debug: <bool> Determines the logging level. DEBUG if debug else INFO
+	"""
     try:
         mkdir("logs",0o777 )
     except OSError as error:

@@ -5,6 +5,7 @@ This file is responsible for storing the class that is responsible for
 socket-based network communication.
 """
 
+# Standard library imports
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 import json
@@ -93,6 +94,9 @@ class SingleConnectionHandler():
 	def _get_data(self, connection, data_size, num_buffers):
 		"""
 		_get_data
+
+		Not Thread Safe
+		
 		This function will listen on the connection for the data.
 
 		:param connection: The new connection.

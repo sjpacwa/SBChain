@@ -1,3 +1,9 @@
+"""
+mine.py
+
+This file is responsible for the miner functionality
+"""
+
 # Standard Library Imports
 import logging
 from datetime import datetime
@@ -10,18 +16,37 @@ from macros import NEIGHBORS, RECEIVE_BLOCK
 from multicast import MulticastHandler
 
 class Miner():
+    """
+    Miner
+	"""
     node = None
     blockchain = None
 
     new_block = {}
 
     def __init__(self, node, new_block):
+        """
+        __init__
+    
+        The constructor for a Miner object.
+
+        :param node: <node Object> Node to do mining on
+        :param new_block: <tuple> Saves next block
+        """
         self.node = node
         self.blockchain = self.node.blockchain
 
         self.new_block = new_block
 
     def mine(self):
+        """
+		mine()
+
+		Not Thread Safe
+
+		Mine a new Block
+
+		"""
         last_block = self.blockchain.last_block
         
         # Remove reward from last block.
@@ -63,6 +88,15 @@ class Miner():
         logging.debug(self.blockchain.get_chain())
 
     def proof_of_work(self, last_block):
+        """
+		proof_of_work()
+
+		Not Thread Safe
+
+		Proof of work algorithm
+
+		:return: <int> proof
+		"""
         last_proof = last_block.proof
         last_hash = last_block.hash
         current_trans = self.blockchain.current_transactions
@@ -92,10 +126,23 @@ class Miner():
         return proof
 
     def check_new_block(self):
+        """
+		check_new_block()
+
+		Not Thread Safe
+
+        TODO: check block logic
+		"""
         pass
 
 
 def mine_loop(network_handler, received_block):
+    """
+    mine_loop()
+
+    While the network handler is active, mine a block
+
+    """
     miner = Miner(network_handler.node, received_block)
 
     while network_handler.isActive():
