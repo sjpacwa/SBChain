@@ -20,7 +20,7 @@ def initialize_log(node_id,debug):
 
     :param node_id: <str> Node ID.
     :param debug: <bool> Determines the logging level. DEBUG if debug else INFO
-	"""
+    """
     try:
         mkdir("logs",0o777 )
     except OSError as error:
