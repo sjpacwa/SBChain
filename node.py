@@ -15,21 +15,33 @@ from threading import Lock
 from blockchain import Blockchain
 from block import Block, block_from_json
 from multicast import MulticastHandler
-from macros import FULL_CHAIN
+from macros import GET_CHAIN
 
 class Node:
+    """
+	Node
+	"""
     def __init__(self,node_id):
+        """
+        __init__
+        
+        The constructor for a Single Connection Handler object
+
+		:param node_id: <str> Identifier for the node.
+        """
         self.nodes = []
         self.blockchain = Blockchain()
         self.identifier = node_id
 
     def resolve_conflicts(self):
         """
-        This is our consensus algorithm, it resolves conflicts
-        by replacing our chain with the longest one in the network.
+        reslove_conflicts()
 
-        :return: True if our chain was replaced, False if not
-        TODO: decide when to lock, what to do if resources are lcoked
+        Not Thread Safe
+
+		Consensus algorithm at the node level
+
+        :returns: <bool> True if our chain was replaced, else False
         """
 
         neighbors = self.nodes
@@ -40,7 +52,7 @@ class Node:
         # We're only looking for chains longer than ours
         our_length = len(our_chain)
 
-        responses = MulticastHandler(neighbors).multicast_with_response(FULL_CHAIN())
+        responses = MulticastHandler(neighbors).multicast_with_response(GET_CHAIN())
         logging.debug("Responses")
         logging.debug(responses)
 
@@ -68,11 +80,17 @@ class Node:
 
     def register_node(self, address,port):
         """
-        Add a new node to the list of nodes
+        register_nodes()
 
-        :param address: Address of node. Eg. 'http://192.168.0.5:5000'
+        Add a new peer to the list of nodes
 
         NOTE: We assume that nodes don't drop later in the blockchain's lifespan
+
+
+        :param address: <str> Address of peer. Eg. 'http://192.168.0.5:5000'
+        :param port: <int> Port of peer.
+
+        :raises: <ValueError> If the address is invalid
         """
 
         logging.debug("Registering Node")

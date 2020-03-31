@@ -4,7 +4,7 @@ network.py
 This file is responsible for storing the class that is responsible for 
 the socket-based main network loop.
 """
-
+# Standard library imports
 from math import ceil
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
@@ -12,30 +12,34 @@ import json
 from datetime import datetime
 import hashlib
 import logging
-#import sys
 
 # Local Imports
 from node import Node
 from block import Block
 from macros import *
 from multicast import MulticastHandler
+from mine import Miner
 
 class NetworkHandler():
-    def __init__(self, host, port, node, buffer_size=256):
+    """
+	Single Connection Handler
+	"""
+    def __init__(self, host, port, node, test, log_host = None, log_port = None, buffer_size=256):
         """
         __init__
         
         The constructor for a NetworkHandler object.
 
-        :param host: (string) The IP address that the socket should be 
+        :param host: <string> The IP address that the socket should be 
             bound to.
-        :param port: (int) The port that the socket should be bound to.
-        :param thread_functions: (dict) A dictionary that allows a 
-            Thread to lookup a function object with a function name.
-        :param buffer_size: (int) The size of the buffer used in data 
+        :param port: <int> The port that the socket should be bound to.
+        :param node: <Node Object> Node Object to interface with
+        :param test: <bool> Testing mode(disable auto mine) if True else Normal Operation
+        :param log_host: <string> The IP address of the logging interface server to connect to (optional)
+        :param log_port: <bool> The port of the logging interface server to connect to (optional)
+        :param buffer_size: <int> The size of the buffer used in data 
             transmission.
         """
-
         self.host = host
         self.port = port
 
@@ -54,24 +58,60 @@ class NetworkHandler():
         self.sh = None
         self.open_log = False
 
+        if log_host and log_port:
+            logger = logging.getLogger()
+            # handler to write to socket
+            self.sh = logging.handlers.SocketHandler(log_host,log_port) 
+            logger.addHandler(self.sh)
+            self.open_log = True
+        if test:
+            self.received_block = (Lock(), False, None)
+            self.miner = Miner(node,self.received_block)
+            
     def isActive(self):
+        """
+		isActive()
+
+        TODO
+
+		Return the status of the network handler
+
+		:return: <bool> True if network handler is active, else False
+		"""
         status = ""
         self.active_lock.acquire()
         status = self.active
         self.active_lock.release()
         return status
     def setActive(self,status):
+        """
+		setActive()
+
+        TODO
+
+		Set the status of the network handler
+        
+        :param status: <bool> True of Network Handler is working else False
+		"""
         self.active_lock.acquire()
         self.active = status
         self.active_lock.release()
 
     def register_nodes(self,peers):
         """
-        register_nodes
+        register_nodes()
 
-        Public.
-        This function handles a POST request to /nodes/register. It 
-        registers a peer with the node.
+        Public
+
+        Not Thread Safe
+
+        This function is a public interface to regsiter nodes outside of the network handler dispatch thread
+
+        Bad Practice: For testing purposes only
+
+        NOTE: Will be deprecated in later versions of the code
+
+        :param peers: <list> List of tuples (ip,port) of all peers to communicate with
         """
         # Check that something was sent.
         logging.info("Registering Nodes")
@@ -94,11 +134,12 @@ class NetworkHandler():
 
     def consensus(self):
         """
-        consensus
+        consensus()
 
-        Public.
-        This function handles a GET request to /nodes/resolve. It checks
-        if the chain needs to be updated.
+        Not Thread Safe
+
+        This function handles consensus when conflicts in chains appear. 
+        This function is automatically called in the mine function
         """
 
         # TODO See what the standard is for this in bitcoin.
@@ -107,21 +148,18 @@ class NetworkHandler():
 
         # Based on conflicts, generate a response of which chain is valid.
         if replaced:
-            #logging.info("------------------------------------------------------------------------------------------------------------------------")
             logging.info("REPLACED")
             logging.info(REPLACED(self.node.blockchain.get_chain()))
-            #logging.info("------------------------------------------------------------------------------------------------------------------------")
 
         else:
-            #logging.info("------------------------------------------------------------------------------------------------------------------------")
             logging.info("Authoritative")
             logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
-            #logging.info("------------------------------------------------------------------------------------------------------------------------")
-
 
     def event_loop(self):
         """
         event_loop
+
+        Not Thread Safe
         
         This function will setup the socket and wait for incoming 
         connections.
@@ -151,13 +189,15 @@ class NetworkHandler():
 
     def _get_data_size(self, connection):
         """
-        _get_data_size
+        _get_data_size()
+
+        Not Thread Safe
         
         This function will listen on the connection for the size of the 
         future data.
 
-        :param connection: (Socket) The new connection.
-        :returns: (tuple) (data size, number of buffer cycles needed)
+        :param connection: <Socket Connection Object> The new connection.
+        :returns: <tuple> (data size <int>, number of buffer cycles needed <int>)
         """
 
         data_size = int(connection.recv(16).decode())
@@ -170,14 +210,17 @@ class NetworkHandler():
 
     def _get_data(self, connection, data_size, num_buffers):
         """
-        _get_data
+        _get_data()
+
+        Not Thread Safe
+
         This function will listen on the connection for the data.
 
-        :param connection: The new connection.
-        :param data_size: The size of the incoming data.
-        :param num_buffers: The number of buffer cycles required.
+        :param connection: <Socket Connection Object> The new connection.
+        :param data_size: <int> The size of the incoming data.
+        :param num_buffers: <int> The number of buffer cycles required.
 
-        :return: JSON representation of the data.
+        :return: <json> JSON representation of the data.
         """
 
         data = ''
@@ -191,14 +234,19 @@ class NetworkHandler():
 
     def _dispatch_thread(self, connection, data):
         """
-        _dispatch_thread
+        _dispatch_thread()
+
+        Not Thread Safe
+
         This function will dispatch a worker thread to handle the 
         request.
 
-        :param connection: The new connection.
-        :param data: JSON representation of the data.
+        :param connection: <Socket Connection Object> The new connection.
+        :param data: <json> JSON representation of the request. 
+            Contains the name of the function to call and arguments for that function
         """
-
+        function_name = None
+        function_args = None
         try:
             function_name = data['name']
             function_args = data['args']
@@ -210,9 +258,6 @@ class NetworkHandler():
             )
             th.start()
         except Exception as e:
-            logging.error('Dispatcher error: {}'.format(e))
-            logging.error(data)
-
             if not function_args:
                 th = Thread(target=self.T_FUNCTIONS[function_name], args=(self,connection,))
                 th.start()
@@ -226,11 +271,17 @@ class NetworkHandler():
     
     def register_new_peers(self,connection,arguments):
         """
-        register_new_peers
+        register_new_peers()
 
-        Public.
-        This function handles a request fro mthe dispatcher. It 
+        Public
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher. It 
         registers a peer with the node during runtime.
+        
+        :param connection: <Socket Connection Object> The new connection.
+        :param peers: <list> A list of tuples (ip,port) of all peers
         """
         peers = arguments['peers']
         logging.info("Registering peers from dispatcher")
@@ -240,12 +291,22 @@ class NetworkHandler():
 
     def receive_block(self, connection,arguments):
         """
-        receive_block
+        receive_block()
 
-        Internal.
-        This function handles a POST request to /block/receive_block. It 
-        receives a block from a peer and forwards it along to everyone but 
+        Internal
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher (internal).
+        It receives a block from a peer and forwards it along to everyone but 
         the original sender.
+
+        :param connection: <Socket Connection Object> The new connection.
+        :param index: <int> Index of the block
+        :param transactions: <json> JSON representation of transactions.
+        :param proof: <int> Proof of block
+        :param previous hash: <str> Hash of the previous block
+        :param timestamp: <timestamp> Timestamp of the block creation
         """
         logging.info("Received Block (from dispatcher) with Block Number: {}".format(arguments['index']))
         # Create a block from the sent data.
@@ -316,11 +377,21 @@ class NetworkHandler():
 
     def new_transaction(self, connection, arguments):
         """
-        new_transaction
+        new_transaction()
 
-        Public.
-        This function handles a POST request to /transactions/new. It 
-        creates a new transaction and adds it to the pool of transactions.
+        Public
+
+        Not Thread Safe
+
+        This function handles request from the dispatcher (public). 
+        It creates a new transaction and adds it to the pool of transactions.
+
+        TODO: refactored in new branch to use coins
+        
+        :param connection: <Socket Connection Object> The new connection.
+        :param sender: <str> Sender id for the transaction
+        :param recipient: <str> Recipient id for the transaction
+        :param amount: <int> Amount of the transaction 
         """
         
         # NOTE: Currently, all transactions are considered valid. This 
@@ -346,12 +417,23 @@ class NetworkHandler():
 
     def receive_transactions(self,connection,arguments):
         """
-        receive_transaction
+        receive_transactions()
 
-        Internal.
-        This function handles a POST request to /transactions/receive_transaction. 
+        Internal
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher (internal). 
         It receives a transaction from a peer and forwards it along to everyone 
         but the original sender.
+
+        TODO: refactored in new branch to use coins
+
+
+        :param connection: <Socket Connection Object> The new connection.
+        :param sender: <str> Sender id for the transaction
+        :param recipient: <str> Recipient id for the transaction
+        :param amount: <int> Amount of the transaction 
         """
         logging.info("Received transaction (from dispatcher)")
 
@@ -387,16 +469,18 @@ class NetworkHandler():
 
 
     def full_chain(self,connection):
+        """
+        full_chain()
+
+        Public and Internal
+
+        This function handles a request from the dispatcher (public and internal).
+        It returns a copy of the entire chain to the client.
+        
+        :param connection: <Socket Connection Object> The new connection.
+        """
+
         logging.info("Received full_chain request (from dispatcher)")
-        """
-        full_chain
-
-        Public.
-        This function handles a GET request to /chain. It returns a copy of 
-        the entire chain.
-        """
-
-        # TODO This needs to reply to the socket that is passed, it does not communicate to any other nodes, just returns local chain on socket.
 
         # Assemble the chain for the response.
         chain = CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
@@ -410,30 +494,54 @@ class NetworkHandler():
         connection.close()
 
     def get_block(self,connection,arguments):
+        """
+        get_block()
+
+        Public and Internal
+
+        This function handles a request from the dispatcher. 
+        It returns the block that has been requested to the client.
+
+        :param connection: <Socket Connection Object> The new connection.
+        :param index: <int> Index of the block to send
+        """
         
         logging.info("Received get block request (from dispatcher)")
 
-        """
-        get_block
-
-        Public.
-        This function handles a GET request to /block/get_block. It returns 
-        the block that has been requested.
-        """
-
         # TODO Just need to respond to the connection.
-        block = self.node.blockchain.get_block(arguments['values'].get('index'))
-        logging.info(block.to_json)
-        block = json.dumps(block, default=str).encode()
+        block = self.node.blockchain.get_block(int(arguments))
 
-        data_len = len(block)
+        if isinstance(block,int):
+            logging.error("Invalid block index")
+            connection.close()
+            return
+
+        logging.info(block.to_string)
+
+        block_to_string = block.to_string
+
+        data_len = len(block_to_string)
         connection.send(str(data_len).encode())
         test = connection.recv(16).decode()
         logging.debug(test)        
-        connection.send(block)
+        connection.send(block_to_string.encode())
         connection.close()
     
     def open_log(self,connection,arguments):
+        """
+        open_log()
+
+        Public
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher. 
+        It creates a socket connection to the logging server
+
+        :param connection: <Socket Connection Object> The new connection.
+        :param host: <str> Host IP of the logging server
+        :param port: <int> Host port of the logging server
+        """
         host = arguments['host']
         port = arguments['port']
 
@@ -444,6 +552,18 @@ class NetworkHandler():
         connection.close()
 
     def close_log(self,connection):
+        """
+        close_log()
+
+        Public
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher. 
+        It removes a socket connection to the logging server
+
+        :param connection: <Socket Connection Object> The new connection.
+        """
         node_id = self.node.identifier
         logger = logging.getLogger()
 
@@ -456,7 +576,26 @@ class NetworkHandler():
         self.sh = None
         self.open_log = False
         connection.close()
-           
+    
+    def mine(self,connection):
+        """
+        mine()
+
+        Public
+
+        Not Thread Safe
+
+        This function handles a request from the dispatcher. 
+        It processes a manual mine request
+
+        NOTE: Only for testing purposes, do not use in normal operation
+
+        :param connection: <Socket Connection Object> The new connection.
+        """
+        self.miner.mine()
+        connection.close()
+    
+    # Functions that can be called by the dispatcher thread
     THREAD_FUNCTIONS = {
         "receive_block": receive_block,
         "new_transaction": new_transaction,
@@ -465,5 +604,6 @@ class NetworkHandler():
         "get_block": get_block,
         "open_log": open_log,
         "close_log": close_log,
-        "register_new_peers": register_new_peers
+        "register_new_peers": register_new_peers,
+        "mine": mine
     }
