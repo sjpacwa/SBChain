@@ -15,7 +15,7 @@ from datetime import datetime
 class Block:
     """
     Block
-	"""
+    """
     def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
         """
         __init__

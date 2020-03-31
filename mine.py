@@ -18,7 +18,7 @@ from multicast import MulticastHandler
 class Miner():
     """
     Miner
-	"""
+    """
     node = None
     blockchain = None
 
@@ -40,13 +40,13 @@ class Miner():
 
     def mine(self):
         """
-		mine()
+        mine()
 
-		Not Thread Safe
+        Not Thread Safe
 
-		Mine a new Block
+        Mine a new Block
 
-		"""
+        """
         last_block = self.blockchain.last_block
         
         # Remove reward from last block.
@@ -89,16 +89,16 @@ class Miner():
 
     def proof_of_work(self, last_block):
         """
-		proof_of_work()
+        proof_of_work()
 
-		Not Thread Safe
+        Not Thread Safe
 
-		Proof of work algorithm
+        Proof of work algorithm
 
         TODO: consider including reward with the proof -> percentage of the transaction amount or other schema
 
-		:return: <int> proof
-		"""
+        :return: <int> proof
+        """
         last_proof = last_block.proof
         last_hash = last_block.hash
         current_trans = self.blockchain.current_transactions
@@ -129,12 +129,12 @@ class Miner():
 
     def check_new_block(self):
         """
-		check_new_block()
+        check_new_block()
 
-		Not Thread Safe
+        Not Thread Safe
 
         TODO: check block logic
-		"""
+        """
         pass
 
 

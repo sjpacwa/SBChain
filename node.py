@@ -19,15 +19,15 @@ from macros import GET_CHAIN
 
 class Node:
     """
-	Node
-	"""
+    Node
+    """
     def __init__(self,node_id):
         """
         __init__
         
         The constructor for a Single Connection Handler object
 
-		:param node_id: <str> Identifier for the node.
+        :param node_id: <str> Identifier for the node.
         """
         self.nodes = []
         self.blockchain = Blockchain()
@@ -39,7 +39,7 @@ class Node:
 
         Not Thread Safe
 
-		Consensus algorithm at the node level
+        Consensus algorithm at the node level
 
         :returns: <bool> True if our chain was replaced, else False
         """

@@ -22,8 +22,8 @@ from mine import Miner
 
 class NetworkHandler():
     """
-	Single Connection Handler
-	"""
+    Single Connection Handler
+    """
     def __init__(self, host, port, node, test, log_host = None, log_port = None, buffer_size=256):
         """
         __init__
@@ -70,14 +70,14 @@ class NetworkHandler():
             
     def isActive(self):
         """
-		isActive()
+        isActive()
 
         TODO
 
-		Return the status of the network handler
+        Return the status of the network handler
 
-		:return: <bool> True if network handler is active, else False
-		"""
+        :return: <bool> True if network handler is active, else False
+        """
         status = ""
         self.active_lock.acquire()
         status = self.active
@@ -85,14 +85,14 @@ class NetworkHandler():
         return status
     def setActive(self,status):
         """
-		setActive()
+        setActive()
 
         TODO
 
-		Set the status of the network handler
+        Set the status of the network handler
         
         :param status: <bool> True of Network Handler is working else False
-		"""
+        """
         self.active_lock.acquire()
         self.active = status
         self.active_lock.release()
