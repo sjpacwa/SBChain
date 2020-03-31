@@ -16,7 +16,6 @@ class BlockchainConfig:
         __init__
         
         The constructor for a BlockChain Config object
-
         """
 		self.parser = configparser.ConfigParser()
 		self.parser.read('config.ini')
