@@ -56,6 +56,8 @@ class SingleConnectionHandler():
 		Not Thread Safe
 
 		Send data to peer
+
+		:param data: <str> Data to send
 		"""
 		logging.debug("Sending data (single_connection_handler)")
 		logging.debug("Data:")
