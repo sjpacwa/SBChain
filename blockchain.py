@@ -174,10 +174,6 @@ class Blockchain:
         """
 
         # TODO Lock transactions
-        # try:
-        #     timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
-        # except:
-        #     pass
         self.current_transactions.append({
             'sender': sender,
             'recipient': recipient,

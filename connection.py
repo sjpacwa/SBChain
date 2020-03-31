@@ -24,7 +24,6 @@ class SingleConnectionHandler():
 		:param host: <str> IP address of peer.
         :param port: <int> Port of peer.
         :param buffer_size: <int> Size of buffer (optional).
-    
         """
 		self.host = host
 		self.port = port
