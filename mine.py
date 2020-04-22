@@ -22,21 +22,18 @@ class Miner():
     node = None
     blockchain = None
 
-    new_block = {}
 
-    def __init__(self, node, new_block):
+    def __init__(self, node):
         """
         __init__
     
         The constructor for a Miner object.
 
         :param node: <node Object> Node to do mining on
-        :param new_block: <tuple> Saves next block
         """
         self.node = node
         self.blockchain = self.node.blockchain
 
-        self.new_block = new_block
 
     def mine(self):
         """
@@ -112,19 +109,6 @@ class Miner():
         while not self.blockchain.valid_proof(last_proof, proof, last_hash, current_trans):
             proof += 1
 
-            # Check if a new block was received from network.
-            self.new_block[0].acquire()
-            if self.new_block[1]:
-                # A block has been received and not handled.
-                # TODO Check index, proof, etc. and handle.
-                # TODO This is where new blocks should be added if they are valid.
-                # TODO If a block is valid to be added, do that and restart mining.
-                
-                # Mark that this block has been handled.
-                self.new_block[1] = False
-
-            self.new_block[0].release()
-
         return proof
 
     def check_new_block(self):
@@ -138,14 +122,14 @@ class Miner():
         pass
 
 
-def mine_loop(network_handler, received_block):
+def mine_loop(network_handler):
     """
     mine_loop()
 
     While the network handler is active, mine a block
 
     """
-    miner = Miner(network_handler.node, received_block)
+    miner = Miner(network_handler.node)
 
     while network_handler.isActive():
         miner.mine()

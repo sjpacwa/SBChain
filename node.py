@@ -14,14 +14,16 @@ from threading import Lock
 # Local imports
 from blockchain import Blockchain
 from block import Block, block_from_json
+from logger import initialize_log
 from multicast import MulticastHandler
 from macros import GET_CHAIN
+from network import NetworkHandler
 
 class Node:
     """
     Node
     """
-    def __init__(self,node_id):
+    def __init__(self, ip, port, debug=False, neighbors=[], uuid=None):
         """
         __init__
         
@@ -29,9 +31,25 @@ class Node:
 
         :param node_id: <str> Identifier for the node.
         """
+
+        self.ip = ip
+        self.port = port
+
+        self.identifier = str(uuid4()).replace('-', '') if uuid == None else uuid
         self.nodes = []
         self.blockchain = Blockchain()
-        self.identifier = node_id
+
+        initialize_log(self.identifier, debug)
+
+        # Create the Network Handler.
+        self.nh = NetworkHandler(ip, port, self) # TODO check what self (Node) is being used for.
+
+        # Automatically register neighbors.
+        self.register_nodes(neighbors)
+
+        # Start the Network Handler main loop
+        self.nh.event_loop()
+
 
     def resolve_conflicts(self):
         """
@@ -78,7 +96,7 @@ class Node:
             return True
         return False
 
-    def register_node(self, address,port):
+    def register_nodes(self, peers):
         """
         register_nodes()
 
@@ -93,17 +111,25 @@ class Node:
         :raises: <ValueError> If the address is invalid
         """
 
-        logging.debug("Registering Node")
-        parsed_url = urlparse(address)
-        logging.debug("Parsed url")
-        logging.debug(parsed_url)
-        if parsed_url.netloc:
-            self.nodes.append((parsed_url.netloc,port))
-            logging.debug(parsed_url.netloc,port)
-        elif parsed_url.path:
-            # Accepts an URL without scheme like '192.168.0.5:5000'.
-            self.nodes.append((parsed_url.path,port))
-            logging.debug(parsed_url.path,port)
-        else:
-            logging.error('Invalid URL')
-            raise ValueError('Invalid URL')
+        for peer in peers:
+            logging.debug("Peer")
+            logging.debug(peer)
+            if peer[0] != self.ip or peer[1] != self.port:
+                logging.debug("Registering Node")
+                parsed_url = urlparse(peer[0])
+                logging.debug("Parsed url")
+                logging.debug(parsed_url)
+                
+                if parsed_url.netloc:
+                    self.nodes.append((parsed_url.netloc,peer[1]))
+                    logging.debug(parsed_url.netloc,peer[1])
+                
+                elif parsed_url.path:
+                    # Accepts an URL without scheme like '192.168.0.5:5000'.
+                    self.nodes.append((parsed_url.path,peer[1]))
+                    logging.debug(parsed_url.path,peer[1])
+                
+                else:
+                    logging.error('Invalid URL')
+                    logging.error(peer)
+

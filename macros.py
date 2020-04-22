@@ -5,6 +5,8 @@ This file defines the Blockchain class which is used to manage information
 related to the chain.
 """
 
+TEST_MODE = False
+
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {

@@ -14,17 +14,16 @@ import hashlib
 import logging
 
 # Local Imports
-from node import Node
 from block import Block
 from macros import *
 from multicast import MulticastHandler
-from mine import Miner
+from mine import Miner, mine_loop
 
 class NetworkHandler():
     """
     Single Connection Handler
     """
-    def __init__(self, host, port, node, test, log_host = None, log_port = None, buffer_size=256):
+    def __init__(self, host, port, node, log_host = None, log_port = None, buffer_size=256):
         """
         __init__
         
@@ -34,7 +33,6 @@ class NetworkHandler():
             bound to.
         :param port: <int> The port that the socket should be bound to.
         :param node: <Node Object> Node Object to interface with
-        :param test: <bool> Testing mode(disable auto mine) if True else Normal Operation
         :param log_host: <string> The IP address of the logging interface server to connect to (optional)
         :param log_port: <bool> The port of the logging interface server to connect to (optional)
         :param buffer_size: <int> The size of the buffer used in data 
@@ -64,9 +62,11 @@ class NetworkHandler():
             self.sh = logging.handlers.SocketHandler(log_host,log_port) 
             logger.addHandler(self.sh)
             self.open_log = True
-        if test:
-            self.received_block = (Lock(), False, None)
-            self.miner = Miner(node,self.received_block)
+        if TEST_MODE:
+            self.miner = Miner(node)
+        else:
+            th = Thread(target=mine_loop, args=(self,))
+            th.start()
             
     def isActive(self):
         """
@@ -121,12 +121,7 @@ class NetworkHandler():
             return
 
         # Register the nodes that have been received.
-        for peer in peers:
-            logging.debug("Peer")
-            logging.debug(peer)
-            if peer[0] != self.host or peer[1] != self.port:
-                logging.debug("Registering Node")
-                self.node.register_node(peer[0],peer[1])
+        self.node.register_nodes(peers)
 
         # Generate a response to report that the peer was registered.
         logging.info("Peers")
