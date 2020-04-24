@@ -23,7 +23,7 @@ class Miner():
     blockchain = None
 
 
-    def __init__(self, node):
+    def __init__(self, blockchain, identifier, nodes):
         """
         __init__
     
@@ -31,9 +31,10 @@ class Miner():
 
         :param node: <node Object> Node to do mining on
         """
-        self.node = node
-        self.blockchain = self.node.blockchain
-
+        
+        self.blockchain = blockchain
+        self.identifier = identifier
+        self.nodes = nodes
 
     def mine(self):
         """
@@ -66,7 +67,7 @@ class Miner():
         # newly minted coin by setting the sender to '0'.
         self.blockchain.new_transaction(
             sender='0',
-            recipient=self.node.identifier,
+            recipient=self.identifier,
             amount=1,
             timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         )
@@ -75,8 +76,8 @@ class Miner():
         block = self.blockchain.new_block(proof, last_block.hash)
 
         logging.debug("Mine peers:")
-        logging.debug(self.node.nodes)
-        MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json))
+        logging.debug(self.nodes)
+        MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json))
 
         logging.debug("Response:")
         logging.debug(block.to_json)
@@ -122,15 +123,15 @@ class Miner():
         pass
 
 
-def mine_loop(network_handler):
+def mine_loop(blockchain, identifier, nodes):
     """
     mine_loop()
 
     While the network handler is active, mine a block
 
     """
-    miner = Miner(network_handler.node)
+    miner = Miner(blockchain, identifier, nodes)
 
-    while network_handler.isActive():
+    while 1:
         miner.mine()
 

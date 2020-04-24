@@ -14,6 +14,7 @@ import hashlib
 import logging
 
 # Local Imports
+from apiEndpoints import *
 from block import Block
 from macros import *
 from multicast import MulticastHandler
@@ -23,7 +24,7 @@ class NetworkHandler():
     """
     Single Connection Handler
     """
-    def __init__(self, host, port, node, log_host = None, log_port = None, buffer_size=256):
+    def __init__(self, host, port, blockchain, identifier, neighbors, buffer_size=256):
         """
         __init__
         
@@ -38,8 +39,14 @@ class NetworkHandler():
         :param buffer_size: <int> The size of the buffer used in data 
             transmission.
         """
+
+        self.nodes = []
+
         self.host = host
         self.port = port
+
+        # Automatically register neighbors.
+        register_nodes(neighbors, self.host, self.port, self.nodes)
 
         self.sock = None
 
@@ -47,7 +54,8 @@ class NetworkHandler():
         self.T_FUNCTIONS = self.THREAD_FUNCTIONS
         self.BUFFER_SIZE = int(buffer_size)
 
-        self.node = node
+        self.blockchain = blockchain
+        self.identifier = identifier
 
         # TODO stop all threads waiting on things, need to send SIGKILL or something.
         self.active_lock = Lock()
@@ -56,76 +64,11 @@ class NetworkHandler():
         self.sh = None
         self.open_log = False
 
-        if log_host and log_port:
-            logger = logging.getLogger()
-            # handler to write to socket
-            self.sh = logging.handlers.SocketHandler(log_host,log_port) 
-            logger.addHandler(self.sh)
-            self.open_log = True
         if TEST_MODE:
-            self.miner = Miner(node)
+            self.miner = Miner(self.blockchain, self.identifier, self.nodes)
         else:
-            th = Thread(target=mine_loop, args=(self,))
+            th = Thread(target=mine_loop, args=(self.blockchain, self.identifier, self.nodes,))
             th.start()
-            
-    def isActive(self):
-        """
-        isActive()
-
-        TODO
-
-        Return the status of the network handler
-
-        :return: <bool> True if network handler is active, else False
-        """
-        status = ""
-        self.active_lock.acquire()
-        status = self.active
-        self.active_lock.release()
-        return status
-    def setActive(self,status):
-        """
-        setActive()
-
-        TODO
-
-        Set the status of the network handler
-        
-        :param status: <bool> True of Network Handler is working else False
-        """
-        self.active_lock.acquire()
-        self.active = status
-        self.active_lock.release()
-
-    def register_nodes(self,peers):
-        """
-        register_nodes()
-
-        Public
-
-        Not Thread Safe
-
-        This function is a public interface to regsiter nodes outside of the network handler dispatch thread
-
-        Bad Practice: For testing purposes only
-
-        NOTE: Will be deprecated in later versions of the code
-
-        :param peers: <list> List of tuples (ip,port) of all peers to communicate with
-        """
-        # Check that something was sent.
-        logging.info("Registering Nodes")
-        logging.info(peers)
-        if peers is None:
-            logging.error("Error: No nodes supplied")
-            return
-
-        # Register the nodes that have been received.
-        self.node.register_nodes(peers)
-
-        # Generate a response to report that the peer was registered.
-        logging.info("Peers")
-        logging.info(json.dumps(NODES(list(self.node.nodes))))
 
     def consensus(self):
         """
@@ -139,16 +82,16 @@ class NetworkHandler():
 
         # TODO See what the standard is for this in bitcoin.
 
-        replaced = self.node.resolve_conflicts()
+        replaced = resolve_conflicts(self.blockchain, self.nodes)
 
         # Based on conflicts, generate a response of which chain is valid.
         if replaced:
             logging.info("REPLACED")
-            logging.info(REPLACED(self.node.blockchain.get_chain()))
+            logging.info(REPLACED(self.blockchain.get_chain()))
 
         else:
             logging.info("Authoritative")
-            logging.info(AUTHORITATIVE(self.node.blockchain.get_chain()))
+            logging.info(AUTHORITATIVE(self.blockchain.get_chain()))
 
     def event_loop(self):
         """
@@ -166,7 +109,7 @@ class NetworkHandler():
         self.sock.bind((self.host, self.port))
 
         # Block while waiting for connections.
-        while self.isActive():
+        while 1:
             logging.info('Waiting for new connections')
             self.sock.listen(1)
             connection, client = self.sock.accept()
@@ -262,7 +205,6 @@ class NetworkHandler():
         except:
             logging.error("ERROR IN DISPATCHER")
             logging.error(data)
-            self.setActive(False)
     
     def register_new_peers(self,connection,arguments):
         """
@@ -281,7 +223,7 @@ class NetworkHandler():
         peers = arguments['peers']
         logging.info("Registering peers from dispatcher")
 
-        self.register_nodes(peers)
+        register_nodes(peers, self.host, self.port, self.nodes)
         connection.close()
 
     def receive_block(self, connection,arguments):
@@ -315,7 +257,7 @@ class NetworkHandler():
         logging.info(new_block.to_string)
         
         # Ensure that this block has not been added before.
-        for block in self.node.blockchain.chain:
+        for block in self.blockchain.chain:
             if new_block == block:
                 logging.debug("Duplicate Block")
                 connection.close()
@@ -324,8 +266,8 @@ class NetworkHandler():
         else:
             # The block has not been added before. The proof should be 
             # checked.
-            last_proof = self.node.blockchain.last_block.proof
-            last_hash = self.node.blockchain.last_block.hash
+            last_proof = self.blockchain.last_block.proof
+            last_hash = self.blockchain.last_block.hash
 
             # Remove the reward from the block. If it is kept in, the proof 
             # will not be the same.
@@ -338,7 +280,7 @@ class NetworkHandler():
                 arguments['transactions'].remove(block_reward)
             #logging.info("Arguments transactions")
 
-            if self.node.blockchain.valid_proof(last_proof, arguments['proof'], last_hash, 
+            if self.blockchain.valid_proof(last_proof, arguments['proof'], last_hash, 
                 arguments['transactions']):
                 # The proof is valid and the block can be added. The reward 
                 # transaction should be returned.
@@ -347,16 +289,16 @@ class NetworkHandler():
 
                 # Clear the pool of the transactions that are present in 
                 # the mined block.
-                for i in range(len(self.node.blockchain.current_transactions)):
+                for i in range(len(self.blockchain.current_transactions)):
                     for item in arguments['transactions']:
-                        if self.node.blockchain.current_transactions[i] == item:
-                            self.node.blockchain.current_transactions.remove(
-                                self.node.blockchain.current_transactions[i])
+                        if self.blockchain.current_transactions[i] == item:
+                            self.blockchain.current_transactions.remove(
+                                self.blockchain.current_transactions[i])
 
                 # Append the block to the chain.
-                self.node.blockchain.chain.append(new_block)
+                self.blockchain.chain.append(new_block)
 
-                MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
+                MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
 
                 logging.info("-------------------")
                 logging.info("Block Added")
@@ -397,14 +339,14 @@ class NetworkHandler():
         transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],timestamp)
 
         # Create a new transaction from received data.
-        block_index = self.node.blockchain.new_transaction(
+        block_index = self.blockchain.new_transaction(
             sender=arguments['sender'],
             recipient=arguments['recipient'],
             amount=arguments['amount'],
             timestamp=timestamp
         )
 
-        MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+        MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
 
         logging.info(TRANSACTION_ADDED(block_index))
         connection.close()
@@ -443,7 +385,7 @@ class NetworkHandler():
         # TODO need to implement a routing algorithm or verify transactions or we'll run into problems
         # I.E: Z nodes, node A creates transaction and adds to its block, forwards to all other blocks, Block Z gets transaction and forwards to Block A which is on a new blcok, Block A will add this transaction 
         # not realising that it was already added in another block
-        for node_transaction in self.node.blockchain.current_transactions:
+        for node_transaction in self.blockchain.current_transactions:
             node_transaction_hash = hashlib.sha256(node_transaction)
             if node_transaction_hash == transaction_hash:
                 logging.info("Duplicate Transaction")
@@ -451,14 +393,14 @@ class NetworkHandler():
         else:
             #TODO add locks for thread safety? (for everything)
             # The transaction was not found. Add to the pool.
-            self.node.blockchain.new_transaction(
+            self.blockchain.new_transaction(
                 sender=arguments['sender'],
                 recipient=arguments['recipient'],
                 amount=arguments['amount'],
                 timestamp=arguments['timestamp']
             )
 
-            MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+            MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
             logging.info("Transaction added")
         connection.close()
 
@@ -478,7 +420,7 @@ class NetworkHandler():
         logging.info("Received full_chain request (from dispatcher)")
 
         # Assemble the chain for the response.
-        chain = CHAIN(self.node.blockchain.get_chain(),len(self.node.blockchain.get_chain()))
+        chain = CHAIN(self.blockchain.get_chain(),len(self.blockchain.get_chain()))
         logging.info(chain)
         chain = json.dumps(chain, default=str).encode()
         data_len = len(chain)
@@ -504,7 +446,7 @@ class NetworkHandler():
         logging.info("Received get block request (from dispatcher)")
 
         # TODO Just need to respond to the connection.
-        block = self.node.blockchain.get_block(int(arguments))
+        block = self.blockchain.get_block(int(arguments))
 
         if isinstance(block,int):
             logging.error("Invalid block index")
@@ -559,7 +501,7 @@ class NetworkHandler():
 
         :param connection: <Socket Connection Object> The new connection.
         """
-        node_id = self.node.identifier
+        node_id = self.identifier
         logger = logging.getLogger()
 
         if not open_log:
