@@ -1,20 +1,11 @@
 # Standard library imports
 from urllib.parse import urlparse
 import logging
+from time import sleep
 
 # Local imports
+from mine import mine
 from multicast import MulticastHandler
-
-
-# Functions that can be called by the dispatcher thread
-THREAD_FUNCTIONS = {
-    "full_chain": full_chain,
-    "get_block": get_block,
-    "mine": mine
-    "receive_block": receive_block,
-    "receieve_transactions": receive_transactions,
-    "register_new_peers": register_new_peers,
-}
 
 
 def full_chain(*args, **kwargs):
@@ -188,7 +179,7 @@ def receive_block(block_data, *args, **kwargs):
             logging.info("Bad Proof")
 
 
-def receive_transaction(trans_data, *args, **kwargs):
+def receive_transactions(trans_data, *args, **kwargs):
     """
     new_transaction()
 
@@ -268,4 +259,22 @@ def register_nodes(new_peers, *args, **kwargs):
             else:
                 logging.error('Invalid URL')
                 logging.error(peer)
+
+
+def test(sleep_time, message_id, *args, **kwargs):
+    print("Start " + str(message_id))
+    sleep(sleep_time)
+    print("End " + str(message_id))
+
+
+# Functions that can be called by the dispatcher thread
+THREAD_FUNCTIONS = {
+    "full_chain": full_chain,
+    "get_block": get_block,
+    "mine": mine,
+    "receive_block": receive_block,
+    "receieve_transactions": receive_transactions,
+    "register_nodes": register_nodes,
+    "test": test,
+}
 

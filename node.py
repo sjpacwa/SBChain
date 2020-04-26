@@ -38,6 +38,7 @@ class Node:
         self.metadata['host'] = host
         self.metadata['port'] = port
         self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid == None else uuid
+        self.metadata['debug'] = debug
         
         initialize_log(self.metadata['uuid'], debug)
 

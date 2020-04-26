@@ -10,8 +10,8 @@ from queue import Queue
 from threading import Thread
 
 # Local imports
-# TODO implement this.
-from miner import Miner
+from macros import BUFFER_SIZE
+from mine import Miner
 from tasks import *
 
 class Worker(Thread):
@@ -20,7 +20,7 @@ class Worker(Thread):
     """
 
     def __init__(self, metadata, queues):
-        Thread.__init__()
+        Thread.__init__(self)
         self.metadata = metadata
         self.queues = queues
         self.daemon = True
@@ -29,12 +29,13 @@ class Worker(Thread):
     def run(self):
         while True:
             func, args, kwargs, conn = self.queues['tasks'].get()
+
             try:
                 func(*args, self.metadata, self.queues, conn, **kwargs)
             except Exception as e:
                 print(e)
             finally:
-                self.tasks.task_done()
+                self.queues['tasks'].task_done()
                 conn.close()
 
 
@@ -51,9 +52,13 @@ class ThreadHandler():
         for _ in range(num_threads):
             Worker(metadata, self.queues)
 
-        Miner(metadata, self.queues)
+        if not metadata['debug']:
+            Miner(metadata, self.queues)
 
     def add_task(self, task, conn):
-        # TODO Translate JSON task into proper format.
-        # self.tasks.put((func, args, kargs))
+        # TODO Add some stuff to detect errors.
+        action = THREAD_FUNCTIONS[task['action']]
+        params = task['params']
+
+        self.queues['tasks'].put((action, params, {}, conn))
 

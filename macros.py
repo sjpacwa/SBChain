@@ -7,6 +7,8 @@ related to the chain.
 
 TEST_MODE = False
 
+BUFFER_SIZE = 256
+
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {
