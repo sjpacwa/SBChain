@@ -34,15 +34,18 @@ class Node:
         :param uuid: <string> The UUID the node should use.
         """
 
-        self.identifier = str(uuid4()).replace('-', '') if uuid == None else uuid
-        initialize_log(self.identifier, debug)
+        self.metadata = {}
+        self.metadata['host'] = host
+        self.metadata['port'] = port
+        self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid == None else uuid
+        
+        initialize_log(self.metadata['uuid'], debug)
 
         # Create the Blockchain object.
-        self.blockchain = Blockchain()
+        self.metadata['blockchain'] = Blockchain()
 
         # Create the Network Handler object.
-        self.nh = NetworkHandler(host, port, self.blockchain, self.identifier, 
-                neighbors)
+        self.nh = NetworkHandler(self.metadata, neighbors)
 
         # Start the Network Handler main loop.
         self.nh.event_loop()

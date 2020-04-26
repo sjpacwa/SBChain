@@ -14,7 +14,7 @@ import hashlib
 import logging
 
 # Local Imports
-from apiEndpoints import *
+from tasks import register_nodes
 from block import Block
 from macros import *
 from multicast import MulticastHandler
@@ -24,7 +24,7 @@ class NetworkHandler():
     """
     Single Connection Handler
     """
-    def __init__(self, host, port, blockchain, identifier, neighbors, buffer_size=256):
+    def __init__(self, metadata, initial_peers, buffer_size=256):
         """
         __init__
         
@@ -40,13 +40,19 @@ class NetworkHandler():
             transmission.
         """
 
-        self.nodes = []
+        self.peers = []
+        self.metadata['peers'] = self.peers
+        
+        # TODO remove nodes in future.
+        self.nodes = self.peers
 
-        self.host = host
-        self.port = port
+        self.metadata = metadata
+
+        self.host = metadata['host']
+        self.port = metadata['port']
 
         # Automatically register neighbors.
-        register_nodes(neighbors, self.host, self.port, self.nodes)
+        register_nodes(initial_peers, self.metadata)
 
         self.sock = None
 
@@ -54,8 +60,8 @@ class NetworkHandler():
         self.T_FUNCTIONS = self.THREAD_FUNCTIONS
         self.BUFFER_SIZE = int(buffer_size)
 
-        self.blockchain = blockchain
-        self.identifier = identifier
+        self.blockchain = metadata['blockchain']
+        self.identifier = metadata['uuid']
 
         # TODO stop all threads waiting on things, need to send SIGKILL or something.
         self.active_lock = Lock()
@@ -69,29 +75,6 @@ class NetworkHandler():
         else:
             th = Thread(target=mine_loop, args=(self.blockchain, self.identifier, self.nodes,))
             th.start()
-
-    def consensus(self):
-        """
-        consensus()
-
-        Not Thread Safe
-
-        This function handles consensus when conflicts in chains appear. 
-        This function is automatically called in the mine function
-        """
-
-        # TODO See what the standard is for this in bitcoin.
-
-        replaced = resolve_conflicts(self.blockchain, self.nodes)
-
-        # Based on conflicts, generate a response of which chain is valid.
-        if replaced:
-            logging.info("REPLACED")
-            logging.info(REPLACED(self.blockchain.get_chain()))
-
-        else:
-            logging.info("Authoritative")
-            logging.info(AUTHORITATIVE(self.blockchain.get_chain()))
 
     def event_loop(self):
         """
@@ -205,342 +188,4 @@ class NetworkHandler():
         except:
             logging.error("ERROR IN DISPATCHER")
             logging.error(data)
-    
-    def register_new_peers(self,connection,arguments):
-        """
-        register_new_peers()
 
-        Public
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher. It 
-        registers a peer with the node during runtime.
-        
-        :param connection: <Socket Connection Object> The new connection.
-        :param peers: <list> A list of tuples (ip,port) of all peers
-        """
-        peers = arguments['peers']
-        logging.info("Registering peers from dispatcher")
-
-        register_nodes(peers, self.host, self.port, self.nodes)
-        connection.close()
-
-    def receive_block(self, connection,arguments):
-        """
-        receive_block()
-
-        Internal
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher (internal).
-        It receives a block from a peer and forwards it along to everyone but 
-        the original sender.
-
-        :param connection: <Socket Connection Object> The new connection.
-        :param index: <int> Index of the block
-        :param transactions: <json> JSON representation of transactions.
-        :param proof: <int> Proof of block
-        :param previous hash: <str> Hash of the previous block
-        :param timestamp: <timestamp> Timestamp of the block creation
-        """
-        logging.info("Received Block (from dispatcher) with Block Number: {}".format(arguments['index']))
-        # Create a block from the sent data.
-        new_block = Block(
-            index=arguments['index'],
-            transactions=arguments['transactions'],
-            proof=arguments['proof'],
-            previous_hash=arguments['previous_hash'],
-            timestamp=arguments['timestamp']
-        )
-        logging.info(new_block.to_string)
-        
-        # Ensure that this block has not been added before.
-        for block in self.blockchain.chain:
-            if new_block == block:
-                logging.debug("Duplicate Block")
-                connection.close()
-                return
-
-        else:
-            # The block has not been added before. The proof should be 
-            # checked.
-            last_proof = self.blockchain.last_block.proof
-            last_hash = self.blockchain.last_block.hash
-
-            # Remove the reward from the block. If it is kept in, the proof 
-            # will not be the same.
-            block_reward = None
-            for transaction in arguments['transactions']:
-                if transaction['sender'] == '0':
-                    block_reward = transaction
-                    break
-            if block_reward:
-                arguments['transactions'].remove(block_reward)
-            #logging.info("Arguments transactions")
-
-            if self.blockchain.valid_proof(last_proof, arguments['proof'], last_hash, 
-                arguments['transactions']):
-                # The proof is valid and the block can be added. The reward 
-                # transaction should be returned.
-                if block_reward:
-                    arguments['transactions'].append(block_reward)
-
-                # Clear the pool of the transactions that are present in 
-                # the mined block.
-                for i in range(len(self.blockchain.current_transactions)):
-                    for item in arguments['transactions']:
-                        if self.blockchain.current_transactions[i] == item:
-                            self.blockchain.current_transactions.remove(
-                                self.blockchain.current_transactions[i])
-
-                # Append the block to the chain.
-                self.blockchain.chain.append(new_block)
-
-                MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
-
-                logging.info("-------------------")
-                logging.info("Block Added")
-                logging.info("-------------------")
-
-            else:
-                # The proof is not valid and the block is ignored and not 
-                # propogated.
-                logging.info("Bad Proof")
-        connection.close()
-                
-
-
-    def new_transaction(self, connection, arguments):
-        """
-        new_transaction()
-
-        Public
-
-        Not Thread Safe
-
-        This function handles request from the dispatcher (public). 
-        It creates a new transaction and adds it to the pool of transactions.
-
-        TODO: refactored in new branch to use coins
-        
-        :param connection: <Socket Connection Object> The new connection.
-        :param sender: <str> Sender id for the transaction
-        :param recipient: <str> Recipient id for the transaction
-        :param amount: <int> Amount of the transaction 
-        """
-        
-        # NOTE: Currently, all transactions are considered valid. This 
-        # means that 'fake' transactions will be added as well.
-        
-        logging.info("Creating new transaction (from dispatcher)")
-        timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],timestamp)
-
-        # Create a new transaction from received data.
-        block_index = self.blockchain.new_transaction(
-            sender=arguments['sender'],
-            recipient=arguments['recipient'],
-            amount=arguments['amount'],
-            timestamp=timestamp
-        )
-
-        MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
-
-        logging.info(TRANSACTION_ADDED(block_index))
-        connection.close()
-
-
-    def receive_transactions(self,connection,arguments):
-        """
-        receive_transactions()
-
-        Internal
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher (internal). 
-        It receives a transaction from a peer and forwards it along to everyone 
-        but the original sender.
-
-        TODO: refactored in new branch to use coins
-
-
-        :param connection: <Socket Connection Object> The new connection.
-        :param sender: <str> Sender id for the transaction
-        :param recipient: <str> Recipient id for the transaction
-        :param amount: <int> Amount of the transaction 
-        """
-        logging.info("Received transaction (from dispatcher)")
-
-        # Create a new transaction.
-        transaction = TRANSACTION(arguments['sender'],arguments['recipient'],arguments['amount'],arguments['timestamp'])
-
-        logging.info(transaction)
-        # Compute the hash of the transaction for comparison.
-        transaction_hash = hashlib.sha256(json.dumps(transaction, default=str).encode())
-        
-        # Make sure that the transaction doesn't match a previous one.
-        # TODO need to implement a routing algorithm or verify transactions or we'll run into problems
-        # I.E: Z nodes, node A creates transaction and adds to its block, forwards to all other blocks, Block Z gets transaction and forwards to Block A which is on a new blcok, Block A will add this transaction 
-        # not realising that it was already added in another block
-        for node_transaction in self.blockchain.current_transactions:
-            node_transaction_hash = hashlib.sha256(node_transaction)
-            if node_transaction_hash == transaction_hash:
-                logging.info("Duplicate Transaction")
-
-        else:
-            #TODO add locks for thread safety? (for everything)
-            # The transaction was not found. Add to the pool.
-            self.blockchain.new_transaction(
-                sender=arguments['sender'],
-                recipient=arguments['recipient'],
-                amount=arguments['amount'],
-                timestamp=arguments['timestamp']
-            )
-
-            MulticastHandler(self.nodes).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
-            logging.info("Transaction added")
-        connection.close()
-
-
-    def full_chain(self,connection):
-        """
-        full_chain()
-
-        Public and Internal
-
-        This function handles a request from the dispatcher (public and internal).
-        It returns a copy of the entire chain to the client.
-        
-        :param connection: <Socket Connection Object> The new connection.
-        """
-
-        logging.info("Received full_chain request (from dispatcher)")
-
-        # Assemble the chain for the response.
-        chain = CHAIN(self.blockchain.get_chain(),len(self.blockchain.get_chain()))
-        logging.info(chain)
-        chain = json.dumps(chain, default=str).encode()
-        data_len = len(chain)
-        connection.send(str(data_len).encode())
-        test = connection.recv(16).decode()
-        logging.debug(test)        
-        connection.send(chain)
-        connection.close()
-
-    def get_block(self,connection,arguments):
-        """
-        get_block()
-
-        Public and Internal
-
-        This function handles a request from the dispatcher. 
-        It returns the block that has been requested to the client.
-
-        :param connection: <Socket Connection Object> The new connection.
-        :param index: <int> Index of the block to send
-        """
-        
-        logging.info("Received get block request (from dispatcher)")
-
-        # TODO Just need to respond to the connection.
-        block = self.blockchain.get_block(int(arguments))
-
-        if isinstance(block,int):
-            logging.error("Invalid block index")
-            connection.close()
-            return
-
-        logging.info(block.to_string)
-
-        block_to_string = block.to_string
-
-        data_len = len(block_to_string)
-        connection.send(str(data_len).encode())
-        test = connection.recv(16).decode()
-        logging.debug(test)        
-        connection.send(block_to_string.encode())
-        connection.close()
-    
-    def open_log(self,connection,arguments):
-        """
-        open_log()
-
-        Public
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher. 
-        It creates a socket connection to the logging server
-
-        :param connection: <Socket Connection Object> The new connection.
-        :param host: <str> Host IP of the logging server
-        :param port: <int> Host port of the logging server
-        """
-        host = arguments['host']
-        port = arguments['port']
-
-        logger = logging.getLogger()
-        self.sh = logging.handlers.SocketHandler(host,port) # handler to write to socket
-        logger.addHandler(self.sh)
-        self.open_log = True
-        connection.close()
-
-    def close_log(self,connection):
-        """
-        close_log()
-
-        Public
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher. 
-        It removes a socket connection to the logging server
-
-        :param connection: <Socket Connection Object> The new connection.
-        """
-        node_id = self.identifier
-        logger = logging.getLogger()
-
-        if not open_log:
-            logging.info("Log is not open over socket, please open the log")
-            return
-
-        logger.removeHandler(self.sh)
-        self.sh.close()
-        self.sh = None
-        self.open_log = False
-        connection.close()
-    
-    def mine(self,connection):
-        """
-        mine()
-
-        Public
-
-        Not Thread Safe
-
-        This function handles a request from the dispatcher. 
-        It processes a manual mine request
-
-        NOTE: Only for testing purposes, do not use in normal operation
-
-        :param connection: <Socket Connection Object> The new connection.
-        """
-        self.miner.mine()
-        connection.close()
-    
-    # Functions that can be called by the dispatcher thread
-    THREAD_FUNCTIONS = {
-        "receive_block": receive_block,
-        "new_transaction": new_transaction,
-        "receieve_transactions": receive_transactions,
-        "full_chain": full_chain,
-        "get_block": get_block,
-        "open_log": open_log,
-        "close_log": close_log,
-        "register_new_peers": register_new_peers,
-        "mine": mine
-    }

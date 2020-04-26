@@ -9,7 +9,7 @@ starting the Flask webserver for the node.
 from argparse import ArgumentParser
 
 # Local imports
-from macros import NEIGHBORS
+from macros import INITIAL_PEERS
 from node import Node
 
 
@@ -31,5 +31,5 @@ if __name__ == '__main__':
     debug = args.debug
    
     # Create the node.
-    node = Node(host, port, uuid, debug, NEIGHBORS)
+    node = Node(host, port, uuid, debug, INITIAL_PEERS)
 
