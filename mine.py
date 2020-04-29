@@ -12,7 +12,7 @@ import json
 
 # Local imports
 from macros import RECEIVE_BLOCK
-from multicast import MulticastHandler
+from connection import MultipleConnectionHandler
 
 
 class Miner(Thread):
@@ -114,7 +114,7 @@ def mine(*args, **kwargs):
 
     logging.debug("Mine peers:")
     logging.debug(metadata['peers'])
-    MulticastHandler(metadata['peers']).multicast_wout_response(RECEIVE_BLOCK(block.to_json))
+    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json))
 
     logging.debug("Response:")
     logging.debug(block.to_json)

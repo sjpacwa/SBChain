@@ -11,11 +11,13 @@ import json
 import logging
 
 # Local Imports
+from connection import ConnectionHandler
 from tasks import register_nodes
 from thread import ThreadHandler
 from macros import BUFFER_SIZE
 
-class NetworkHandler():
+
+class NetworkHandler(ConnectionHandler):
     """
     Single Connection Handler
     """
@@ -34,6 +36,7 @@ class NetworkHandler():
         :param buffer_size: <int> The size of the buffer used in data 
             transmission.
         """
+        ConnectionHandler.__init__(self)
 
         self.metadata = metadata
         self.metadata['peers'] = [] 
@@ -68,42 +71,9 @@ class NetworkHandler():
             logging.info('Created connection to %s:%s', client[0], 
                 client[1])
 
-            data = self._get_data(conn)
+            data = self._recv(conn)
 
             if data is None:
                 continue
             else:
                 self.threads.add_task(data, conn)
-
-    def _get_data(self, conn):
-        """
-        _get_data()
-
-        Not Thread Safe
-
-        This function will listen on the connection for the data.
-
-        :param connection: <Socket Connection Object> The new connection.
-        :param data_size: <int> The size of the incoming data.
-        :param num_buffers: <int> The number of buffer cycles required.
-
-        :return: <json> JSON representation of the data.
-        """
-
-        try:
-            initial_message = conn.recv(BUFFER_SIZE).decode()
-            print(initial_message)
-            size, data = initial_message.split('~')
-
-            size = int(size)
-            amount_received = len(data)
-            while amount_received < size:
-                data += conn.recv(BUFFER_SIZE).decode()
-                amount_received = len(data)
-
-            return json.loads(data[:size])
-        except OSError as E:
-            # A timeout has occured.
-            conn.close()
-            return None
-

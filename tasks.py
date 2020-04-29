@@ -4,8 +4,8 @@ import logging
 from time import sleep
 
 # Local imports
+from connection import MultipleConnectionHandler
 from mine import mine
-from multicast import MulticastHandler
 
 
 def full_chain(*args, **kwargs):
@@ -70,27 +70,6 @@ def get_block(arguments, *args, **kwargs):
     test = connection.recv(16).decode()
     logging.debug(test)        
     connection.send(block_to_string.encode())
-
-    
-def mine(*args, **kwargs):
-    """
-    mine()
-
-    Public
-
-    Not Thread Safe
-
-    This function handles a request from the dispatcher. 
-    It processes a manual mine request
-
-    NOTE: Only for testing purposes, do not use in normal operation
-
-    :param connection: <Socket Connection Object> The new connection.
-    """
-
-    pass
-    # self.miner.mine()
-    # TODO need to rethink mining here.
 
 
 def receive_block(block_data, *args, **kwargs):
@@ -167,7 +146,7 @@ def receive_block(block_data, *args, **kwargs):
             # Append the block to the chain.
             metadata['blockchain'].chain.append(new_block)
 
-            MulticastHandler(metadata['peers']).multicast_wout_response(RECEIVE_BLOCK(new_block.to_json))
+            MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(new_block.to_json))
 
             logging.info("-------------------")
             logging.info("Block Added")
@@ -215,7 +194,7 @@ def receive_transactions(trans_data, *args, **kwargs):
         timestamp=timestamp
     )
 
-    MulticastHandler(metadata['peers']).multicast_wout_response(RECEIVE_TRANSACTION(transaction))
+    MultipleConnectionHandler(metadata['peer']).send_wout_response(RECEIVE_TRANSACTION(transaction))
 
     logging.info(TRANSACTION_ADDED(block_index))
 

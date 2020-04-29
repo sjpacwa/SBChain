@@ -35,7 +35,7 @@ def initialize_log(node_id,debug):
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.ERROR)
+        logger.setLevel(logging.INFO)
     # Create handlers
     f_handler = logging.FileHandler(logs_path)
     c_handler = logging.StreamHandler()
