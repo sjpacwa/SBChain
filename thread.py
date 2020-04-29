@@ -57,6 +57,7 @@ class ThreadHandler():
 
     def add_task(self, task, conn):
         # TODO Add some stuff to detect errors.
+
         action = THREAD_FUNCTIONS[task['action']]
         params = task['params']
 

@@ -69,6 +69,7 @@ class NetworkHandler():
                 client[1])
 
             data = self._get_data(conn)
+
             if data is None:
                 continue
             else:
@@ -91,6 +92,7 @@ class NetworkHandler():
 
         try:
             initial_message = conn.recv(BUFFER_SIZE).decode()
+            print(initial_message)
             size, data = initial_message.split('~')
 
             size = int(size)
