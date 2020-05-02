@@ -240,10 +240,16 @@ def register_nodes(new_peers, *args, **kwargs):
                 logging.error(peer)
 
 
-def test(sleep_time, message_id, *args, **kwargs):
+def wait_test(sleep_time, message_id, *args, **kwargs):
     print("Start " + str(message_id))
     sleep(sleep_time)
     print("End " + str(message_id))
+
+def response_test(*args, **kwargs):
+    conn = args[2]
+
+    message = '20~{"message": "hello"}'
+    conn.send(message.encode())
 
 
 # Functions that can be called by the dispatcher thread
@@ -254,6 +260,7 @@ THREAD_FUNCTIONS = {
     "receive_block": receive_block,
     "receieve_transactions": receive_transactions,
     "register_nodes": register_nodes,
-    "test": test,
+    "wait_test": wait_test,
+    "response_test": response_test,
 }
 

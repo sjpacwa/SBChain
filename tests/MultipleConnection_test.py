@@ -16,12 +16,4 @@ Test:
 
 Teardown:
     Nothing is needed
-
-"""
-
-@pytest.fixture
-def resource():
-    yield "resource"
-
-class SingleConnectionTest():
-    
+""" 

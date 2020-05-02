@@ -64,6 +64,9 @@ class NetworkHandler(ConnectionHandler):
         """
 
         # Block while waiting for connections.
+        if self.metadata['done'] is not None:
+            self.metadata['done'].release()
+
         while True:
             logging.info('Waiting for new connections')
             self.sock.listen(5)

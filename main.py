@@ -31,5 +31,5 @@ if __name__ == '__main__':
     debug = args.debug
    
     # Create the node.
-    node = Node(host, port, uuid, debug, INITIAL_PEERS)
+    node = Node(host, port, None, uuid, debug, INITIAL_PEERS)
 

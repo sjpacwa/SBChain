@@ -19,7 +19,7 @@ class Node:
     Node
     """
 
-    def __init__(self, host, port, uuid=None, debug=False, neighbors=[]):
+    def __init__(self, host,port, initialized=None, uuid=None, debug=False, neighbors=[]):
         """
         __init__
         
@@ -35,6 +35,7 @@ class Node:
         """
 
         self.metadata = {}
+        self.metadata['done'] = initialized
         self.metadata['host'] = host
         self.metadata['port'] = port
         self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid == None else uuid

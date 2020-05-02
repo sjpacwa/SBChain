@@ -27,7 +27,7 @@ class ConnectionHandler():
         """
 
         try:
-            json_data = json.dump(data)
+            json_data = json.dumps(data)
             data_size = str(len(json_data))
 
             message = data_size + '~' + json_data
@@ -65,11 +65,13 @@ class ConnectionHandler():
             return json.loads(data[:size])
         except OSError as e:
             # A timeout has occured.
+            logging.warning('Error receiving data from network: ' + str(e))
             conn.close()
             return None
         except Exception as e:
             # All other exceptions
             logging.warning('Error receiving data from network: ' + str(e))
+            return None
 
 
 class SingleConnectionHandler(ConnectionHandler):

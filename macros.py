@@ -31,6 +31,11 @@ GET_CHAIN = {
     'name': "full-chain"
 }
 
+def GENERATE_ERROR(data):
+    message = '{"error": "' + data + '"}'
+    message = str(len(message)) + '~' + message
+    return message.encode()
+
 def RECEIVE_BLOCK(block):
     return {
         'name': 'receive_block',

@@ -10,7 +10,7 @@ from queue import Queue
 from threading import Thread
 
 # Local imports
-from macros import BUFFER_SIZE
+from macros import BUFFER_SIZE, GENERATE_ERROR
 from mine import Miner
 from tasks import *
 
@@ -33,7 +33,8 @@ class Worker(Thread):
             try:
                 func(*args, self.metadata, self.queues, conn, **kwargs)
             except Exception as e:
-                print(e)
+                logging.warning("Inside thread: " + str(e))
+                conn.send(GENERATE_ERROR("invalid data"))
             finally:
                 self.queues['tasks'].task_done()
                 conn.close()
@@ -58,8 +59,13 @@ class ThreadHandler():
     def add_task(self, task, conn):
         # TODO Add some stuff to detect errors.
 
-        action = THREAD_FUNCTIONS[task['action']]
-        params = task['params']
+        try:
+            action = THREAD_FUNCTIONS[task['action']]
+            params = task['params']
 
-        self.queues['tasks'].put((action, params, {}, conn))
-
+            self.queues['tasks'].put((action, params, {}, conn))
+        except Exception as e:
+            conn.send(GENERATE_ERROR('Bad request'))
+            logging.warning(e)
+            conn.close()
+            
