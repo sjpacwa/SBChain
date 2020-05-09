@@ -53,7 +53,7 @@ class Block:
             'previous_hash': self.previous_hash,
             'proof': self.proof,
             'timestamp': self.timestamp,
-            'transactions': self.transactions
+            'transactions': [transaction.to_json() for transaction in self.transactions]
         }
     @property
     def to_string(self):
@@ -128,7 +128,7 @@ def block_from_json(data):
 
     return Block(
         data['index'],
-        data['transactions'],
+        [transaction_from_json(transaction) for transaction in data['transactions'],
         data['proof'],
         data['previous_hash'],
         data['timestamp']
