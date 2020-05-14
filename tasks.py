@@ -273,17 +273,3 @@ def response_test(*args, **kwargs):
     message = '20~{"message": "hello"}'
     conn.send(message.encode())
 
-"""
-# Functions that can be called by the dispatcher thread
-THREAD_FUNCTIONS = {
-    "full_chain": full_chain,
-    "get_block": get_block,
-    "mine": mine,
-    "receive_block": receive_block,
-    "receieve_transactions": receive_transactions,
-    "register_nodes": register_nodes,
-    "wait_test": wait_test,
-    "response_test": response_test,
-}
-"""
-
