@@ -4,10 +4,30 @@ import logging
 from time import sleep
 
 # Local imports
+from coin import Coin
+from transaction import Transaction
 from connection import MultipleConnectionHandler
 from mine import mine
 
 
+THREAD_FUNCTIONS = dict()
+
+
+def thread_function(func):
+    """
+    register
+
+    This function registers a function with the THREAD_FUNCTIONS 
+    dictionary.
+
+    :param func: <Function Object> The function to be registered.
+    """
+
+    THREAD_FUNCTIONS[func.__name__] = func
+    return func
+
+
+@thread_function
 def full_chain(*args, **kwargs):
     """
     full_chain()
@@ -35,7 +55,8 @@ def full_chain(*args, **kwargs):
     logging.debug(test)        
     connection.send(chain)
 
-    
+
+@thread_function
 def get_block(arguments, *args, **kwargs):
     """
     get_block()
@@ -72,6 +93,7 @@ def get_block(arguments, *args, **kwargs):
     connection.send(block_to_string.encode())
 
 
+@thread_function
 def receive_block(block_data, *args, **kwargs):
     """
     receive_block()
@@ -158,6 +180,7 @@ def receive_block(block_data, *args, **kwargs):
             logging.info("Bad Proof")
 
 
+@thread_function
 def receive_transactions(trans_data, *args, **kwargs):
     """
     new_transaction()
@@ -184,21 +207,18 @@ def receive_transactions(trans_data, *args, **kwargs):
     
     logging.info("Creating new transaction (from dispatcher)")
     timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-    transaction = TRANSACTION(trans_data['sender'],trans_data['recipient'],trans_data['amount'],timestamp)
+    
+    transaction = transaction_from_json(trans_data)
 
     # Create a new transaction from received data.
-    block_index = metadata['blockchain'].new_transaction(
-        sender=trans_data['sender'],
-        recipient=trans_data['recipient'],
-        amount=trans_data['amount'],
-        timestamp=timestamp
-    )
+    block_index = metadata['blockchain'].new_transaction(transaction)
 
     MultipleConnectionHandler(metadata['peer']).send_wout_response(RECEIVE_TRANSACTION(transaction))
 
     logging.info(TRANSACTION_ADDED(block_index))
 
 
+@thread_function
 def register_nodes(new_peers, *args, **kwargs):
     """
     register_nodes()
@@ -240,18 +260,20 @@ def register_nodes(new_peers, *args, **kwargs):
                 logging.error(peer)
 
 
+@thread_function
 def wait_test(sleep_time, message_id, *args, **kwargs):
     print("Start " + str(message_id))
     sleep(sleep_time)
     print("End " + str(message_id))
 
+@thread_function
 def response_test(*args, **kwargs):
     conn = args[2]
 
     message = '20~{"message": "hello"}'
     conn.send(message.encode())
 
-
+"""
 # Functions that can be called by the dispatcher thread
 THREAD_FUNCTIONS = {
     "full_chain": full_chain,
@@ -263,4 +285,5 @@ THREAD_FUNCTIONS = {
     "wait_test": wait_test,
     "response_test": response_test,
 }
+"""
 

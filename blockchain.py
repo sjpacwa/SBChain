@@ -157,7 +157,7 @@ class Blockchain:
         logging.info(block.to_json)
         return block
 
-    def new_transaction(self, sender, recipient, amount,timestamp):
+    def new_transaction(self, transaction):
         """
         Creates a new transaction to go into the next mined Block
 
@@ -174,14 +174,9 @@ class Blockchain:
         """
 
         # TODO Lock transactions
-        self.current_transactions.append({
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-            'timestamp': timestamp
-        })
+        self.current_transactions.append(transaction)
         logging.info("New Transaction")
-        logging.info(self.current_transactions[-1])
+        logging.info(self.current_transactions[-1].to_string())
         return self.last_block.index + 1
 
     @property
@@ -239,3 +234,4 @@ class Blockchain:
         # This is where difficulty is set.
         difficulty = config.get_block_difficulty()
         return guess_hash[:difficulty] == '0' * difficulty
+

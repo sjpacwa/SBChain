@@ -14,27 +14,22 @@ class Coin:
         self._value = value
         self._uuid = str(uuid4()).replace('-', '') if uuid == None else uuid
 
-    @property
     def get_transaction_id(self):
         return self._transaction_id
 
-    @property
     def get_value(self):
         return self._value
 
-    @property
     def get_uuid(self):
         return self._uuid
 
-    @property
     def to_json(self):
         return {
             'uuid': self._uuid,
-            'transaction_id': self._transaction,
+            'transaction_id': self._transaction_id,
             'value': self._value,
         }
 
-    @property
     def to_string(self):
         return json.dumps(self.to_json(), default=str)
 

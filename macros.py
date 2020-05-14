@@ -45,26 +45,13 @@ def RECEIVE_BLOCK(block):
 def RECEIVE_TRANSACTION(transaction):
     return {
         'name': 'receive_transactions', 
-        'args': {
-                'sender': transaction['sender'],
-                'recipient': transaction['recipient'],
-                'amount': transaction['amount'],
-                'timestamp': transaction['timestamp']
-            }
+        'args': transaction.to_json(),
     }
 
 def TRANSACTION_ADDED(block_index):
     return {
         "Transaction will be added to block {}.".format(block_index)
     }
-
-def TRANSACTION(sender,recipient,amount,timestamp):
-    return {
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-            'timestamp': timestamp
-        }
 
 def CHAIN(chain,length):
     return {

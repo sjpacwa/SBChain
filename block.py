@@ -128,7 +128,7 @@ def block_from_json(data):
 
     return Block(
         data['index'],
-        [transaction_from_json(transaction) for transaction in data['transactions'],
+        [transaction_from_json(transaction) for transaction in data['transactions']],
         data['proof'],
         data['previous_hash'],
         data['timestamp']

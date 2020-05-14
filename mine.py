@@ -8,9 +8,12 @@ This file is responsible for the miner functionality
 import logging
 from datetime import datetime
 from threading import Thread
+from uuid import uuid4
 import json
 
 # Local imports
+from coin import Coin
+from transaction import Transaction
 from macros import RECEIVE_BLOCK
 from connection import MultipleConnectionHandler
 
@@ -87,7 +90,7 @@ def mine(*args, **kwargs):
     # Remove reward from last block.
     block_reward = None
     for transaction in last_block.transactions:
-        if transaction['sender'] == '0':
+        if transaction.get_sender() == '0':
             block_reward = transaction
             break
     if block_reward:
@@ -102,12 +105,10 @@ def mine(*args, **kwargs):
 
     # A reward is provided for a successful proof. This is marked as a 
     # newly minted coin by setting the sender to '0'.
-    metadata['blockchain'].new_transaction(
-        sender='0',
-        recipient=metadata['uuid'],
-        amount=1,
-        timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-    )
+    reward_id = str(uuid4()).replace('-', '')
+    reward_coin = Coin(reward_id, 1)
+    reward = Transaction('0', [], {metadata['uuid']: [reward_coin]}, reward_id)
+    metadata['blockchain'].new_transaction(reward)
 
     # Create the new block and add it to the end of the chain.
     block = metadata['blockchain'].new_block(proof, last_block.hash)
