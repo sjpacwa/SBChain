@@ -201,21 +201,70 @@ def receive_transactions(trans_data, *args, **kwargs):
     """
 
     metadata = args[0]
-    
-    # NOTE: Currently, all transactions are considered valid. This 
-    # means that 'fake' transactions will be added as well.
-    
-    logging.info("Creating new transaction (from dispatcher)")
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-    
-    transaction = transaction_from_json(trans_data)
+    queues = args[1]
 
-    # Create a new transaction from received data.
-    block_index = metadata['blockchain'].new_transaction(transaction)
+    history = metadata['History']
+    history_lock = history.get_lock()
 
-    MultipleConnectionHandler(metadata['peer']).send_wout_response(RECEIVE_TRANSACTION(transaction))
+    with history_lock:
+        for transaction in trans_data:
+            # Check the transaction history.
+            if history.get_transaction(transaction['uuid']) != None:
+                # The transaction already exists.
+                continue
 
-    logging.info(TRANSACTION_ADDED(block_index))
+            # Check input coins
+            bad_transaction = False
+            input_coins = []
+            for coin in transaction['inputs']:
+                found_coin = history.get_coin(coin['uuid'])
+                if found_coin == None:
+                    # The input coin does not exist.
+                    bad_transaction = True
+                    break
+
+                if found_coin.get_value != coin['value'] or found_coin.get_transaction_id != coin['transaction_id']:
+                    # The coin does not match what we have in history.
+                    bad_transaction = True
+                    break
+
+                input_coins.append(found_coin)
+
+            if bad_transaction:
+                continue
+
+            # Check output coins
+            output_coins = {}
+            for recipient in transaction['outputs']:
+                if bad_transaction:
+                    break
+
+                output_coins[recipient] = []
+
+                for coin in transaction['outputs'][recipient]:
+                    if history.get_coin(coin['uuid']):
+                        logging.error('Fatal Error: This transaction contains an output coin that already exists: ' + transaction)
+                        bad_transaction = True
+                        break
+                    
+                    output_coins[recipient].append(coin_from_json(coin))
+
+            if bad_transaction:
+                continue
+
+            new_transaction = transaction_from_json(transaction, input_coins, output_coins)
+            if new_transaction.verify():
+                # The transaction looks proper. Remove inputs and add outputs to history.
+                for coin in input_coins:
+                    history.remove_coin(coin.get_uuid())
+
+                for recipient in output_coins:
+                    for coin in output_coins[recipient]:
+                        history.add_coin(coin.get_uuid())
+
+                # Add transaction to queue and history.
+                queues['trans'].put(new_transaction)
+                history.add_transaction(new_transaction)
 
 
 @thread_function

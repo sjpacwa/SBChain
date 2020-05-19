@@ -10,6 +10,7 @@ from uuid import uuid4
 
 # Local imports
 from blockchain import Blockchain
+from history import History
 from logger import initialize_log
 from network import NetworkHandler
 
@@ -45,6 +46,7 @@ class Node:
 
         # Create the Blockchain object.
         self.metadata['blockchain'] = Blockchain()
+        self.metadata['history'] = History()
 
         # Create the Network Handler object.
         self.nh = NetworkHandler(self.metadata, neighbors)

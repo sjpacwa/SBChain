@@ -32,6 +32,25 @@ class Transaction:
 
         self._reward_value = self._input_value - self._output_value
 
+    def verify(self):
+        """
+        verify
+        Assumptions:
+        1. The transaction history has been checked for duplicates.
+        2. Input coins previously existed in the system.
+        3. Output coins were created from scratch.
+        4. Assume that history is already locked.
+        """
+
+        if self._input_value < self._output_value:
+            return False
+
+        for coin in self._inputs:
+
+        
+        # Check if the inputs point to transactions that point to the coins.
+
+
     def to_json(self):
         return {
             'uuid': self._uuid,
@@ -71,15 +90,15 @@ class Transaction:
     def get_timestamp(self):
         return self._timestamp
 
-def transaction_from_json(data):
+def transaction_from_json(data, inputs, outputs):
     return Transaction(
         data['sender'],
-        [coin_from_json(input) for coin in data['inputs']],
-        {recipient:[coin_from_json(coin) for coin in data['outputs'][recipient]] for recipient in data['outputs']},
+        inputs,
+        outputs,
         data['uuid'],
         data['timestamp']
     )
 
-def transaction_from_string(data):
-    return transaction_from_json(json.loads(data))
+def transaction_from_string(data, inputs, outputs):
+    return transaction_from_json(json.loads(data), inputs, outputs)
 
