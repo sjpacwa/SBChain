@@ -16,11 +16,11 @@ class History:
             self.transactions = {}
             self.history_lock = Lock()
 
-        def lookup_coin(self, uuid):
-            return self.coins[uuid]
+        def get_coin(self, uuid):
+            return self.coins.get(uuid)
 
-        def lookup_transaction(self, uuid):
-            return self.transactions[uuid]
+        def get_transaction(self, uuid):
+            return self.transactions.get(uuid)
 
         def add_coin(self, coin):
             self.coins[coin.get_uuid()] = coin
@@ -42,11 +42,11 @@ class History:
         if not History.instance:
             History.instance = History.__History()
     
-    def lookup_coin(self, uuid):
-        return History.instance.lookup_coin(uuid)
+    def get_coin(self, uuid):
+        return History.instance.get_coin(uuid)
 
-    def lookup_transaction(self, uuid):
-        return History.instance.lookup_transaction(uuid)
+    def get_transaction(self, uuid):
+        return History.instance.get_transaction(uuid)
 
     def add_coin(self, coin):
         History.instance.add_coin(coin)

@@ -33,6 +33,14 @@ class Coin:
     def to_string(self):
         return json.dumps(self.to_json(), default=str)
 
+    def __eq__(self, other):
+        if other == None:
+            return False
+
+        return (self._transaction_id == other.get_transaction_id() 
+                and self._value == other.get_value()
+                and self._uuid == other.get_uuid())
+
 def coin_from_json(data):
     return Coin(data['transaction_id'], data['value'], data['uuid'])
 

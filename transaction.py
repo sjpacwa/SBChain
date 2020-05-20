@@ -10,6 +10,8 @@ from uuid import uuid4
 
 # Local imports
 from coin import Coin
+from copy import deepcopy
+from history import History
 
 
 class Transaction:
@@ -45,11 +47,17 @@ class Transaction:
         if self._input_value < self._output_value:
             return False
 
+        history = History()
         for coin in self._inputs:
+            transaction = history.get_transaction(coin.get_transaction_id())
+            if not transaction.check_coin(self._sender, coin):
+                return False
 
-        
-        # Check if the inputs point to transactions that point to the coins.
+        for coin in self.get_all_output_coins():
+            if coin.get_transaction_id() != self._uuid:
+                return False
 
+        return True
 
     def to_json(self):
         return {
@@ -66,11 +74,18 @@ class Transaction:
     def to_string(self):
         return json.dumps(self.to_json(), default=str)
 
-    def get_coins(self, recipient):
-        return self._outputs[recipient].deep_copy()
+    def get_output_coins(self, recipient):
+        return deepcopy(self._outputs.get(recipient, []))
+
+    def get_all_output_coins(self):
+        coins = []
+        for recipient in self._outputs:
+            coins.extend(self.get_output_coins(recipient))
+
+        return coins
 
     def check_coin(self, recipient, coin):
-        return coin in self._outputs[recipient]
+        return coin in self.get_output_coins(recipient)
 
     def get_values(self):
         return (self._input_value, self._output_value, self._reward_value)
@@ -82,10 +97,10 @@ class Transaction:
         return self._sender
 
     def get_inputs(self):
-        return self._inputs.deep_copy()
+        return deepcopy(self._inputs)
 
     def get_outputs(self):
-        return self._outputs.deep_copy()    
+        return deepcopy(self._outputs)
 
     def get_timestamp(self):
         return self._timestamp

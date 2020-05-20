@@ -4,8 +4,8 @@ import logging
 from time import sleep
 
 # Local imports
-from coin import Coin
-from transaction import Transaction
+from coin import *
+from transaction import *
 from connection import MultipleConnectionHandler
 from mine import mine
 
@@ -203,7 +203,7 @@ def receive_transactions(trans_data, *args, **kwargs):
     metadata = args[0]
     queues = args[1]
 
-    history = metadata['History']
+    history = metadata['history']
     history_lock = history.get_lock()
 
     with history_lock:
@@ -219,11 +219,13 @@ def receive_transactions(trans_data, *args, **kwargs):
             for coin in transaction['inputs']:
                 found_coin = history.get_coin(coin['uuid'])
                 if found_coin == None:
+                    print("not found")
                     # The input coin does not exist.
                     bad_transaction = True
                     break
 
-                if found_coin.get_value != coin['value'] or found_coin.get_transaction_id != coin['transaction_id']:
+                if found_coin.get_value() != coin['value'] or found_coin.get_transaction_id() != coin['transaction_id']:
+                    print("doesn't compare")
                     # The coin does not match what we have in history.
                     bad_transaction = True
                     break
@@ -260,7 +262,7 @@ def receive_transactions(trans_data, *args, **kwargs):
 
                 for recipient in output_coins:
                     for coin in output_coins[recipient]:
-                        history.add_coin(coin.get_uuid())
+                        history.add_coin(coin)
 
                 # Add transaction to queue and history.
                 queues['trans'].put(new_transaction)
