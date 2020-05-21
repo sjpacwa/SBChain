@@ -211,6 +211,7 @@ def receive_transactions(trans_data, *args, **kwargs):
             # Check the transaction history.
             if history.get_transaction(transaction['uuid']) != None:
                 # The transaction already exists.
+                print("transaction exists")
                 continue
 
             # Check input coins
@@ -219,14 +220,14 @@ def receive_transactions(trans_data, *args, **kwargs):
             for coin in transaction['inputs']:
                 found_coin = history.get_coin(coin['uuid'])
                 if found_coin == None:
-                    print("not found")
                     # The input coin does not exist.
+                    print("input coin doesn't exist")
                     bad_transaction = True
                     break
 
                 if found_coin.get_value() != coin['value'] or found_coin.get_transaction_id() != coin['transaction_id']:
-                    print("doesn't compare")
                     # The coin does not match what we have in history.
+                    print("input coin doesn't match")
                     bad_transaction = True
                     break
 
@@ -245,7 +246,8 @@ def receive_transactions(trans_data, *args, **kwargs):
 
                 for coin in transaction['outputs'][recipient]:
                     if history.get_coin(coin['uuid']):
-                        logging.error('Fatal Error: This transaction contains an output coin that already exists: ' + transaction)
+                        logging.error('Fatal Error: This transaction contains an output coin that already exists: ' + str(transaction))
+                        print("Output coin already exists")
                         bad_transaction = True
                         break
                     

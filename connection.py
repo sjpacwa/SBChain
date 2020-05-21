@@ -53,7 +53,6 @@ class ConnectionHandler():
 
         try:
             initial_message = conn.recv(BUFFER_SIZE).decode()
-            print(initial_message)
             size, data = initial_message.split('~')
 
             size = int(size)

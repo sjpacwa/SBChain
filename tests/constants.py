@@ -23,4 +23,16 @@ queues = {
     'blocks': Queue(),
 }
 
+def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
+    return '''
+    {{
+        "sender": "{}",
+        "uuid": "{}",
+        "timestamp": "now",
+        "inputs": {},
+        "outputs": {}
+    }}
+    '''.format(str(sender), str(uuid), str(inputs), str(outputs))
+
+
 connection = None
