@@ -12,8 +12,8 @@ from uuid import uuid4
 import json
 
 # Local imports
-from coin import Coin
-from transaction import Transaction
+from coin import Coin, RewardCoin
+from transaction import Transaction, RewardTransaction
 from macros import RECEIVE_BLOCK
 from connection import MultipleConnectionHandler
 
@@ -43,7 +43,7 @@ class Miner(Thread):
             mine(self.metadata, self.queues)
 
 
-def proof_of_work(metadata, last_block):
+def proof_of_work(metadata, queues, reward, last_block):
     """
     proof_of_work()
 
@@ -68,9 +68,29 @@ def proof_of_work(metadata, last_block):
 
     proof = 0
     while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
+        if not queues['trans'].empty():
+            handle_transactions(metadata, queues, reward)
+            
         proof += 1
 
     return proof
+
+
+def handle_transactions(metadata, queues, reward_transaction):
+    verified_transactions = []
+    reward_coins = []
+    while not queues['trans'].empty():
+        transaction = queues['trans'].get()
+        metadata['blockchain'].new_transaction(transaction)
+        reward_coins.extend(transaction.get_all_reward_coins())
+
+        verified_transactions.append(transaction)
+
+    reward_coin = reward_transaction.get_all_output_coins()[0]
+    reward_transaction.add_new_inputs(reward_coins)
+    reward_coin.set_value(reward_transaction.get_values()[0])
+
+    queues['tasks'].put(('forward_transaction', verified_transactions, {}, None))
 
 
 def mine(*args, **kwargs):
@@ -84,31 +104,19 @@ def mine(*args, **kwargs):
     """
 
     metadata = args[0]
+    queues = args[1]
 
-    last_block = metadata['blockchain'].last_block
-    
-    # Remove reward from last block.
-    block_reward = None
-    for transaction in last_block.transactions:
-        if transaction.get_sender() == '0':
-            block_reward = transaction
-            break
-    if block_reward:
-        last_block.transactions.remove(block_reward)
-    
-    # Create the proof_of_work on the block.
-    proof = proof_of_work(metadata, last_block)
+    blockchain = metadata['blockchain']
 
-    # Add reward back to last block.
-    if block_reward:
-        last_block.transactions.append(block_reward)
+    last_block = blockchain.last_block
 
-    # A reward is provided for a successful proof. This is marked as a 
-    # newly minted coin by setting the sender to '0'.
+    # Create the reward transaction and add to working block.
     reward_id = str(uuid4()).replace('-', '')
-    reward_coin = Coin(reward_id, 1)
-    reward = Transaction('0', [], {metadata['uuid']: [reward_coin]}, reward_id)
-    metadata['blockchain'].new_transaction(reward)
+    reward_transaction = RewardTransaction([], {metadata['uuid']: [RewardCoin(reward_id, 0)]}, reward_id)
+    blockchain.update_reward(reward_transaction)
+
+    # Create the proof_of_work on the block.
+    proof = proof_of_work(metadata, queues, reward_transaction, last_block)
 
     # Create the new block and add it to the end of the chain.
     block = metadata['blockchain'].new_block(proof, last_block.hash)

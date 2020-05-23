@@ -41,6 +41,9 @@ class Node:
         self.metadata['port'] = port
         self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid == None else uuid
         self.metadata['debug'] = debug
+
+        if self.metadata['uuid'] == 'SYSTEM':
+            raise InvalidID
         
         initialize_log(self.metadata['uuid'], debug)
 
@@ -53,4 +56,8 @@ class Node:
 
         # Start the Network Handler main loop.
         self.nh.event_loop()
+
+
+class InvalidID(Exception):
+    pass
 

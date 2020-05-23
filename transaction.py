@@ -12,6 +12,7 @@ from uuid import uuid4
 from coin import Coin
 from copy import deepcopy
 from history import History
+from macros import REWARD_COIN_VALUE
 
 
 class Transaction:
@@ -28,11 +29,14 @@ class Transaction:
 
         self._outputs = outputs
         self._output_value = 0
+        self._reward_value = 0
         for recipient in self._outputs:
             for coin in self._outputs[recipient]:
-                self._output_value += coin.get_value()
+                if recipient == 'SYSTEM':
+                    self._reward_value += coin.get_value()
+                else:
+                    self._output_value += coin.get_value()
 
-        self._reward_value = self._input_value - self._output_value
 
     def verify(self):
         """
@@ -44,7 +48,7 @@ class Transaction:
         4. Assume that history is already locked.
         """
 
-        if self._input_value < self._output_value:
+        if self._input_value != (self._output_value + self._reward_value):
             return False
 
         history = History()
@@ -84,6 +88,9 @@ class Transaction:
 
         return coins
 
+    def get_all_reward_coins(self):
+        return self._outputs.get('SYSTEM')
+
     def check_coin(self, recipient, coin):
         return coin in self.get_output_coins(recipient)
 
@@ -104,6 +111,19 @@ class Transaction:
 
     def get_timestamp(self):
         return self._timestamp
+
+
+class RewardTransaction(Transaction):
+    def __init__(self, inputs, outputs, uuid=None, timestamp=None):
+        Transaction.__init__(self, 'SYSTEM', inputs, outputs, uuid, timestamp)
+
+    def add_new_inputs(self, coins):
+        for coin in coins:
+            self._inputs.extend(coin)
+            self._input_value += coin.get_value()
+        
+        self._output_value = self._input_value
+
 
 def transaction_from_json(data, inputs, outputs):
     return Transaction(

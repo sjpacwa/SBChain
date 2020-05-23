@@ -41,6 +41,15 @@ class Coin:
                 and self._value == other.get_value()
                 and self._uuid == other.get_uuid())
 
+
+class RewardCoin(Coin):
+    def __init__(self, transaction_id, value, uuid=None):
+        Coin.__init__(self, transaction_id, value, uuid)
+
+    def set_value(self, value):
+        self._value = value
+
+
 def coin_from_json(data):
     return Coin(data['transaction_id'], data['value'], data['uuid'])
 

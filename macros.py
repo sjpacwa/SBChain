@@ -9,6 +9,8 @@ TEST_MODE = False
 
 BUFFER_SIZE = 256
 
+REWARD_COIN_VALUE = 5
+
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {

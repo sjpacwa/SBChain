@@ -1,10 +1,12 @@
 # Standard library imports
 from urllib.parse import urlparse
 import logging
+import json
 from time import sleep
 
 # Local imports
 from coin import *
+from encoder import ComplexEncoder
 from transaction import *
 from connection import MultipleConnectionHandler
 from mine import mine
@@ -311,6 +313,20 @@ def register_nodes(new_peers, *args, **kwargs):
             else:
                 logging.error('Invalid URL')
                 logging.error(peer)
+
+
+@thread_function
+def forward_transaction(transaction_list, *args, **kwargs):
+    metadata = args[0]
+
+    connection = MultipleConnectionHandler(metadata['peers'])
+
+    message = {
+            "action": "receive_transaction",
+            "params": transaction_list,
+        }
+
+    connection.send_wout_response(json.dumps(message, cls=ComplexEncoder))
 
 
 @thread_function

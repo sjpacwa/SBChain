@@ -24,8 +24,8 @@ def test_single_valid_transaction(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid",
-            '[' + Coin("0", 1, "0").to_string() + ']',
-            '{"1": [' + Coin("fakeid", 1, "11").to_string() + ']}'
+            [Coin("0", 1, "0")],
+            {"1": [Coin("fakeid", 1, "11")]}
     )
 
     print(transaction_data)
@@ -43,8 +43,8 @@ def test_single_invalid_transaction_bad_input_id(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid2",
-            '[' + Coin("0", 1, "-1").to_string() + ']',
-            '{"1": [' + Coin("fakeid2", 1, "11").to_string() + ']}'
+            [Coin("0", 1, "-1")],
+            {"1": [Coin("fakeid2", 1, "11")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -59,8 +59,8 @@ def test_single_invalid_transaction_bad_input_value(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid11",
-            '[' + Coin("0", 2, "2").to_string() + ']',
-            '{"1": [' + Coin("fakeid11", 1, "11").to_string() + ']}'
+            [Coin("0", 2, "2")],
+            {"1": [Coin("fakeid11", 1, "11")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -75,8 +75,8 @@ def test_single_invalid_transaction_bad_input_transaction_id(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid12",
-            '[' + Coin("3", 1, "2").to_string() + ']',
-            '{"1": [' + Coin("fakeid12", 1, "11").to_string() + ']}'
+            [Coin("3", 1, "2")],
+            {"1": [Coin("fakeid12", 1, "11")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -91,8 +91,8 @@ def test_single_invalid_transaction_nonmatching_input_coin(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid3",
-            '[' + Coin("0", 3, "2").to_string() + ']',
-            '{"1": [' + Coin("fakeid3", 1, "12").to_string() + ']}'
+            [Coin("0", 3, "2")],
+            {"1": [Coin("fakeid3", 1, "12")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -107,8 +107,8 @@ def test_single_invalid_transaction_output_higher_than_input(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid4",
-            '[' + Coin("0", 1, "3").to_string() + ']',
-            '{"1": [' + Coin("fakeid4", 2, "12").to_string() + ']}'
+            [Coin("0", 1, "3")],
+            {"1": [Coin("fakeid4", 2, "12")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -125,8 +125,8 @@ def test_single_invalid_transaction_reused_input_coin(initial_history):
     valid_transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid5",
-            '[' + Coin("0", 1, "1").to_string() + ']',
-            '{"1": [' + Coin("fakeid5", 1, "12").to_string() + ']}'
+            [Coin("0", 1, "1")],
+            {"1": [Coin("fakeid5", 1, "12")]}
     )
 
     valid_transaction_data = loads(valid_transaction_data)
@@ -136,8 +136,8 @@ def test_single_invalid_transaction_reused_input_coin(initial_history):
     invalid_transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid6",
-            '[' + Coin("0", 1, "1").to_string() + ']',
-            '{"1": [' + Coin("fakeid6", 1, "13").to_string() + ']}'
+            [Coin("0", 1, "1")],
+            {"1": [Coin("fakeid6", 1, "13")]}
     )
 
     invalid_transaction_data = loads(invalid_transaction_data)
@@ -154,8 +154,8 @@ def test_single_invalid_transaction_reused_output_coin(initial_history):
     valid_transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid7",
-            '[' + Coin("0", 1, "2").to_string() + ']',
-            '{"1": [' + Coin("fakeid7", 1, "13").to_string() + ']}'
+            [Coin("0", 1, "2")],
+            {"1": [Coin("fakeid7", 1, "13")]}
     )
 
     valid_transaction_data = loads(valid_transaction_data)
@@ -165,8 +165,8 @@ def test_single_invalid_transaction_reused_output_coin(initial_history):
     invalid_transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid8",
-            '[' + Coin("0", 1, "3").to_string() + ']',
-            '{"1": [' + Coin("fakeid8", 1, "13").to_string() + ']}'
+            [Coin("0", 1, "3")],
+            {"1": [Coin("fakeid8", 1, "13")]}
     )
 
     invalid_transaction_data = loads(invalid_transaction_data)
@@ -181,8 +181,8 @@ def test_single_invalid_transaction_output_higher_than_input(initial_history):
     transaction_data = BLANK_TRANSACTION(
             metadata['uuid'],
             "fakeid9",
-            '[' + Coin("0", 1, "3").to_string() + ']',
-            '{"1": [' + Coin("fakeid10", 2, "12").to_string() + ']}'
+            [Coin("0", 1, "3")],
+            {"1": [Coin("fakeid10", 2, "12")]}
     )
 
     transaction_data = loads(transaction_data)
@@ -198,8 +198,8 @@ def test_multiple_valid_transactions(initial_history):
     for i in range(3):
         transactions.append(BLANK_TRANSACTION(metadata['uuid'],
             "validid" + str(i),
-            '[' + Coin("0", 1, str(i + 4)).to_string() + ']',
-            '{"1": [' + Coin("validid" + str(i), 1, str(i + 20)).to_string() + ']}'))
+            [Coin("0", 1, str(i + 4))],
+            {"1": [Coin("validid" + str(i), 1, str(i + 20))]}))
 
     all_transactions = '[' + ', '.join(transactions) + ']'
     all_transactions = loads(all_transactions)
@@ -218,8 +218,8 @@ def test_multiple_invalid_transactions(initial_history):
     for i in range(2):
         transactions.append(BLANK_TRANSACTION(metadata['uuid'],
             "invalidid" + str(i),
-            '[' + Coin("0", 1, str(i + 7)).to_string() + ']',
-            '{"1": [' + Coin("invalidid" + str(i), 1, str(i + 30)).to_string() + ']}'))
+            [Coin("0", 1, str(i + 7))],
+            {"1": [Coin("invalidid" + str(i), 1, str(i + 30))]}))
 
     transactions.append(transactions[1])
 
