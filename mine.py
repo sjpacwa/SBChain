@@ -4,149 +4,130 @@ mine.py
 This file is responsible for the miner functionality
 """
 
-# Standard Library Imports
+# Standard library imports
 import logging
 from datetime import datetime
 from threading import Thread
+from uuid import uuid4
 import json
 
+# Local imports
+from coin import Coin, RewardCoin
+from transaction import Transaction, RewardTransaction
+from macros import RECEIVE_BLOCK
+from connection import MultipleConnectionHandler
 
-#local imports
-from macros import NEIGHBORS, RECEIVE_BLOCK
-from multicast import MulticastHandler
 
-class Miner():
+class Miner(Thread):
     """
     Miner
     """
-    node = None
-    blockchain = None
 
-    new_block = {}
-
-    def __init__(self, node, new_block):
+    def __init__(self, metadata, queues):
         """
         __init__
     
         The constructor for a Miner object.
 
         :param node: <node Object> Node to do mining on
-        :param new_block: <tuple> Saves next block
         """
-        self.node = node
-        self.blockchain = self.node.blockchain
 
-        self.new_block = new_block
+        Thread.__init__(self)
+        self.metadata = metadata
+        self.queues = queues
+        self.daemon = True
+        self.start()
 
-    def mine(self):
-        """
-        mine()
-
-        Not Thread Safe
-
-        Mine a new Block
-
-        """
-        last_block = self.blockchain.last_block
-        
-        # Remove reward from last block.
-        block_reward = None
-        for transaction in last_block.transactions:
-            if transaction['sender'] == '0':
-                block_reward = transaction
-                break
-        if block_reward:
-            last_block.transactions.remove(block_reward)
-        
-        # Create the proof_of_work on the block.
-        proof = self.proof_of_work(last_block)
-
-        # Add reward back to last block.
-        if block_reward:
-            last_block.transactions.append(block_reward)
-
-        # A reward is provided for a successful proof. This is marked as a 
-        # newly minted coin by setting the sender to '0'.
-        self.blockchain.new_transaction(
-            sender='0',
-            recipient=self.node.identifier,
-            amount=1,
-            timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        )
-
-        # Create the new block and add it to the end of the chain.
-        block = self.blockchain.new_block(proof, last_block.hash)
-
-        logging.debug("Mine peers:")
-        logging.debug(self.node.nodes)
-        MulticastHandler(self.node.nodes).multicast_wout_response(RECEIVE_BLOCK(block.to_json))
-
-        logging.debug("Response:")
-        logging.debug(block.to_json)
-
-        logging.debug("My Chain")
-        logging.debug(self.blockchain.get_chain())
-
-    def proof_of_work(self, last_block):
-        """
-        proof_of_work()
-
-        Not Thread Safe
-
-        Proof of work algorithm
-
-        TODO: consider including reward with the proof -> percentage of the transaction amount or other schema
-
-        :return: <int> proof
-        """
-        last_proof = last_block.proof
-        last_hash = last_block.hash
-        current_trans = self.blockchain.current_transactions
-
-        logging.debug("Last Block Hash in mine function")
-        logging.debug(last_block.hash)
-        logging.debug("Last Block")
-        logging.debug(last_block.to_json)
-
-        proof = 0
-        while not self.blockchain.valid_proof(last_proof, proof, last_hash, current_trans):
-            proof += 1
-
-            # Check if a new block was received from network.
-            self.new_block[0].acquire()
-            if self.new_block[1]:
-                # A block has been received and not handled.
-                # TODO Check index, proof, etc. and handle.
-                # TODO This is where new blocks should be added if they are valid.
-                # TODO If a block is valid to be added, do that and restart mining.
-                
-                # Mark that this block has been handled.
-                self.new_block[1] = False
-
-            self.new_block[0].release()
-
-        return proof
-
-    def check_new_block(self):
-        """
-        check_new_block()
-
-        Not Thread Safe
-
-        TODO: check block logic
-        """
-        pass
+    def run(self):
+        while True:
+            mine(self.metadata, self.queues)
 
 
-def mine_loop(network_handler, received_block):
+def proof_of_work(metadata, queues, reward, last_block):
     """
-    mine_loop()
+    proof_of_work()
 
-    While the network handler is active, mine a block
+    Not Thread Safe
+
+    Proof of work algorithm
+
+    TODO: consider including reward with the proof -> percentage of the transaction amount or other schema
+
+    :return: <int> proof
+    """
+
+    current_trans = metadata['blockchain'].current_transactions
+
+    last_proof = last_block.proof
+    last_hash = last_block.hash
+
+    logging.debug("Last Block Hash in mine function")
+    logging.debug(last_block.hash)
+    logging.debug("Last Block")
+    logging.debug(last_block.to_json)
+
+    proof = 0
+    while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
+        if not queues['trans'].empty():
+            handle_transactions(metadata, queues, reward)
+            
+        proof += 1
+
+    return proof
+
+
+def handle_transactions(metadata, queues, reward_transaction):
+    verified_transactions = []
+    reward_coins = []
+    while not queues['trans'].empty():
+        transaction = queues['trans'].get()
+        metadata['blockchain'].new_transaction(transaction)
+        reward_coins.extend(transaction.get_all_reward_coins())
+
+        verified_transactions.append(transaction)
+
+    reward_coin = reward_transaction.get_all_output_coins()[0]
+    reward_transaction.add_new_inputs(reward_coins)
+    reward_coin.set_value(reward_transaction.get_values()[0])
+
+    queues['tasks'].put(('forward_transaction', verified_transactions, {}, None))
+
+
+def mine(*args, **kwargs):
+    """
+    mine()
+
+    Not Thread Safe
+
+    Mine a new Block
 
     """
-    miner = Miner(network_handler.node, received_block)
 
-    while network_handler.isActive():
-        miner.mine()
+    metadata = args[0]
+    queues = args[1]
+
+    blockchain = metadata['blockchain']
+
+    last_block = blockchain.last_block
+
+    # Create the reward transaction and add to working block.
+    reward_id = str(uuid4()).replace('-', '')
+    reward_transaction = RewardTransaction([], {metadata['uuid']: [RewardCoin(reward_id, 0)]}, reward_id)
+    blockchain.update_reward(reward_transaction)
+
+    # Create the proof_of_work on the block.
+    proof = proof_of_work(metadata, queues, reward_transaction, last_block)
+
+    # Create the new block and add it to the end of the chain.
+    block = metadata['blockchain'].new_block(proof, last_block.hash)
+
+    logging.debug("Mine peers:")
+    logging.debug(metadata['peers'])
+    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json))
+
+    logging.debug("Response:")
+    logging.debug(block.to_json)
+
+    logging.debug("My Chain")
+    logging.debug(metadata['blockchain'].get_chain())
 

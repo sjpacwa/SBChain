@@ -33,7 +33,7 @@ class Blockchain:
         self.chain = []
 
         # Create the genesis block
-        self.new_block(previous_hash='1', proof=100)
+        self.new_block(previous_hash='1', proof=100, date=datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     def get_chain(self):
         """
@@ -133,7 +133,7 @@ class Blockchain:
         logging.debug("--------------------")
         return True
 
-    def new_block(self, proof, previous_hash):
+    def new_block(self, proof, previous_hash, date=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')):
         """
         Create a new Block in the Blockchain
 
@@ -147,7 +147,8 @@ class Blockchain:
         :return: <Block Object> New Block
         """
         logging.info("New Block")
-        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
+        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,date)
+
 
         #TODO LOCK transactions and Block - if someone else has the lock then ?
         # Reset the current list of transactions
@@ -157,7 +158,7 @@ class Blockchain:
         logging.info(block.to_json)
         return block
 
-    def new_transaction(self, sender, recipient, amount,timestamp):
+    def new_transaction(self, transaction):
         """
         Creates a new transaction to go into the next mined Block
 
@@ -174,15 +175,16 @@ class Blockchain:
         """
 
         # TODO Lock transactions
-        self.current_transactions.append({
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-            'timestamp': timestamp
-        })
+        self.current_transactions.append(transaction)
         logging.info("New Transaction")
-        logging.info(self.current_transactions[-1])
+        logging.info(self.current_transactions[-1].to_string())
         return self.last_block.index + 1
+
+    def update_reward(self, reward_transaction):
+        if len(self.current_transactions) == 0:
+            self.current_transactions.append(reward_transaction)
+        else:
+            self.current_transactions[0] = reward_transaction
 
     @property
     def last_block(self):
@@ -239,3 +241,4 @@ class Blockchain:
         # This is where difficulty is set.
         difficulty = config.get_block_difficulty()
         return guess_hash[:difficulty] == '0' * difficulty
+

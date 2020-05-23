@@ -5,6 +5,12 @@ This file defines the Blockchain class which is used to manage information
 related to the chain.
 """
 
+TEST_MODE = False
+
+BUFFER_SIZE = 256
+
+REWARD_COIN_VALUE = 5
+
 NO_INDEX_FOUND = {
     'name': 'broadcast',
     'args': {
@@ -18,7 +24,7 @@ INVALID_INDEX = {
     }
 }
 
-NEIGHBORS = (
+INITIAL_PEERS = (
     ('localhost',5000),
     ('localhost',5001)
 )
@@ -26,6 +32,11 @@ NEIGHBORS = (
 GET_CHAIN = {
     'name': "full-chain"
 }
+
+def GENERATE_ERROR(data):
+    message = '{"error": "' + data + '"}'
+    message = str(len(message)) + '~' + message
+    return message.encode()
 
 def RECEIVE_BLOCK(block):
     return {
@@ -36,26 +47,13 @@ def RECEIVE_BLOCK(block):
 def RECEIVE_TRANSACTION(transaction):
     return {
         'name': 'receive_transactions', 
-        'args': {
-                'sender': transaction['sender'],
-                'recipient': transaction['recipient'],
-                'amount': transaction['amount'],
-                'timestamp': transaction['timestamp']
-            }
+        'args': transaction.to_json(),
     }
 
 def TRANSACTION_ADDED(block_index):
     return {
         "Transaction will be added to block {}.".format(block_index)
     }
-
-def TRANSACTION(sender,recipient,amount,timestamp):
-    return {
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-            'timestamp': timestamp
-        }
 
 def CHAIN(chain,length):
     return {
