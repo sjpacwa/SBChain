@@ -112,14 +112,14 @@ def handle_transactions(metadata, queues, reward_transaction):
 
 def handle_blocks(metadata, queues):
     history = History()
-    history_temp = history.get_copy()
 
     changed = False
     while not queues['blocks'].empty():
+        history_temp = history.get_copy()
+
         host_port, block = queues['blocks'].get()
         current_index = metadata['blockchain'].last_block_index        
         if block.index == current_index:
-            changed = True
             bad_block = False
             for transaction in block.transactions:
                 hist_trans = history.get_transaction(transaction.get_uuid())
@@ -150,15 +150,29 @@ def handle_blocks(metadata, queues):
             if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash(), block.transactions):
                 continue
 
-            # TODO add block to the chain.
+            for transaction in block.transactions[1:]:
+                try:
+                    metadata['blockchain'].current_transactions.remove(transaction)
+                except ValueError:
+                    pass
+
+            metadata['blockchain'].add_block(block)
+            history.replace_history(history_temp)
+            changed = True
 
         elif block.index > current_index:
-            changed = True
-            # TODO run resolve conflicts
+            if resolve_conflicts(block, history_temp, host_port, metadata):
+                changed = True
 
     if changed:
         queues['tasks'].put(('forward_block', metadata['blockchain'].last_block, {}, None))
+        raise BlockException
 
+
+def resolve_conflicts(block, history, host_port, metadata):
+    print("resolve conflicts")
+    print("Implement me!")
+    return false
 
 
 def mine(*args, **kwargs):

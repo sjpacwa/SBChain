@@ -37,9 +37,21 @@ class Coin:
         if other == None:
             return False
 
+        if not other.is_instance(Coin):
+            return False
+
         return (self._transaction_id == other.get_transaction_id() 
                 and self._value == other.get_value()
                 and self._uuid == other.get_uuid())
+
+    def __lt__(self, other):
+        if other == None:
+            raise TypeError
+
+        if not other.is_instance(Coin):
+            raise TypeError
+
+        return self._value < other.get_value()
 
 
 class RewardCoin(Coin):

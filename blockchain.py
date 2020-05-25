@@ -158,6 +158,9 @@ class Blockchain:
         logging.info(block.to_json)
         return block
 
+    def add_block(self, block):
+        self.chain.append(block)
+
     def new_transaction(self, transaction):
         """
         Creates a new transaction to go into the next mined Block

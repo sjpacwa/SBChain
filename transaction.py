@@ -114,6 +114,15 @@ class Transaction:
     def get_timestamp(self):
         return self._timestamp
 
+    def __eq__(self, other):
+        if other == None:
+            return False
+
+        if not other.is_instance(Transaction):
+            return False
+
+        return other.to_string == self.to_string
+
 
 class RewardTransaction(Transaction):
     def __init__(self, inputs, outputs, uuid=None, timestamp=None):
