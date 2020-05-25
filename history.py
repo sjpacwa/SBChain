@@ -11,10 +11,11 @@ from threading import Lock
 
 class History:
     class __History:
+        history_lock = Lock()
+
         def __init__(self):
             self.coins = {}
             self.transactions = {}
-            self.history_lock = Lock()
 
         def get_coin(self, uuid):
             return self.coins.get(uuid)
@@ -63,6 +64,9 @@ class History:
     def get_lock(self):
         return History.instance.get_lock()
 
+    def get_copy(self):
+        return deepcopy(History.instance)
 
+    def replace_history(self, history):
+        History.instance = history
 
-    

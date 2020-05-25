@@ -117,69 +117,23 @@ def receive_block(block_data, *args, **kwargs):
     """
 
     metadata = args[0]
-
-    logging.info("Received Block (from dispatcher) with Block Number: {}".format(arguments['index']))
-    # Create a block from the sent data.
-    new_block = Block(
-        index=block_data['index'],
-        transactions=block_data['transactions'],
-        proof=block_data['proof'],
-        previous_hash=block_data['previous_hash'],
-        timestamp=block_data['timestamp']
-    )
-    logging.info(new_block.to_string)
+    queues = args[1]
+    conn = args[2]
     
-    # Ensure that this block has not been added before.
-    for block in metadata['blockchain'].chain:
-        if new_block == block:
-            logging.debug("Duplicate Block")
-            return
+    host, port = conn.getpeername()
 
-    else:
-        # The block has not been added before. The proof should be 
-        # checked.
-        last_proof = metadata['blockchain'].last_block.proof
-        last_hash = metadata['blockchain'].last_block.hash
+    current_index = metadata['blockchain'].last_block_index
 
-        # Remove the reward from the block. If it is kept in, the proof 
-        # will not be the same.
-        block_reward = None
-        for transaction in block_data['transactions']:
-            if transaction['sender'] == '0':
-                block_reward = transaction
-                break
-        if block_reward:
-            block_data['transactions'].remove(block_reward)
-        #logging.info("Arguments transactions")
+    if block_data['index'] >= current_index:
+        block = Block(
+            index=block_data['index'],
+            transactions=block_data['transactions'],
+            proof=block_data['proof'],
+            previous_hash=block_data['previous_hash'],
+            timestamp=block_data['timestamp']
+        )
 
-        if metadata['blockchain'].valid_proof(last_proof, block_data['proof'], last_hash, 
-            block_data['transactions']):
-            # The proof is valid and the block can be added. The reward 
-            # transaction should be returned.
-            if block_reward:
-                block_data['transactions'].append(block_reward)
-
-            # Clear the pool of the transactions that are present in 
-            # the mined block.
-            for i in range(len(metadata['blockchain'].current_transactions)):
-                for item in block_data['transactions']:
-                    if metadata['blockchain'].current_transactions[i] == item:
-                        metadata['blockchain'].current_transactions.remove(
-                            metadata['blockchain'].current_transactions[i])
-
-            # Append the block to the chain.
-            metadata['blockchain'].chain.append(new_block)
-
-            MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(new_block.to_json))
-
-            logging.info("-------------------")
-            logging.info("Block Added")
-            logging.info("-------------------")
-
-        else:
-            # The proof is not valid and the block is ignored and not 
-            # propogated.
-            logging.info("Bad Proof")
+        queues['block'].put(((host, port), block))
 
 
 @thread_function
@@ -210,67 +164,9 @@ def receive_transactions(trans_data, *args, **kwargs):
 
     with history_lock:
         for transaction in trans_data:
-            # Check the transaction history.
-            if history.get_transaction(transaction['uuid']) != None:
-                # The transaction already exists.
-                print("transaction exists")
-                continue
-
-            # Check input coins
-            bad_transaction = False
-            input_coins = []
-            for coin in transaction['inputs']:
-                found_coin = history.get_coin(coin['uuid'])
-                if found_coin == None:
-                    # The input coin does not exist.
-                    print("input coin doesn't exist")
-                    bad_transaction = True
-                    break
-
-                if found_coin.get_value() != coin['value'] or found_coin.get_transaction_id() != coin['transaction_id']:
-                    # The coin does not match what we have in history.
-                    print("input coin doesn't match")
-                    bad_transaction = True
-                    break
-
-                input_coins.append(found_coin)
-
-            if bad_transaction:
-                continue
-
-            # Check output coins
-            output_coins = {}
-            for recipient in transaction['outputs']:
-                if bad_transaction:
-                    break
-
-                output_coins[recipient] = []
-
-                for coin in transaction['outputs'][recipient]:
-                    if history.get_coin(coin['uuid']):
-                        logging.error('Fatal Error: This transaction contains an output coin that already exists: ' + str(transaction))
-                        print("Output coin already exists")
-                        bad_transaction = True
-                        break
-                    
-                    output_coins[recipient].append(coin_from_json(coin))
-
-            if bad_transaction:
-                continue
-
-            new_transaction = transaction_from_json(transaction, input_coins, output_coins)
-            if new_transaction.verify():
-                # The transaction looks proper. Remove inputs and add outputs to history.
-                for coin in input_coins:
-                    history.remove_coin(coin.get_uuid())
-
-                for recipient in output_coins:
-                    for coin in output_coins[recipient]:
-                        history.add_coin(coin)
-
-                # Add transaction to queue and history.
+            check, new_transaction = transaction_verify(history, transaction)
+            if check:
                 queues['trans'].put(new_transaction)
-                history.add_transaction(new_transaction)
 
 
 @thread_function

@@ -202,6 +202,10 @@ class Blockchain:
         # TODO lock chain? 
         return self.chain[-1]
 
+    @property
+    def last_block_index(self):
+        return self.chain[-1].index
+
     def get_block(self, index):
         """
         get_block()
