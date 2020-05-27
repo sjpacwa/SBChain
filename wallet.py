@@ -12,7 +12,7 @@ class Wallet:
     class __Wallet:
         wallet_lock = Lock()
 
-        def __init__():
+        def __init__(self):
             self.personal_coins = []
             self.uuid_lookup = {}
             self.balance = 0
