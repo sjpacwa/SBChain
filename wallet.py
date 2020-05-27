@@ -25,7 +25,7 @@ class Wallet:
 
         def remove_coin(self, uuid):
             try:
-                self.personal_coins.remove(self.uuid_lookup[uuid])
+                coin = self.personal_coins.remove(self.uuid_lookup[uuid])
                 del self.uuid_lookup[uuid]
                 self.balance -= coin.get_value()
             except ValueError:
