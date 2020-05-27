@@ -147,7 +147,7 @@ class MultipleConnectionHandler(ConnectionHandler):
             self._send(conn, data)
             received_data = self._recv(conn)
             conn.close()
-            peer_responses.append(data)
+            peer_responses.append(received_data)
 
         return peer_responses
 
