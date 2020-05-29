@@ -118,10 +118,10 @@ class Transaction:
         if other == None:
             return False
 
-        if not other.is_instance(Transaction):
+        if not isinstance(other, Transaction):
             return False
 
-        return other.to_string == self.to_string
+        return other.to_string() == self.to_string()
 
 
 class RewardTransaction(Transaction):

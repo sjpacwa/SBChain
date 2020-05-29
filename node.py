@@ -49,7 +49,7 @@ class Node:
 
         # Create the Blockchain object.
         self.metadata['blockchain'] = Blockchain()
-        self.metadata['history'] = History()
+        self.metadata['history'] = History(self.metadata['uuid'])
 
         # Create the Network Handler object.
         self.nh = NetworkHandler(self.metadata, neighbors)

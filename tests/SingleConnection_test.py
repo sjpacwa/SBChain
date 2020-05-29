@@ -22,6 +22,9 @@ Teardown:
 
 """
 
+class ThreadFailed(Exception):
+    pass
+
 @pytest.fixture(scope="module")
 def node_a():
     from node import Node
@@ -32,7 +35,9 @@ def node_a():
     thread = Thread(target=Node, args=('localhost', 5000, initialized), daemon=True)
     thread.start()
 
-    initialized.acquire()
+    while not initialized.acquire(blocking=False):
+        if not thread.is_alive():
+            raise ThreadFailed
 
     return None
 

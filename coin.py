@@ -37,7 +37,7 @@ class Coin:
         if other == None:
             return False
 
-        if not other.is_instance(Coin):
+        if not isinstance(other, Coin):
             return False
 
         return (self._transaction_id == other.get_transaction_id() 
@@ -48,7 +48,7 @@ class Coin:
         if other == None:
             raise TypeError
 
-        if not other.is_instance(Coin):
+        if not isinstance(other, Coin):
             raise TypeError
 
         return self._value < other.get_value()

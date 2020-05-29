@@ -5,6 +5,7 @@ import json
 from time import sleep
 
 # Local imports
+from block import Block
 from coin import *
 from encoder import ComplexEncoder
 from transaction import *
@@ -84,9 +85,9 @@ def get_block(arguments, *args, **kwargs):
         logging.error("Invalid block index")
         return
 
-    logging.info(block.to_string)
+    logging.info(block.to_string())
 
-    block_to_string = block.to_string
+    block_to_string = block.to_string()
 
     data_len = len(block_to_string)
     connection.send(str(data_len).encode())
@@ -124,6 +125,8 @@ def receive_block(block_data, *args, **kwargs):
 
     current_index = metadata['blockchain'].last_block_index
 
+    print(block_data)
+
     if block_data['index'] >= current_index:
         block = Block(
             index=block_data['index'],
@@ -133,7 +136,7 @@ def receive_block(block_data, *args, **kwargs):
             timestamp=block_data['timestamp']
         )
 
-        queues['block'].put(((host, port), block))
+        queues['blocks'].put(((host, port), block))
 
 
 @thread_function
@@ -168,6 +171,36 @@ def receive_transactions(trans_data, *args, **kwargs):
             if check:
                 queues['trans'].put(new_transaction)
 
+
+@thread_function
+def new_transaction(trans_data, *args, **kwargs):
+    """
+    {
+        'inputs': ##
+        'outputs' : {recipient: ##, recipient2: ##}
+    }
+    """
+
+    history = History()
+    wallet = history.get_wallet()
+    wallet_lock = wallet.get_lock()
+
+    input_value = trans_data['input']
+
+    output_value = 0
+    for recipient in trans_data['output']:
+        output_value += trans_data['output'][recipient]
+
+    reward = input_value - output_value
+
+    with wallet_lock:
+        coins, value = wallet.get_coins(trans_data['inputs'])
+
+        # Create three coins:
+        # Iterate through output recipients and create coins.
+        # Create the reward coin.
+        # Create the change coin.
+            # Value - Input
 
 @thread_function
 def register_nodes(new_peers, *args, **kwargs):

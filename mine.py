@@ -74,7 +74,7 @@ def proof_of_work(metadata, queues, reward, last_block):
     logging.debug("Last Block Hash in mine function")
     logging.debug(last_block.hash)
     logging.debug("Last Block")
-    logging.debug(last_block.to_json)
+    logging.debug(last_block.to_json())
 
     proof = 0
     while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
@@ -205,10 +205,10 @@ def mine(*args, **kwargs):
 
     logging.debug("Mine peers:")
     logging.debug(metadata['peers'])
-    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json))
+    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json()))
 
     logging.debug("Response:")
-    logging.debug(block.to_json)
+    logging.debug(block.to_json())
 
     logging.debug("My Chain")
     logging.debug(metadata['blockchain'].get_chain())

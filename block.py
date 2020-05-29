@@ -35,7 +35,7 @@ class Block:
         self.proof = proof
         self.previous_hash = previous_hash
         self.timestamp = datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ') if timestamp == -1 else timestamp
-    @property
+    
     def to_json(self):
         """
         to_json
@@ -55,7 +55,7 @@ class Block:
             'timestamp': self.timestamp,
             'transactions': [transaction.to_json() for transaction in self.transactions]
         }
-    @property
+    
     def to_string(self):
         """
         to_string
@@ -69,7 +69,7 @@ class Block:
         """
 
         return json.dumps(
-            self.to_json,
+            self.to_json(),
             default=str
         )
     @property
@@ -82,7 +82,7 @@ class Block:
         Creates a SHA-256 hash of a Block from its string form.
         """
         
-        return hashlib.sha256(self.to_string.encode()).hexdigest()
+        return hashlib.sha256(self.to_string().encode()).hexdigest()
 
     def __eq__(self, other):
         """

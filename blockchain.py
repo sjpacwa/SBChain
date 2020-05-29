@@ -51,7 +51,7 @@ class Blockchain:
         json_chain = []
 
         for block in self.chain:
-            json_chain.append(block.to_json)
+            json_chain.append(block.to_json())
             
         return json_chain
 
@@ -104,13 +104,13 @@ class Blockchain:
                 logging.error("Bad Chain, Recieved hash: {} Expected hash: {}".format(cur_block['previous_hash'],prev_block_hash))
                 logging.error("-------------------------------------------")
                 logging.debug("Previous Block")
-                logging.debug(block_from_json(prev_block).to_json)
+                logging.debug(block_from_json(prev_block).to_json())
                 logging.debug("Prev Block #")
                 logging.debug(prev_block['index'])
                 logging.debug("Prev Block Proof")
                 logging.debug(prev_block['proof'])
                 logging.debug("Current Block")
-                logging.debug(block_from_json(cur_block).to_json)
+                logging.debug(block_from_json(cur_block).to_json())
                 logging.debug("Cur Block #:")
                 logging.debug(cur_block['index'])
                 logging.debug("Cur Block proof")
@@ -155,7 +155,7 @@ class Blockchain:
         self.current_transactions = []
 
         self.chain.append(block)
-        logging.info(block.to_json)
+        logging.info(block.to_json())
         return block
 
     def add_block(self, block):

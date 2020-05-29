@@ -9,45 +9,48 @@ from threading import Lock
 
 
 class Wallet:
-    class __Wallet:
-        wallet_lock = Lock()
+    wallet_lock = Lock()
 
-        def __init__():
-            self.personal_coins = []
-            self.uuid_lookup = {}
-            self.balance = 0
+    def __init__(self):
+        self.personal_coins = []
+        self.uuid_lookup = {}
+        self.balance = 0
 
-        def add_coin(self, coin):
-            self.personal_coins.append(coin)
-            self.personal_coins.sort()
-            self.uuid_lookup[coin.get_uuid()] = coin
-            self.balance += coin.get_value()
+    def add_coin(self, coin):
+        self.personal_coins.append(coin)
+        self.personal_coins.sort()
+        self.uuid_lookup[coin.get_uuid()] = coin
+        self.balance += coin.get_value()
 
-        def remove_coin(self, uuid):
-            try:
-                self.personal_coins.remove(self.uuid_lookup[uuid])
-                del self.uuid_lookup[uuid]
-                self.balance -= coin.get_value()
-            except ValueError:
-                pass
+    def remove_coin(self, uuid):
+        try:
+            self.personal_coins.remove(self.uuid_lookup[uuid])
+            del self.uuid_lookup[uuid]
+            self.balance -= coin.get_value()
+        except ValueError:
+            pass
 
-        def get_balance(self):
-            return self.balance
+    def get_balance(self):
+        return self.balance
 
-        def get_coins(self, value, uuid, recipient):
-            num_coins = 0
-            coins = []
-            for i in self.personal_coins[::-1]:
-                if value < 0:
-                    break
-                value -= i.get_value()
-                coins.append(i)
-                num_coins += 1
-            else:
-                return (), False
+    def get_coins(self, value):
+        num_coins = 0
+        coins = []
 
-            for coin in coins:
-                self.remove_coin(coin.get_uuid())
+        for i in self.personal_coins[::-1]:
+            if value < 0:
+                break
+            value -= i.get_value()
+            coins.append(i)
+            num_coins += 1
+        else:
+            return (), False
 
-            return (coins, abs(value)), True
+        for coin in coins:
+            self.remove_coin(coin.get_uuid())
+
+        return (coins, abs(value)), True
+
+    def get_lock(self):
+        return wallet_lock
 
