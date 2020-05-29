@@ -146,13 +146,13 @@ class MultipleConnectionHandler(ConnectionHandler):
         for conn in self.peer_connections:
             self._send(conn, data)
             received_data = self._recv(conn)
-            self.conn.close()
-            peer_responses.append(data)
+            conn.close()
+            peer_responses.append(received_data)
 
         return peer_responses
 
     def send_wout_response(self, data):
         for conn in self.peer_connections:
             self._send(conn, data)
-            self.conn.close()
+            conn.close()
 
