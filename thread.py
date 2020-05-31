@@ -31,13 +31,18 @@ class Worker(Thread):
             func, args, kwargs, conn = self.queues['tasks'].get()
 
             try:
+                if isinstance(func, str):
+                    func = THREAD_FUNCTIONS[func]
                 func(*args, self.metadata, self.queues, conn, **kwargs)
             except Exception as e:
                 logging.warning("Inside thread: " + str(e))
                 conn.send(GENERATE_ERROR("invalid data"))
             finally:
                 self.queues['tasks'].task_done()
-                conn.close()
+                try:
+                    conn.close()
+                except AttributeError:
+                    pass
 
 
 class ThreadHandler():
@@ -60,8 +65,12 @@ class ThreadHandler():
         # TODO Add some stuff to detect errors.
 
         try:
+            print(task)
             action = THREAD_FUNCTIONS[task['action']]
             params = task['params']
+
+            print(task)
+            print(params)
 
             self.queues['tasks'].put((action, params, {}, conn))
         except Exception as e:

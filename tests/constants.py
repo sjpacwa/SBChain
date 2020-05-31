@@ -9,12 +9,17 @@ from encoder import ComplexEncoder
 from history import History
 from transaction import Transaction
 
-def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain(), history=History()):
+uuid = str(uuid4()).replace("-", "")
+
+def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
+    history = History(uuid)
+    
+
     return {
         'host': host,
         'port': port,
         'done': Lock(),
-        'uuid': str(uuid4()).replace('-', ''),
+        'uuid': uuid,
         'debug': True,
         'blockchain': blockchain,
         'history': history,
@@ -39,3 +44,12 @@ def BLANK_BLOCK(index, transactions, proof, previous_hash):
     return json.dumps(block, cls=ComplexEncoder)
 
 connection = None
+
+
+class FakeConnection():
+    def getpeername(self):
+        return ('127.0.0.1', 5000)
+
+    def send(self, data):
+        split_data = data.decode().split('~')
+        print(json.loads(split_data[1]))

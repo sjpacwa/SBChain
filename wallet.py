@@ -26,8 +26,9 @@ class Wallet:
         try:
             coin = self.personal_coins.remove(self.uuid_lookup[uuid])
             del self.uuid_lookup[uuid]
-            self.balance -= coin.get_value()
-        except ValueError:
+            if coin != None:
+                self.balance -= coin.get_value()
+        except (ValueError, KeyError):
             pass
 
     def get_balance(self):
@@ -38,11 +39,11 @@ class Wallet:
         coins = []
 
         for i in self.personal_coins[::-1]:
-            if value < 0:
-                break
             value -= i.get_value()
             coins.append(i)
             num_coins += 1
+            if value < 0:
+                break
         else:
             return (), False
 
@@ -52,5 +53,5 @@ class Wallet:
         return (coins, abs(value)), True
 
     def get_lock(self):
-        return wallet_lock
+        return Wallet.wallet_lock
 

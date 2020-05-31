@@ -69,7 +69,8 @@ def proof_of_work(metadata, queues, reward, last_block):
     last_proof = last_block.proof
     last_hash = last_block.hash
 
-    history_lock = History().get_lock()
+    history = History()
+    history_lock = history.get_lock()
 
     logging.debug("Last Block Hash in mine function")
     logging.debug(last_block.hash)
@@ -89,6 +90,10 @@ def proof_of_work(metadata, queues, reward, last_block):
 
     if not queues['blocks'].empty():
         handle_blocks(metadata, queues)
+
+    history.add_transaction(current_trans[0])
+    history.add_coin(current_trans[0].get_all_output_coins()[0])
+    print(history.get_wallet().personal_coins)
 
     return proof
 
@@ -172,7 +177,7 @@ def handle_blocks(metadata, queues):
 def resolve_conflicts(block, history, host_port, metadata):
     print("resolve conflicts")
     print("Implement me!")
-    return false
+    return False
 
 
 def mine(*args, **kwargs):
@@ -194,7 +199,7 @@ def mine(*args, **kwargs):
 
     # Create the reward transaction and add to working block.
     reward_id = str(uuid4()).replace('-', '')
-    reward_transaction = RewardTransaction([], {metadata['uuid']: [RewardCoin(reward_id, 0)]}, reward_id)
+    reward_transaction = RewardTransaction([], {metadata['uuid']: [RewardCoin(reward_id, 5)]}, reward_id)
     blockchain.update_reward(reward_transaction)
 
     # Create the proof_of_work on the block.

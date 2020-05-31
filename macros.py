@@ -11,13 +11,6 @@ BUFFER_SIZE = 256
 
 REWARD_COIN_VALUE = 5
 
-NO_INDEX_FOUND = {
-    'name': 'broadcast',
-    'args': {
-       "Error: No Index found"
-    }
-}
-
 INVALID_INDEX = {
     'args': {
        "Error: Invalid Index"
@@ -40,14 +33,14 @@ def GENERATE_ERROR(data):
 
 def RECEIVE_BLOCK(block):
     return {
-        'name': 'receive_block',
-        'args': block
+        'action': 'receive_block',
+        'params': [block]
     }
 
 def RECEIVE_TRANSACTION(transaction):
     return {
-        'name': 'receive_transactions', 
-        'args': transaction.to_json(),
+        'action': 'receive_transactions', 
+        'params': [transaction.to_json()],
     }
 
 def TRANSACTION_ADDED(block_index):
@@ -90,6 +83,6 @@ def BLOCK_RECEIVED(index,transactions,proof,previous_hash):
 
 def GET_BLOCK(index):
     return {
-        'name':"get_block",
-        'args': index
+        'action':"get_block",
+        'params': [index]
     }

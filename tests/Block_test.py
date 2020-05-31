@@ -9,7 +9,6 @@ from tasks import receive_block
 import pytest
 
 
-
 @pytest.fixture(scope="module")
 def blockchain():
     blockchain = Blockchain()
@@ -19,9 +18,6 @@ def blockchain():
 
     return blockchain
 
-class FakeConnection():
-    def getpeername(self):
-        return ('127.0.0.1', 5000)
 
 
 def test_block_with_lower_index(blockchain):

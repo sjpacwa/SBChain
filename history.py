@@ -6,6 +6,7 @@ Singleton property. This should guarantee that only one instance of the
 inner __History class should exist on a node when the program is run.
 """
 
+from copy import deepcopy
 from threading import Lock
 
 from wallet import Wallet
@@ -41,7 +42,7 @@ class History:
   
             if transaction.get_sender() == self.uuid:
                 for coin in transaction.get_inputs():
-                    self.wallet.remove_coin(coin)
+                    self.wallet.remove_coin(coin.get_uuid())
 
         def remove_coin(self, uuid):
             del self.coins[uuid]
@@ -56,7 +57,7 @@ class History:
             our_bad_coins = transaction.get_output_coins(self.uuid)
             if our_bad_coins != None:
                 for coin in our_bad_coins:
-                    self.wallet.remove_coin(coin)
+                    self.wallet.remove_coin(coin.get_uuid())
 
             del self.transactions[uuid]
 
@@ -66,9 +67,17 @@ class History:
         def get_wallet(self):
             return self.wallet
 
+        def reset(self):
+            self.coins = {}
+            self.transactions = {}
+
+            self.wallet = Wallet()
+
     instance = None
     def __init__(self, uuid=""):
         if not History.instance:
+            if uuid == "":
+                raise ValueError("Initial history needs proper UUID")
             History.instance = History.__History(uuid)
     
     def get_coin(self, uuid):
@@ -100,4 +109,7 @@ class History:
 
     def get_wallet(self):
         return History.instance.get_wallet()
+
+    def reset(self):
+        History.instance.reset()
 

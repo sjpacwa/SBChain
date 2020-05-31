@@ -51,6 +51,9 @@ class Transaction:
 
         history = History()
 
+        if self._input_value < 0 or self._output_value < 0 or self._reward_value < 0:
+            return False
+
         if self._input_value != (self._output_value + self._reward_value):
             return False
 
@@ -130,10 +133,42 @@ class RewardTransaction(Transaction):
 
     def add_new_inputs(self, coins):
         for coin in coins:
-            self._inputs.extend(coin)
+            self._inputs.append(coin)
             self._input_value += coin.get_value()
         
-        self._output_value = self._input_value
+        self._output_value = self._input_value + REWARD_COIN_VALUE
+
+        for i in self._outputs:
+            self._outputs[i][0].set_value(self._output_value)
+
+    def verify(self):
+        """
+        verify
+        Assumptions:
+        1. The transaction history has been checked for duplicates.
+        2. Input coins previously existed in the system.
+        3. Output coins were created from scratch.
+        4. Assume that history is already locked.
+        """
+
+        history = History()
+
+        if self._input_value < 0 or self._output_value < 0 or self._reward_value < 0:
+            return False
+
+        if (self._input_value + REWARD_COIN_VALUE) != (self._output_value + self._reward_value):
+            return False
+
+        for coin in self._inputs:
+            transaction = history.get_transaction(coin.get_transaction_id())
+            if not transaction.check_coin(self._sender, coin):
+                return False
+
+        for coin in self.get_all_output_coins():
+            if coin.get_transaction_id() != self._uuid:
+                return False
+
+        return True
 
 
 def transaction_from_json(data, inputs, outputs):

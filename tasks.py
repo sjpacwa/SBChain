@@ -9,7 +9,7 @@ from block import Block
 from coin import *
 from encoder import ComplexEncoder
 from transaction import *
-from connection import MultipleConnectionHandler
+from connection import MultipleConnectionHandler, ConnectionHandler
 from mine import mine
 
 
@@ -117,9 +117,15 @@ def receive_block(block_data, *args, **kwargs):
     :param timestamp: <timestamp> Timestamp of the block creation
     """
 
+    print("START")
+    print(block_data)
+    print(args)
+    print("END")
+
     metadata = args[0]
     queues = args[1]
     conn = args[2]
+
     
     host, port = conn.getpeername()
 
@@ -128,6 +134,25 @@ def receive_block(block_data, *args, **kwargs):
     print(block_data)
 
     if block_data['index'] >= current_index:
+        transactions = []
+
+        """
+        try:
+            reward = block_data['transactions'][0]
+            inputs = json.loads(reward['inputs'], cls=ComplexEncoder)
+            outputs = {}
+            for i in outputs:
+                outputs[i] = RewardCoin(outputs[i][0]['transaction_id'], outputs[i][0]['value'], outputs[i][0]['uuid'])
+
+            transactions.append(transaction_from_json(reward, inputs, outputs))
+        except IndexError:
+            pass
+
+        for transaction in block_data['transactions'][1:]:
+            inputs = json.loads(transaction['inputs'], cls=ComplexEncoder)
+            outputs = json.loads(transaction['outputs'], cls=ComplexEncoder)
+            transactions.append(transaction_from_json(transaction, inputs, outputs))
+        """
         block = Block(
             index=block_data['index'],
             transactions=block_data['transactions'],
@@ -162,28 +187,41 @@ def receive_transactions(trans_data, *args, **kwargs):
     metadata = args[0]
     queues = args[1]
 
+    receive_transaction_internal(trans_data, metadata, queues)
+                
+
+def receive_transaction_internal(trans_data, metadata, queues):
     history = metadata['history']
     history_lock = history.get_lock()
+
+    transactions = []
 
     with history_lock:
         for transaction in trans_data:
             check, new_transaction = transaction_verify(history, transaction)
             if check:
                 queues['trans'].put(new_transaction)
+                transactions.append(new_transaction.to_json())
+            else:
+                transactions.append('Transaction verfication failed' + str(transaction))
+
+    return transactions
 
 
 @thread_function
 def new_transaction(trans_data, *args, **kwargs):
-    """
-    {
-        'inputs': ##
-        'outputs' : {recipient: ##, recipient2: ##}
-    }
-    """
+
+    print("HERE")
+
+    metadata = args[0]
+    queues = args[1]
+    conn = args[2]
 
     history = History()
     wallet = history.get_wallet()
     wallet_lock = wallet.get_lock()
+
+    trans_id = str(uuid4()).replace('-', '')
 
     input_value = trans_data['input']
 
@@ -194,13 +232,48 @@ def new_transaction(trans_data, *args, **kwargs):
     reward = input_value - output_value
 
     with wallet_lock:
-        coins, value = wallet.get_coins(trans_data['inputs'])
+        coins_tuple, check = wallet.get_coins(trans_data['input'])
 
-        # Create three coins:
-        # Iterate through output recipients and create coins.
-        # Create the reward coin.
-        # Create the change coin.
-            # Value - Input
+    if not check:
+        ConnectionHandler()._send(conn, "Not enough coins")
+        return
+
+    coins, value = coins_tuple
+
+    output_coins = {}
+    # Normal output coins to other people.
+    for recipient in trans_data['output']:
+        coin = Coin(trans_id, trans_data['output'][recipient])
+
+        if recipient in output_coins:
+            output_coins[recipient].append(coin)
+        else:
+            output_coins[recipient] = [coin]
+
+    # Reward coin.
+    output_coins["SYSTEM"] = [Coin(trans_id, reward)]
+
+    # Change.
+    print(value)
+    print(input_value)
+    if value > 0:
+        coin = Coin(trans_id, value)
+
+        if metadata['uuid'] in output_coins:
+            output_coins[metadata['uuid']].append(coin)
+        else:
+            output_coins[metadata['uuid']] = [coin]
+
+    transaction = Transaction(metadata['uuid'], coins, output_coins, trans_id)
+    transaction_json = [transaction.to_json()]
+
+    print("check 1")
+    print(transaction_json)
+
+    response = receive_transaction_internal(transaction_json, metadata, queues)
+
+    ConnectionHandler()._send(conn, response)
+
 
 @thread_function
 def register_nodes(new_peers, *args, **kwargs):

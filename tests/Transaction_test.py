@@ -1,7 +1,7 @@
 from tests.constants import *
 from coin import Coin
 from transaction import Transaction
-from tasks import receive_transactions
+from tasks import receive_transactions, new_transaction
 from json import loads
 from queue import Empty
 
@@ -11,8 +11,10 @@ import pytest
 def initial_metadata():
     return create_metadata()
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def initial_history(initial_metadata):
+    initial_metadata['history'].reset()
+
     transaction_id = "0"
 
 
@@ -22,7 +24,7 @@ def initial_history(initial_metadata):
         output_coins[initial_metadata['uuid']].append(coin)
         initial_metadata['history'].add_coin(coin)
 
-    transaction = Transaction("0", [], output_coins, transaction_id)
+    transaction = Transaction(initial_metadata['uuid'], [], output_coins, transaction_id)
     initial_metadata['history'].add_transaction(transaction)
 
 def test_single_valid_transaction(initial_history, initial_metadata):
@@ -182,22 +184,6 @@ def test_single_invalid_transaction_reused_output_coin(initial_history, initial_
         queues['trans'].get(block=False)
 
 
-def test_single_invalid_transaction_output_higher_than_input(initial_history, initial_metadata):
-    transaction_data = BLANK_TRANSACTION(
-            initial_metadata['uuid'],
-            "fakeid9",
-            [Coin("0", 1, "3")],
-            {"1": [Coin("fakeid10", 2, "12")]}
-    )
-
-    transaction_data = loads(transaction_data)
-
-    receive_transactions([transaction_data], initial_metadata, queues, connection)
-
-    with pytest.raises(Empty):
-        queues['trans'].get(block=False)
-
-
 def test_multiple_valid_transactions(initial_history, initial_metadata):
     transactions = []
     for i in range(3):
@@ -237,4 +223,24 @@ def test_multiple_invalid_transactions(initial_history, initial_metadata):
     assert queues['trans'].get(block=False) != None
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
-    
+
+def test_new_transaction(initial_history, initial_metadata):
+    new_transaction({'input': 2.5, 'output': {'A': 1, 'B': 0.5}}, initial_metadata, queues, FakeConnection())
+
+    assert queues['trans'].get(block=False) != None
+    with pytest.raises(Empty):
+        queues['trans'].get(block=False)
+
+
+def test_bad_new_transaction_small_input(initial_history, initial_metadata):
+    new_transaction({'input': 0.5, 'output': {'A': 1, 'B': 0.5}}, initial_metadata, queues, FakeConnection())
+
+    with pytest.raises(Empty):
+        queues['trans'].get(block=False)
+
+
+def test_bad_new_transaction_large_input(initial_history, initial_metadata):
+    new_transaction({'input': 1000, 'output': {'A': 1, 'B': 0.5}}, initial_metadata, queues, FakeConnection())
+
+    with pytest.raises(Empty):
+        queues['trans'].get(block=False)
