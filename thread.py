@@ -36,7 +36,10 @@ class Worker(Thread):
                 func(*args, self.metadata, self.queues, conn, **kwargs)
             except Exception as e:
                 logging.warning("Inside thread: " + str(e))
-                conn.send(GENERATE_ERROR("invalid data"))
+                try:
+                    conn.send(GENERATE_ERROR("invalid data"))
+                except AttributeError:
+                    pass
             finally:
                 self.queues['tasks'].task_done()
                 try:
@@ -58,19 +61,14 @@ class ThreadHandler():
         for _ in range(num_threads):
             Worker(metadata, self.queues)
 
-        if not metadata['debug']:
-            Miner(metadata, self.queues)
+        Miner(metadata, self.queues)
 
     def add_task(self, task, conn):
         # TODO Add some stuff to detect errors.
 
         try:
-            print(task)
             action = THREAD_FUNCTIONS[task['action']]
             params = task['params']
-
-            print(task)
-            print(params)
 
             self.queues['tasks'].put((action, params, {}, conn))
         except Exception as e:

@@ -65,6 +65,9 @@ class RewardCoin(Coin):
 def coin_from_json(data):
     return Coin(data['transaction_id'], data['value'], data['uuid'])
 
+def reward_coin_from_json(data):
+    return RewardCoin(data['transaction_id'], data['value'], data['uuid'])
+
 def coin_string_string(data):
     return block_from_json(json.loads(data))
 

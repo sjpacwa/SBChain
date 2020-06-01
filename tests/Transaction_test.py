@@ -35,8 +35,6 @@ def test_single_valid_transaction(initial_history, initial_metadata):
             {"1": [Coin("fakeid", 1, "11")]}
     )
 
-    print(transaction_data)
-
     transaction_data = loads(transaction_data)
 
     receive_transactions([transaction_data], initial_metadata, queues, connection)
@@ -128,7 +126,6 @@ def test_single_invalid_transaction_output_higher_than_input(initial_history, in
 
 def test_single_invalid_transaction_reused_input_coin(initial_history, initial_metadata):
     history = History()
-    print(history.instance.coins)
     valid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
             "fakeid5",
@@ -157,7 +154,6 @@ def test_single_invalid_transaction_reused_input_coin(initial_history, initial_m
 
 def test_single_invalid_transaction_reused_output_coin(initial_history, initial_metadata):
     history = History()
-    print(history.instance.coins)
     valid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
             "fakeid7",

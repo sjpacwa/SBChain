@@ -117,11 +117,6 @@ def receive_block(block_data, *args, **kwargs):
     :param timestamp: <timestamp> Timestamp of the block creation
     """
 
-    print("START")
-    print(block_data)
-    print(args)
-    print("END")
-
     metadata = args[0]
     queues = args[1]
     conn = args[2]
@@ -131,28 +126,9 @@ def receive_block(block_data, *args, **kwargs):
 
     current_index = metadata['blockchain'].last_block_index
 
-    print(block_data)
-
-    if block_data['index'] >= current_index:
+    if block_data['index'] >= current_index + 1:
         transactions = []
-
-        """
-        try:
-            reward = block_data['transactions'][0]
-            inputs = json.loads(reward['inputs'], cls=ComplexEncoder)
-            outputs = {}
-            for i in outputs:
-                outputs[i] = RewardCoin(outputs[i][0]['transaction_id'], outputs[i][0]['value'], outputs[i][0]['uuid'])
-
-            transactions.append(transaction_from_json(reward, inputs, outputs))
-        except IndexError:
-            pass
-
-        for transaction in block_data['transactions'][1:]:
-            inputs = json.loads(transaction['inputs'], cls=ComplexEncoder)
-            outputs = json.loads(transaction['outputs'], cls=ComplexEncoder)
-            transactions.append(transaction_from_json(transaction, inputs, outputs))
-        """
+        
         block = Block(
             index=block_data['index'],
             transactions=block_data['transactions'],
@@ -161,6 +137,7 @@ def receive_block(block_data, *args, **kwargs):
             timestamp=block_data['timestamp']
         )
 
+        logging.info('Added block to queue')
         queues['blocks'].put(((host, port), block))
 
 
@@ -210,9 +187,6 @@ def receive_transaction_internal(trans_data, metadata, queues):
 
 @thread_function
 def new_transaction(trans_data, *args, **kwargs):
-
-    print("HERE")
-
     metadata = args[0]
     queues = args[1]
     conn = args[2]
@@ -254,8 +228,6 @@ def new_transaction(trans_data, *args, **kwargs):
     output_coins["SYSTEM"] = [Coin(trans_id, reward)]
 
     # Change.
-    print(value)
-    print(input_value)
     if value > 0:
         coin = Coin(trans_id, value)
 
@@ -266,9 +238,6 @@ def new_transaction(trans_data, *args, **kwargs):
 
     transaction = Transaction(metadata['uuid'], coins, output_coins, trans_id)
     transaction_json = [transaction.to_json()]
-
-    print("check 1")
-    print(transaction_json)
 
     response = receive_transaction_internal(transaction_json, metadata, queues)
 
@@ -332,10 +301,23 @@ def forward_transaction(transaction_list, *args, **kwargs):
 
 
 @thread_function
+def forward_block(block_list, *args, **kwargs):
+    metadata = args[0]
+
+    connection = MultipleConnectionHandler(metadata['peers'])
+
+    message = {
+            "action": "receive_block",
+            "params": block_list,
+        }
+
+    connection.send_wout_response(json.dumps(message, cls=ComplexEncoder))
+
+
+@thread_function
 def wait_test(sleep_time, message_id, *args, **kwargs):
-    print("Start " + str(message_id))
+    logging.info("Inside wait test")
     sleep(sleep_time)
-    print("End " + str(message_id))
 
 @thread_function
 def response_test(*args, **kwargs):

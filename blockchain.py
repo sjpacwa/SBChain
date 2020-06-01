@@ -14,6 +14,7 @@ from datetime import datetime
 # Local imports
 from block import Block, block_from_json
 from blockchainConfig import BlockchainConfig
+from encoder import ComplexEncoder
 
 config = BlockchainConfig()
 
@@ -159,6 +160,8 @@ class Blockchain:
         return block
 
     def add_block(self, block):
+        logging.info("Added block")
+        logging.info(block.to_json())
         self.chain.append(block)
 
     def new_transaction(self, transaction):
@@ -242,7 +245,10 @@ class Blockchain:
 
         """
 
-        guess = f'{last_proof}{proof}{last_hash}{current_transactions}'.encode()
+        transactions = json.dumps(current_transactions, cls=ComplexEncoder)
+
+        guess = f'{last_proof}{proof}{last_hash}{transactions}'.encode()
+        #logging.info(guess)
         guess_hash = hashlib.sha256(guess).hexdigest()
         
         # This is where difficulty is set.

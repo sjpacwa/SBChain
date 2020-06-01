@@ -12,8 +12,9 @@ from uuid import uuid4
 import json
 
 # Local imports
+from blockchain import Blockchain
 from coin import Coin, RewardCoin
-from transaction import Transaction, RewardTransaction
+from transaction import Transaction, RewardTransaction, transaction_verify
 from macros import RECEIVE_BLOCK
 from connection import MultipleConnectionHandler
 from history import History
@@ -48,6 +49,7 @@ class Miner(Thread):
             try:
                 mine(self.metadata, self.queues)
             except BlockException:
+                self.metadata['history'].get_lock().release()
                 pass
 
 
@@ -80,20 +82,23 @@ def proof_of_work(metadata, queues, reward, last_block):
     proof = 0
     while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
         history_lock.acquire()
+        
         if not queues['trans'].empty():
             handle_transactions(metadata, queues, reward)
         if not queues['blocks'].empty():
             handle_blocks(metadata, queues)
         history_lock.release()
-            
-        proof += 1
+           
+        if metadata['debug']:
+            proof = proof
+        else:
+            proof += 1
 
     if not queues['blocks'].empty():
         handle_blocks(metadata, queues)
 
     history.add_transaction(current_trans[0])
     history.add_coin(current_trans[0].get_all_output_coins()[0])
-    print(history.get_wallet().personal_coins)
 
     return proof
 
@@ -124,35 +129,68 @@ def handle_blocks(metadata, queues):
 
         host_port, block = queues['blocks'].get()
         current_index = metadata['blockchain'].last_block_index        
-        if block.index == current_index:
+        
+        if block.index == current_index + 1:
             bad_block = False
-            for transaction in block.transactions:
-                hist_trans = history.get_transaction(transaction.get_uuid())
-                if transaction_hist != None:
+            new_transactions = []
+            for transaction in block.transactions[1:]:
+                hist_trans = history.get_transaction(transaction["uuid"])
+                if hist_trans != None:
                     new_trans = transaction.to_string()
                     hist_trans = hist_trans.to_string()
 
                     if new_trans != hist_trans:
                         # Transaction exists but does not match
+                        logging.info('Bad block: transaction exists but does not match.')
                         bad_block = True
                         break
                 else:
-                    check, _ = transaction_verify(history_temp, transaction)
+                    check, new_transaction = transaction_verify(history_temp, transaction)
                     if not check:
                         # Verification doesn't pass.
+                        logging.info('Bad block: transaction verification fails')
                         bad_block = True
                         break
+                    new_transactions.append(new_transaction)
+
+            # Verify the reward.
+            reward = block.transactions[0]
+            hist_trans = history.get_transaction(reward["uuid"])
+            if hist_trans != None:
+                new_trans = reward.to_string()
+                hist_trans = hist_trans.to_string()
+
+                if new_trans != hist_trans:
+                    # Transaction exists but does not match
+                    logging.info('Bad block: reward exists but does not match.')
+                    bad_block = True
+                    break
+            else:
+                check, new_reward = transaction_verify(history_temp, reward, True)
+                if not check:
+                    # Verification doesn't pass.
+                    logging.info('Bad block: reward verification fails')
+                    print(reward)
+                    bad_block = True
+                    break
+                new_transactions = [new_reward] + new_transactions
 
             if bad_block:
+                queues['blocks'].task_done()
                 continue
 
             lastblock = metadata['blockchain'].last_block
 
-            if lastblock.hash() != block.previous_hash:
+            if lastblock.hash != block.previous_hash:
+                logging.info('Bad block: hash does not match')
+                queues['blocks'].task_done()
                 continue
 
-        
-            if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash(), block.transactions):
+            block.transactions = new_transactions
+            
+            if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash, block.transactions):
+                logging.info('Bad block: invalid proof')
+                queues['blocks'].task_done()
                 continue
 
             for transaction in block.transactions[1:]:
@@ -170,13 +208,13 @@ def handle_blocks(metadata, queues):
                 changed = True
 
     if changed:
-        queues['tasks'].put(('forward_block', metadata['blockchain'].last_block, {}, None))
+        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block], {}, None))
+        queues['blocks'].task_done()
         raise BlockException
 
 
 def resolve_conflicts(block, history, host_port, metadata):
-    print("resolve conflicts")
-    print("Implement me!")
+    logging.warning('Resolve conflicts unimplemented')
     return False
 
 
