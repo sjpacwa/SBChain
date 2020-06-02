@@ -33,7 +33,7 @@ def test_block_with_lower_index(blockchain):
 def test_block_with_equal_index(blockchain):
     metadata = create_metadata(blockchain=blockchain)
 
-    block = loads(BLANK_BLOCK(3, [], "3", "3"))
+    block = loads(BLANK_BLOCK(4, [], "3", "3"))
 
     receive_block(block, metadata, queues, FakeConnection())
 

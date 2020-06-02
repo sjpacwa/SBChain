@@ -147,7 +147,6 @@ class Blockchain:
         
         :return: <Block Object> New Block
         """
-        logging.info("New Block")
         block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,date)
 
 
@@ -160,7 +159,6 @@ class Blockchain:
         return block
 
     def add_block(self, block):
-        logging.info("Added block")
         logging.info(block.to_json())
         self.chain.append(block)
 
@@ -182,7 +180,6 @@ class Blockchain:
 
         # TODO Lock transactions
         self.current_transactions.append(transaction)
-        logging.info("New Transaction")
         logging.info(self.current_transactions[-1].to_string())
         return self.last_block.index + 1
 

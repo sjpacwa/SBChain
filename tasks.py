@@ -10,6 +10,7 @@ from coin import *
 from encoder import ComplexEncoder
 from transaction import *
 from connection import MultipleConnectionHandler, ConnectionHandler
+from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION
 from mine import mine
 
 
@@ -164,6 +165,8 @@ def receive_transactions(trans_data, *args, **kwargs):
     metadata = args[0]
     queues = args[1]
 
+    
+
     receive_transaction_internal(trans_data, metadata, queues)
                 
 
@@ -171,17 +174,16 @@ def receive_transaction_internal(trans_data, metadata, queues):
     history = metadata['history']
     history_lock = history.get_lock()
 
-    transactions = []
-
     with history_lock:
+        transactions = []
         for transaction in trans_data:
             check, new_transaction = transaction_verify(history, transaction)
             if check:
                 queues['trans'].put(new_transaction)
                 transactions.append(new_transaction.to_json())
             else:
-                transactions.append('Transaction verfication failed' + str(transaction))
-
+                transactions.append('Transaction verification failed' + str(transaction))
+    
     return transactions
 
 
@@ -237,9 +239,9 @@ def new_transaction(trans_data, *args, **kwargs):
             output_coins[metadata['uuid']] = [coin]
 
     transaction = Transaction(metadata['uuid'], coins, output_coins, trans_id)
-    transaction_json = [transaction.to_json()]
+    transaction_json = transaction.to_json()
 
-    response = receive_transaction_internal(transaction_json, metadata, queues)
+    response = receive_transaction_internal([transaction_json], metadata, queues)
 
     ConnectionHandler()._send(conn, response)
 
@@ -292,26 +294,20 @@ def forward_transaction(transaction_list, *args, **kwargs):
 
     connection = MultipleConnectionHandler(metadata['peers'])
 
-    message = {
-            "action": "receive_transaction",
-            "params": transaction_list,
-        }
+    message = RECEIVE_TRANSACTION([transaction_list])
 
-    connection.send_wout_response(json.dumps(message, cls=ComplexEncoder))
+    connection.send_wout_response(message)
 
 
 @thread_function
-def forward_block(block_list, *args, **kwargs):
+def forward_block(block, *args, **kwargs):
     metadata = args[0]
 
     connection = MultipleConnectionHandler(metadata['peers'])
 
-    message = {
-            "action": "receive_block",
-            "params": block_list,
-        }
+    message = RECEIVE_BLOCK(block)
 
-    connection.send_wout_response(json.dumps(message, cls=ComplexEncoder))
+    connection.send_wout_response(message)
 
 
 @thread_function

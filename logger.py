@@ -40,7 +40,7 @@ def initialize_log(node_id,debug):
     f_handler = logging.FileHandler(logs_path)
     c_handler = logging.StreamHandler()
 
-    log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_format = logging.Formatter('%(asctime)s - %(funcName)s() - %(levelname)s - %(message)s')
 
     if debug:
         debug = True

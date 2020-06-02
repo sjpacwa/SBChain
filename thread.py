@@ -6,6 +6,7 @@ manage the threads that perform work.
 """
 
 # Standard library imports
+import traceback
 from queue import Queue
 from threading import Thread
 
@@ -36,6 +37,8 @@ class Worker(Thread):
                 func(*args, self.metadata, self.queues, conn, **kwargs)
             except Exception as e:
                 logging.warning("Inside thread: " + str(e))
+                traceback.print_exc()
+                traceback.print_stack()
                 try:
                     conn.send(GENERATE_ERROR("invalid data"))
                 except AttributeError:
@@ -74,5 +77,7 @@ class ThreadHandler():
         except Exception as e:
             conn.send(GENERATE_ERROR('Bad request'))
             logging.warning(e)
+            traceback.print_exc()
+            traceback.print_stack()
             conn.close()
             

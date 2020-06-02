@@ -117,7 +117,7 @@ def handle_transactions(metadata, queues, reward_transaction):
     reward_transaction.add_new_inputs(reward_coins)
     reward_coin.set_value(reward_transaction.get_values()[0])
 
-    queues['tasks'].put(('forward_transaction', verified_transactions, {}, None))
+    queues['tasks'].put(('forward_transaction', [verified_transactions], {}, None))
 
 
 def handle_blocks(metadata, queues):
@@ -133,17 +133,19 @@ def handle_blocks(metadata, queues):
         if block.index == current_index + 1:
             bad_block = False
             new_transactions = []
+
             for transaction in block.transactions[1:]:
                 hist_trans = history.get_transaction(transaction["uuid"])
                 if hist_trans != None:
-                    new_trans = transaction.to_string()
-                    hist_trans = hist_trans.to_string()
+                    new_trans = json.dumps(transaction)
+                    hist_trans_string = hist_trans.to_string()
 
-                    if new_trans != hist_trans:
+                    if new_trans != hist_trans_string:
                         # Transaction exists but does not match
                         logging.info('Bad block: transaction exists but does not match.')
                         bad_block = True
                         break
+                    new_transactions.append(hist_trans)
                 else:
                     check, new_transaction = transaction_verify(history_temp, transaction)
                     if not check:
@@ -157,20 +159,18 @@ def handle_blocks(metadata, queues):
             reward = block.transactions[0]
             hist_trans = history.get_transaction(reward["uuid"])
             if hist_trans != None:
-                new_trans = reward.to_string()
+                new_trans = json.dumps(reward)
                 hist_trans = hist_trans.to_string()
 
-                if new_trans != hist_trans:
-                    # Transaction exists but does not match
-                    logging.info('Bad block: reward exists but does not match.')
-                    bad_block = True
-                    break
+                # Transaction exists but does not match
+                logging.warning('Bad block: reward already exists')
+                bad_block = True
+                break
             else:
                 check, new_reward = transaction_verify(history_temp, reward, True)
                 if not check:
                     # Verification doesn't pass.
                     logging.info('Bad block: reward verification fails')
-                    print(reward)
                     bad_block = True
                     break
                 new_transactions = [new_reward] + new_transactions

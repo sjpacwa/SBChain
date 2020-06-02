@@ -50,7 +50,7 @@ def test_valid_connection(node_a):
 
 def test_send_wout_response(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
-    conn.send_wout_response({"action": "wait_test", "args": [1, 1]})
+    conn.send_wout_response({"action": "wait_test", "params": [1, 1]})
 
 def test_send_with_response_bad_2(node_a):
     conn = SingleConnectionHandler('localhost', 5000)

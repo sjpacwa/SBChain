@@ -31,7 +31,7 @@ def GENERATE_ERROR(data):
     message = str(len(message)) + '~' + message
     return message.encode()
 
-def RECEIVE_BLOCK(block):
+def RECEIVE_BLOCK(block): 
     return {
         'action': 'receive_block',
         'params': [block]
@@ -40,7 +40,7 @@ def RECEIVE_BLOCK(block):
 def RECEIVE_TRANSACTION(transaction):
     return {
         'action': 'receive_transactions', 
-        'params': [transaction.to_json()],
+        'params': transaction,
     }
 
 def TRANSACTION_ADDED(block_index):

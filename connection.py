@@ -11,6 +11,7 @@ import json
 import logging
 
 # Local Imports
+from encoder import ComplexEncoder
 from macros import BUFFER_SIZE
 
 
@@ -27,7 +28,7 @@ class ConnectionHandler():
         """
 
         try:
-            json_data = json.dumps(data)
+            json_data = json.dumps(data, cls=ComplexEncoder)
             data_size = str(len(json_data))
 
             message = data_size + '~' + json_data
@@ -61,7 +62,8 @@ class ConnectionHandler():
                 data += conn.recv(BUFFER_SIZE).decode()
                 amount_received = len(data)
 
-            return json.loads(data[:size])
+            json_data = json.loads(data[:size])
+            return json_data
         except OSError as e:
             # A timeout has occured.
             logging.warning('Error receiving data from network: ' + str(e))
