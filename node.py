@@ -20,7 +20,7 @@ class Node:
     Node
     """
 
-    def __init__(self, host,port, initialized=None, uuid=None, debug=False, neighbors=[]):
+    def __init__(self, host,port, initialized=None, uuid=None, debug=False, benchmark=False, neighbors=[]):
         """
         __init__
         
@@ -41,6 +41,10 @@ class Node:
         self.metadata['port'] = port
         self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid == None else uuid
         self.metadata['debug'] = debug
+        self.metadata['benchmark'] = benchmark
+        if benchmark:
+            from threading import Semaphore
+            self.metadata['benchmark_lock'] = Semaphore(0)
 
         if self.metadata['uuid'] == 'SYSTEM':
             raise InvalidID

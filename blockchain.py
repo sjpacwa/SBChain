@@ -33,6 +33,10 @@ class Blockchain:
         self.current_transactions = []
         self.chain = []
 
+        # The version number is incremented in resolve conflicts and is returned 
+        # in paginated get chain.
+        self.version_number = 0
+
         # Create the genesis block
         self.new_block(previous_hash='1', proof=100, date=datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
 
@@ -223,9 +227,9 @@ class Blockchain:
         """
         #TODO lock block?
         try:
-            return self.chain[index]
+            return self.chain[index - 1]
         except IndexError:
-            return -1
+            return None
 
     @staticmethod
     def valid_proof(last_proof, proof, last_hash, current_transactions):
@@ -251,4 +255,10 @@ class Blockchain:
         # This is where difficulty is set.
         difficulty = config.get_block_difficulty()
         return guess_hash[:difficulty] == '0' * difficulty
+
+    def get_version_number(self):
+        return self.version_number
+
+    def increment_version_number(self):
+        self.version_number += 1
 

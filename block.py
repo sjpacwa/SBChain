@@ -11,6 +11,9 @@ import json
 import logging
 from datetime import datetime
 
+from coin import reward_coin_from_json, coin_from_json
+from transaction import reward_transaction_from_json, transaction_from_json, transaction_verify
+
 
 class Block:
     """
@@ -93,7 +96,13 @@ class Block:
         Checks to see if two Blocks are equal.
 
         :param other: <Block Object> The Block to compare to.
+    
         """
+        
+        if not isinstance(other, Block):
+            return False
+
+
         return (self.index == other.index
             and self.timestamp == other.timestamp
             and self.transactions == other.transactions
@@ -126,9 +135,36 @@ def block_from_json(data):
         if key not in data:
             raise KeyError('{} not found during block creation'.format(key))
 
+    reward = data['transaction'][0]
+    # Create inputs
+    inputs = []
+    for coin in reward['inputs']:
+        inputs.append(coin_from_json(coin))
+    outputs = {}
+    for recipient in reward['outputs']:
+        outputs[recipient] = []
+        for coin in reward['outputs'][recipient]:
+            outputs[recipient].append(reward_coin_from_json(coin))
+    reward_trans = reward_transaction_from_json(reward, inputs, outputs)
+
+    transactions = [reward_trans]
+
+    for transaction in data['transactions'][1:]:
+        inputs = []
+        for coin in transaction['inputs']:
+            inputs.append(coin_from_json(coin))
+        outputs = {}
+        for recipient in transaction['outputs']:
+            outputs[recipient] = []
+            for coin in reward['outputs'][recipient]:
+                outputs[recipient].append(coin_from_json(coin))
+        trans = transaction_from_json(reward, inputs, outputs)
+
+        transactions.append(trans)
+
     return Block(
         data['index'],
-        [transaction_from_json(transaction) for transaction in data['transactions']],
+        transactions,
         data['proof'],
         data['previous_hash'],
         data['timestamp']

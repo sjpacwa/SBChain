@@ -77,7 +77,7 @@ class ThreadHandler():
         except Exception as e:
             conn.send(GENERATE_ERROR('Bad request'))
             logging.warning(e)
-            traceback.print_exc()
-            traceback.print_stack()
+            logging.warning(traceback.format_exc())
+            logging.warning(''.join(traceback.format_stack()))
             conn.close()
             

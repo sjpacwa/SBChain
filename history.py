@@ -45,7 +45,10 @@ class History:
                     self.wallet.remove_coin(coin.get_uuid())
 
         def remove_coin(self, uuid):
-            del self.coins[uuid]
+            try:
+                del self.coins[uuid]
+            except KeyError:
+                pass
 
         def remove_transaction(self, uuid):
             transaction = self.transactions[uuid]
@@ -59,7 +62,10 @@ class History:
                 for coin in our_bad_coins:
                     self.wallet.remove_coin(coin.get_uuid())
 
-            del self.transactions[uuid]
+            try:
+                del self.transactions[uuid]
+            except KeyError:
+                pass
 
         def get_lock(self):
             return self.history_lock

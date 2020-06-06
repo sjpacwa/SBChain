@@ -51,7 +51,7 @@ class NetworkHandler(ConnectionHandler):
         self.sock.bind((self.metadata['host'], self.metadata['port']))
 
         # Start thread handler.
-        self.threads = ThreadHandler(metadata, num_threads);
+        self.threads = ThreadHandler(metadata, num_threads)
 
     def event_loop(self):
         """

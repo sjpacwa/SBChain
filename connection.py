@@ -76,7 +76,7 @@ class ConnectionHandler():
 
 
 class SingleConnectionHandler(ConnectionHandler):
-    def __init__(self, host, port):
+    def __init__(self, host, port, close=True):
         """
         __init__
 
@@ -86,6 +86,8 @@ class SingleConnectionHandler(ConnectionHandler):
 
         self.host = host
         self.port = port
+
+        self.close = close
         
         self.conn = socket(AF_INET, SOCK_STREAM)
         try:
@@ -109,7 +111,8 @@ class SingleConnectionHandler(ConnectionHandler):
         
         self._send(self.conn, data)
         received_data = self._recv(self.conn)
-        self.conn.close()
+        if self.close:
+            self.conn.close()
         return received_data
 
     def send_wout_response(self, data):
@@ -125,7 +128,8 @@ class SingleConnectionHandler(ConnectionHandler):
         :return: <json> JSON representation of the data.
         """
         self._send(self.conn, data)
-        self.conn.close()
+        if self.close:
+            self.conn.close()
 
 
 class MultipleConnectionHandler(ConnectionHandler):

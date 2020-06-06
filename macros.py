@@ -17,25 +17,24 @@ INVALID_INDEX = {
     }
 }
 
-INITIAL_PEERS = (
+INITIAL_PEERS = [
     ('localhost',5000),
     ('localhost',5001)
-)
+    ]
 
-GET_CHAIN = {
-    'name': "full-chain"
-}
 
 def GENERATE_ERROR(data):
     message = '{"error": "' + data + '"}'
     message = str(len(message)) + '~' + message
     return message.encode()
 
-def RECEIVE_BLOCK(block): 
+
+def RECEIVE_BLOCK(block, host, port): 
     return {
         'action': 'receive_block',
-        'params': [block]
+        'params': [block, host, port]
     }
+
 
 def RECEIVE_TRANSACTION(transaction):
     return {
@@ -43,16 +42,40 @@ def RECEIVE_TRANSACTION(transaction):
         'params': transaction,
     }
 
+
+def REGISTER_NODES(peer_list):
+    return {"action": "register_nodes", "params": [peer_list]}
+
+
 def TRANSACTION_ADDED(block_index):
     return {
         "Transaction will be added to block {}.".format(block_index)
     }
 
-def CHAIN(chain,length):
-    return {
-        'chain': chain,
-        'length': length
-        }
+
+def GET_CHAIN():
+    return {'action': 'get_chain', 'params': []}
+
+
+def GET_CHAIN_PAGINATED(size):
+    return {'action': 'get_chain_paginated', 'params': [size]}
+
+
+def GET_CHAIN_PAGINATED_ACK():
+    return {'action': 'inform', 'params': {'message': 'ACK'}}
+
+
+def GET_CHAIN_PAGINATED_STOP():
+    return {'action': 'inform', 'params': {'message': 'STOP'}}
+
+
+def SEND_CHAIN(chain, length):
+    return {'chain': chain, 'length': length}
+
+
+def SEND_CHAIN_SECTION(section, status):
+    return {'section': section, 'status': status}
+
 
 def NODES(nodes):
     return {

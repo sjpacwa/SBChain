@@ -25,7 +25,7 @@ def test_block_with_lower_index(blockchain):
 
     block = loads(BLANK_BLOCK(1, [], "1", "1"))
 
-    receive_block(block, metadata, queues, FakeConnection())
+    receive_block(block, '127.0.0.1', 5000, metadata, queues, FakeConnection())
 
     with pytest.raises(Empty):
         queues['blocks'].get(block=False)
@@ -35,7 +35,7 @@ def test_block_with_equal_index(blockchain):
 
     block = loads(BLANK_BLOCK(4, [], "3", "3"))
 
-    receive_block(block, metadata, queues, FakeConnection())
+    receive_block(block, '127.0.0.1', 5000, metadata, queues, FakeConnection())
 
     assert queues['blocks'].get(block=False) != None
     with pytest.raises(Empty):
@@ -46,7 +46,7 @@ def test_block_with_greater_index(blockchain):
 
     block = loads(BLANK_BLOCK(10, [], "10", "10"))
 
-    receive_block(block, metadata, queues, FakeConnection())
+    receive_block(block, '127.0.0.1', 5000, metadata, queues, FakeConnection())
 
     assert queues['blocks'].get(block=False) != None
     with pytest.raises(Empty):

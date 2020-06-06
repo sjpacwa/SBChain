@@ -6,17 +6,19 @@ This file is responsible for the miner functionality
 
 # Standard library imports
 import logging
+from copy import deepcopy
 from datetime import datetime
 from threading import Thread
 from uuid import uuid4
 import json
 
 # Local imports
+from block import block_from_json   
 from blockchain import Blockchain
 from coin import Coin, RewardCoin
 from transaction import Transaction, RewardTransaction, transaction_verify
-from macros import RECEIVE_BLOCK
-from connection import MultipleConnectionHandler
+from macros import RECEIVE_BLOCK, GET_CHAIN_PAGINATED, GET_CHAIN_PAGINATED_ACK, GET_CHAIN_PAGINATED_STOP
+from connection import MultipleConnectionHandler, SingleConnectionHandler
 from history import History
 
 
@@ -45,6 +47,11 @@ class Miner(Thread):
         self.start()
 
     def run(self):
+        if self.metadata['benchmark']:
+            logging.warning("Miner waiting at semaphore. Did you remember to call benchmark initialize?")
+            self.metadata['benchmark_lock'].acquire()
+            logging.info("Semaphore acquired, proceeding to mine")
+
         while True:
             try:
                 mine(self.metadata, self.queues)
@@ -125,71 +132,15 @@ def handle_blocks(metadata, queues):
 
     changed = False
     while not queues['blocks'].empty():
+        logging.info("HERE")
         history_temp = history.get_copy()
 
         host_port, block = queues['blocks'].get()
         current_index = metadata['blockchain'].last_block_index        
         
         if block.index == current_index + 1:
-            bad_block = False
-            new_transactions = []
-
-            for transaction in block.transactions[1:]:
-                hist_trans = history.get_transaction(transaction["uuid"])
-                if hist_trans != None:
-                    new_trans = json.dumps(transaction)
-                    hist_trans_string = hist_trans.to_string()
-
-                    if new_trans != hist_trans_string:
-                        # Transaction exists but does not match
-                        logging.info('Bad block: transaction exists but does not match.')
-                        bad_block = True
-                        break
-                    new_transactions.append(hist_trans)
-                else:
-                    check, new_transaction = transaction_verify(history_temp, transaction)
-                    if not check:
-                        # Verification doesn't pass.
-                        logging.info('Bad block: transaction verification fails')
-                        bad_block = True
-                        break
-                    new_transactions.append(new_transaction)
-
-            # Verify the reward.
-            reward = block.transactions[0]
-            hist_trans = history.get_transaction(reward["uuid"])
-            if hist_trans != None:
-                new_trans = json.dumps(reward)
-                hist_trans = hist_trans.to_string()
-
-                # Transaction exists but does not match
-                logging.warning('Bad block: reward already exists')
-                bad_block = True
-                break
-            else:
-                check, new_reward = transaction_verify(history_temp, reward, True)
-                if not check:
-                    # Verification doesn't pass.
-                    logging.info('Bad block: reward verification fails')
-                    bad_block = True
-                    break
-                new_transactions = [new_reward] + new_transactions
-
-            if bad_block:
-                queues['blocks'].task_done()
-                continue
-
-            lastblock = metadata['blockchain'].last_block
-
-            if lastblock.hash != block.previous_hash:
-                logging.info('Bad block: hash does not match')
-                queues['blocks'].task_done()
-                continue
-
-            block.transactions = new_transactions
-            
-            if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash, block.transactions):
-                logging.info('Bad block: invalid proof')
+            success = verify_block(history_temp, block, metadata)
+            if success == False:
                 queues['blocks'].task_done()
                 continue
 
@@ -208,14 +159,103 @@ def handle_blocks(metadata, queues):
                 changed = True
 
     if changed:
-        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block], {}, None))
+        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'], metadata['port']], {}, None))
         queues['blocks'].task_done()
         raise BlockException
 
 
-def resolve_conflicts(block, history, host_port, metadata):
-    logging.warning('Resolve conflicts unimplemented')
-    return False
+def resolve_conflicts(block, history_copy, host_port, metadata):
+    logging.info("Resolving conflicts")
+
+    blockchain_copy = deepcopy(metadata['blockchain'])
+
+    logging.info(blockchain_copy)
+    logging.info(blockchain_copy.chain)
+    
+    conn = SingleConnectionHandler(host_port[0], host_port[1], False)
+
+    response = conn.send_with_response(GET_CHAIN_PAGINATED(10))
+
+    blocks = response['section']
+
+    # Retrieve only the blocks that we need.
+    while response['status'] != 'FINISHED':
+        our_block = blockchain_copy.get_block(blocks[0]['index'])
+
+        if our_block != None and our_block.previous_hash == blocks[0]['previous_hash']:
+            conn.send_wout_response(GET_CHAIN_PAGINATED_STOP())
+            break
+
+        response = conn.send_with_response(GET_CHAIN_PAGINATED_ACK())
+
+        if response['status'] == 'INITIAL':
+            blocks = response['section']
+        else:
+            blocks = response['section'] + blocks
+
+    # Find common ancestor.
+    common_ancestor_index = -1
+    logging.warning(blocks)
+    for index, block in enumerate(blocks):
+        index = block['index']
+        our_block = blockchain_copy.get_block(index)
+
+        if our_block == None:
+            continue
+
+        if block['previous_hash'] != our_block.previous_hash:
+            common_ancestor_index = our_block.index - 1
+            break
+
+    logging.info("Found common ancestor")
+
+    blocks = blocks[index:]
+
+    # Rollback to common ancestor.
+    for block in blockchain_copy.chain[common_ancestor_index::-1]:
+        rollback_block(block, history_copy)
+        blockchain_copy.chain = blockchain_copy[:-1]
+
+    # Add new blocks moving forward.
+    block_objs = []
+    for block in blocks:
+        block_obj = block_from_json(block)
+        success = verify_block(history_copy, block_obj, metadata)
+        block_objs.append(block_obj)
+        if not success:
+            logging.info("Could not replace chain")
+            return False
+
+    blockchain_copy.chain.extend(block_objs)
+    blockchain_copy.increment_version_number()
+
+    metadata['blockchain'] = blockchain_copy
+    metadata['history'].replace_history(history_copy)
+
+    logging.info("Replaced chain with a longer one.")
+
+    return True
+
+
+def rollback_block(block, history_copy):
+    reward_transaction = block.transactions[0]
+    rollback_transaction(reward_transaction, history_copy)
+
+    # Normal transactions.
+    for transaction in block.transactions[1::-1]:
+        rollback_transaction(transaction, history_copy)
+
+
+def rollback_transaction(transaction, history_copy):
+    output_coins = transaction.get_all_output_coins()
+    for coin in output_coins:
+        history_copy.remove_coin(coin.get_uuid())
+
+    input_coins = transaction.get_inputs()
+    for coin in input_coins:
+        history_copy.add_coin(coin)
+
+    history_copy.remove_transaction(transaction.get_uuid())
 
 
 def mine(*args, **kwargs):
@@ -248,7 +288,7 @@ def mine(*args, **kwargs):
 
     logging.debug("Mine peers:")
     logging.debug(metadata['peers'])
-    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json()))
+    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json(), metadata['host'], metadata['port']))
 
     logging.debug("Response:")
     logging.debug(block.to_json())
@@ -256,3 +296,61 @@ def mine(*args, **kwargs):
     logging.debug("My Chain")
     logging.debug(metadata['blockchain'].get_chain())
 
+
+def verify_block(history_temp, block, metadata):
+    new_transactions = []
+
+    for transaction in block.transactions[1:]:
+        hist_trans = history_temp.get_transaction(transaction["uuid"])
+        if hist_trans != None:
+            new_trans = json.dumps(transaction)
+            hist_trans_string = hist_trans.to_string()
+
+            if new_trans != hist_trans_string:
+                # Transaction exists but does not match
+                logging.info('Bad block: transaction exists but does not match.')
+                return False
+
+            new_transactions.append(hist_trans)
+        else:
+            check, new_transaction = transaction_verify(history_temp, transaction)
+            if not check:
+                # Verification doesn't pass.
+                logging.info('Bad block: transaction verification fails')
+                return False
+
+            new_transactions.append(new_transaction)
+
+    # Verify the reward.
+    reward = block.transactions[0]
+    hist_trans = history_temp.get_transaction(reward["uuid"])
+    if hist_trans != None:
+        new_trans = json.dumps(reward)
+        hist_trans = hist_trans.to_string()
+
+        # Transaction exists but does not match
+        logging.warning('Bad block: reward already exists')
+        return False
+
+    else:
+        check, new_reward = transaction_verify(history_temp, reward, True)
+        if not check:
+            # Verification doesn't pass.
+            logging.info('Bad block: reward verification fails')
+            return False
+
+        new_transactions = [new_reward] + new_transactions
+
+    lastblock = metadata['blockchain'].last_block
+
+    if lastblock.hash != block.previous_hash:
+        logging.info('Bad block: hash does not match')
+        return False
+
+    block.transactions = new_transactions
+    
+    if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash, block.transactions):
+        logging.info('Bad block: invalid proof')
+        return False
+
+    return True

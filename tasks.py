@@ -1,5 +1,6 @@
 # Standard library imports
 from urllib.parse import urlparse
+from hashlib import sha1
 import logging
 import json
 from time import sleep
@@ -9,8 +10,8 @@ from block import Block
 from coin import *
 from encoder import ComplexEncoder
 from transaction import *
-from connection import MultipleConnectionHandler, ConnectionHandler
-from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION
+from connection import MultipleConnectionHandler, ConnectionHandler, SingleConnectionHandler
+from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION
 from mine import mine
 
 
@@ -32,9 +33,9 @@ def thread_function(func):
 
 
 @thread_function
-def full_chain(*args, **kwargs):
+def get_chain(*args, **kwargs):
     """
-    full_chain()
+    get_chain()
 
     Public and Internal
 
@@ -45,23 +46,77 @@ def full_chain(*args, **kwargs):
     """
 
     metadata = args[0]
-    connection = args[2]
+    conn = args[2]
 
-    logging.info("Received full_chain request (from dispatcher)")
+    # Collect chain for response.
+    chain = metadata['blockchain'].get_chain()
+    length = len(chain)
 
-    # Assemble the chain for the response.
-    chain = CHAIN(metadata['blockchain'].get_chain(),len(metadata['blockchain'].get_chain()))
-    logging.info(chain)
-    chain = json.dumps(chain, default=str).encode()
-    data_len = len(chain)
-    connection.send(str(data_len).encode())
-    test = connection.recv(16).decode()
-    logging.debug(test)        
-    connection.send(chain)
+    ConnectionHandler()._send(conn, SEND_CHAIN(chain, length))
 
 
 @thread_function
-def get_block(arguments, *args, **kwargs):
+def get_chain_paginated(size, *args, **kwargs):
+    """
+    get_chain_paginated()
+
+    Public and Internal
+
+    This function handles a request from the dispatcher (public and internal). 
+    It returns a subsection of the chain to the client and then waits for more 
+    messages.
+
+    :param size: <integer> The number of blocks to receive
+    """
+
+    metadata = args[0]
+    conn = args[2]
+
+    if size < 1:
+        ConnectionHandler()._send(conn, SEND_CHAIN_SECTION([], "ERROR"))
+
+    while True:
+        version_initial = metadata['blockchain'].get_version_number()
+        chain = metadata['blockchain'].get_chain()
+        offset = 0
+        status = 'INITIAL'
+
+        while True:
+            version_inner = metadata['blockchain'].get_version_number()
+
+            if version_inner != version_initial:
+                break
+
+
+            if offset == 0 and size < len(chain):
+                section = chain[offset - size:]
+                offset = offset - size
+            elif offset == 0:
+                section = chain
+                status = 'FINISHED'
+            elif abs(offset - size) > len(chain):
+                section = chain[:offset]
+                status = 'FINISHED'
+            else:
+                section = chain[offset - size:offset]
+                offset = offset - size
+
+            ConnectionHandler()._send(conn, SEND_CHAIN_SECTION(section, status))
+
+            if status == 'INITIAL':
+                status = 'CONTINUE'
+
+            if status == 'FINISHED':
+                return
+
+            response = ConnectionHandler()._recv(conn)
+
+            if response['params']['message'] == 'STOP':
+                return
+
+
+@thread_function
+def get_block(index, *args, **kwargs):
     """
     get_block()
 
@@ -75,30 +130,21 @@ def get_block(arguments, *args, **kwargs):
     """
 
     metadata = args[0]
-    connection = args[2]
+    conn = args[2]
     
     logging.info("Received get block request (from dispatcher)")
 
-    # TODO Just need to respond to the connection.
-    block = metadata['blockchain'].get_block(int(arguments))
+    block = metadata['blockchain'].get_block(index)
 
-    if isinstance(block,int):
-        logging.error("Invalid block index")
+    if block == None:
+        ConnectionHandler()._send(conn, "Block does not exist")
         return
-
-    logging.info(block.to_string())
-
-    block_to_string = block.to_string()
-
-    data_len = len(block_to_string)
-    connection.send(str(data_len).encode())
-    test = connection.recv(16).decode()
-    logging.debug(test)        
-    connection.send(block_to_string.encode())
+    
+    ConnectionHandler()._send(conn, block)
 
 
 @thread_function
-def receive_block(block_data, *args, **kwargs):
+def receive_block(block_data, host, port, *args, **kwargs):
     """
     receive_block()
 
@@ -121,9 +167,6 @@ def receive_block(block_data, *args, **kwargs):
     metadata = args[0]
     queues = args[1]
     conn = args[2]
-
-    
-    host, port = conn.getpeername()
 
     current_index = metadata['blockchain'].last_block_index
 
@@ -247,7 +290,7 @@ def new_transaction(trans_data, *args, **kwargs):
 
 
 @thread_function
-def register_nodes(new_peers, *args, **kwargs):
+def register_nodes(peers, *args, **kwargs):
     """
     register_nodes()
 
@@ -255,7 +298,7 @@ def register_nodes(new_peers, *args, **kwargs):
 
     NOTE: We assume that nodes don't drop later in the blockchain's lifespan
 
-    :param new_peers: <list> The address of the peer [host, port].
+    :param new_peers: <list> The address of the peer [[host, port], ...].
     :param *args: <tuple> (metadata, queues, conn).
     :param **kwargs: <dict> Additional arguments.
 
@@ -264,9 +307,21 @@ def register_nodes(new_peers, *args, **kwargs):
 
     metadata = args[0]
 
-    for peer in new_peers:
+    if not isinstance(peers, list):
+        return
+
+    for peer in peers:
         logging.debug("Peer")
         logging.debug(peer)
+
+        if not isinstance(peer, tuple):
+            continue
+        if not len(peer) == 2:
+            continue
+        if not isinstance(peer[0], str):
+            continue
+        if not isinstance(peer[1], int):
+            continue
 
         if peer[0] != metadata['host'] or peer[1] != metadata['port']:
             logging.debug("Registering Node")
@@ -275,17 +330,67 @@ def register_nodes(new_peers, *args, **kwargs):
             logging.debug(parsed_url)
             
             if parsed_url.netloc:
-                metadata['peers'].append((parsed_url.netloc,peer[1]))
-                logging.debug(parsed_url.netloc,peer[1])
+                new_peer = (parsed_url.netloc, peer[1])
+                if new_peer not in metadata['peers']:
+                    metadata['peers'].append(new_peer)
+                    logging.debug(parsed_url.netloc, peer[1])
+                else:
+                    continue
             
             elif parsed_url.path:
                 # Accepts an URL without scheme like '192.168.0.5:5000'.
-                metadata['peers'].append((parsed_url.path,peer[1]))
-                logging.debug(parsed_url.path,peer[1])
-            
+                new_peer = (parsed_url.path, peer[1])
+                if new_peer not in metadata['peers']:
+                    metadata['peers'].append(new_peer)
+                    logging.debug(parsed_url.path, peer[1])
+                else:
+                    continue
+
             else:
                 logging.error('Invalid URL')
                 logging.error(peer)
+                continue
+
+            # Connect to new node and give them our address. The outer list is 
+            # necessary because this function takes a list of nodes and the inner
+            # list combines the host and port into one object.
+            try:
+                SingleConnectionHandler(
+                    new_peer[0],
+                    new_peer[1]
+                ).send_wout_response(REGISTER_NODES([[metadata['host'], metadata['port']]]))
+            except ConnectionRefusedError:
+                pass
+
+
+@thread_function
+def unregister_nodes(peers, *args, **kwargs):
+    """
+    unregister_nodes()
+
+    Remove peers from our list of peers.
+
+    :param peers: <list> The address of the peers [[host, port], ...].
+    :param *args: <tuple> (metadata, queues, conn).
+    :param **kwargs: <dict> Additional arguments.
+    """
+
+    metadata = args[0]
+
+    if not isinstance(peers, list):
+        return
+
+    for peer in peers: 
+        if isinstance(peer, list):
+            peer = tuple(peer)
+        elif not isinstance(peer, tuple):
+            continue
+
+        try:
+            metadata['peers'].remove(peer)
+        except ValueError:
+            pass
+        logging.debug(peer)
 
 
 @thread_function
@@ -300,12 +405,12 @@ def forward_transaction(transaction_list, *args, **kwargs):
 
 
 @thread_function
-def forward_block(block, *args, **kwargs):
+def forward_block(block, host, port, *args, **kwargs):
     metadata = args[0]
 
     connection = MultipleConnectionHandler(metadata['peers'])
 
-    message = RECEIVE_BLOCK(block)
+    message = RECEIVE_BLOCK(block, host, port)
 
     connection.send_wout_response(message)
 
@@ -321,4 +426,61 @@ def response_test(*args, **kwargs):
 
     message = '20~{"message": "hello"}'
     conn.send(message.encode())
+
+
+@thread_function
+def benchmark_initialize(node_ids, value, *args, **kwargs):
+    """
+    benchmark_initialize()
+
+    This endpoint can be used in the case that the chain is being 
+    benchmarked to initialized each node in the system with a starting
+    value. Note that for this to work properly, every node must 
+    successfully complete this task.
+
+    :param node_ids: <list> A list of the node ids in the system.
+    :param value: <int> The value to give each node.
+    """
+
+    metadata = args[0]
+
+    # Only allow this to run once per node if benchmark is set to True.
+    if not metadata['benchmark']:
+        return False
+
+    # Create the input coin.
+    input_coin = Coin('BENCHMARK_ORIGIN', value * len(node_ids), 'BENCHMARK_INPUT')
+
+    # Create the output coins.
+    output_coins = {}
+    for node_id in node_ids:
+        sha1hash = sha1()
+        sha1hash.update(node_id.encode())
+        coin_id = sha1hash.digest().hex()
+
+        coin = Coin('BENCHMARK_TRANS', value, coin_id)
+
+        output_coins[node_id] = [coin]
+        metadata['history'].add_coin(coin)
+
+    # Create the transaction.
+    transaction = Transaction(
+        'BENCHMARK',
+        [input_coin],
+        output_coins,
+        'BENCHMARK_TRANS',
+        datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ')
+    )
+
+    metadata['history'].add_transaction(transaction)
+
+    # Add transaction to genesis block.
+    metadata['blockchain'].chain[0].transactions.append(transaction)
+
+    # Mark benchmark as false to prevent repeat calls and release the 
+    # semaphore so that mining can begin.
+    metadata['benchmark'] = False
+    metadata['benchmark_lock'].release()
+
+    return True
 
