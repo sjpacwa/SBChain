@@ -6,7 +6,7 @@ import json
 from time import sleep
 
 # Local imports
-from block import Block
+from block import Block, block_from_json
 from coin import *
 from encoder import ComplexEncoder
 from transaction import *
@@ -172,14 +172,8 @@ def receive_block(block_data, host, port, *args, **kwargs):
 
     if block_data['index'] >= current_index + 1:
         transactions = []
-        
-        block = Block(
-            index=block_data['index'],
-            transactions=block_data['transactions'],
-            proof=block_data['proof'],
-            previous_hash=block_data['previous_hash'],
-            timestamp=block_data['timestamp']
-        )
+       
+        block = block_from_json(block_data)        
 
         logging.info('Added block to queue')
         queues['blocks'].put(((host, port), block))

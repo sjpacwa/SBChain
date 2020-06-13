@@ -135,7 +135,7 @@ def block_from_json(data):
         if key not in data:
             raise KeyError('{} not found during block creation'.format(key))
 
-    reward = data['transaction'][0]
+    reward = data['transactions'][0]
     # Create inputs
     inputs = []
     for coin in reward['inputs']:

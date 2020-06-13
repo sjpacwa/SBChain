@@ -20,6 +20,7 @@ from transaction import Transaction, RewardTransaction, transaction_verify
 from macros import RECEIVE_BLOCK, GET_CHAIN_PAGINATED, GET_CHAIN_PAGINATED_ACK, GET_CHAIN_PAGINATED_STOP
 from connection import MultipleConnectionHandler, SingleConnectionHandler
 from history import History
+from encoder import ComplexEncoder
 
 
 class BlockException(Exception):
@@ -139,7 +140,7 @@ def handle_blocks(metadata, queues):
         current_index = metadata['blockchain'].last_block_index        
         
         if block.index == current_index + 1:
-            success = verify_block(history_temp, block, metadata)
+            success = verify_block(history_temp, block, metadata['blockchain'])
             if success == False:
                 queues['blocks'].task_done()
                 continue
@@ -195,41 +196,45 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
 
     # Find common ancestor.
     common_ancestor_index = -1
-    logging.warning(blocks)
+    # logging.warning(blocks)
     for index, block in enumerate(blocks):
-        index = block['index']
-        our_block = blockchain_copy.get_block(index)
+        net_index = block['index']
+        our_block = blockchain_copy.get_block(net_index)
 
         if our_block == None:
             continue
 
-        if block['previous_hash'] != our_block.previous_hash:
+        if block['previous_hash'] == our_block.previous_hash:
+            logging.info("Found common ancestor")
             common_ancestor_index = our_block.index - 1
             break
 
-    logging.info("Found common ancestor")
 
-    blocks = blocks[index:]
+    blocks = blocks[index + 1:]
 
     # Rollback to common ancestor.
-    for block in blockchain_copy.chain[common_ancestor_index::-1]:
+    for block in blockchain_copy.chain[-1:common_ancestor_index:-1]:
         rollback_block(block, history_copy)
-        blockchain_copy.chain = blockchain_copy[:-1]
+        blockchain_copy.chain = blockchain_copy.chain[:-1]
 
     # Add new blocks moving forward.
-    block_objs = []
+    i = 0
     for block in blocks:
         block_obj = block_from_json(block)
-        success = verify_block(history_copy, block_obj, metadata)
-        block_objs.append(block_obj)
+        success = verify_block(history_copy, block_obj, blockchain_copy)
+        blockchain_copy.add_block(block_obj)
         if not success:
             logging.info("Could not replace chain")
             return False
 
-    blockchain_copy.chain.extend(block_objs)
+        i = i + 1
+
     blockchain_copy.increment_version_number()
 
-    metadata['blockchain'] = blockchain_copy
+    metadata['blockchain'].chain = blockchain_copy.chain
+    metadata['blockchain'].current_transactions = blockchain_copy.current_transactions
+    metadata['blockchain'].increment_version_number()
+
     metadata['history'].replace_history(history_copy)
 
     logging.info("Replaced chain with a longer one.")
@@ -242,7 +247,7 @@ def rollback_block(block, history_copy):
     rollback_transaction(reward_transaction, history_copy)
 
     # Normal transactions.
-    for transaction in block.transactions[1::-1]:
+    for transaction in block.transactions[-1:0:-1]:
         rollback_transaction(transaction, history_copy)
 
 
@@ -283,6 +288,9 @@ def mine(*args, **kwargs):
     # Create the proof_of_work on the block.
     proof = proof_of_work(metadata, queues, reward_transaction, last_block)
 
+    history = History()
+    history.add_transaction(reward_transaction)
+
     # Create the new block and add it to the end of the chain.
     block = metadata['blockchain'].new_block(proof, last_block.hash)
 
@@ -297,7 +305,7 @@ def mine(*args, **kwargs):
     logging.debug(metadata['blockchain'].get_chain())
 
 
-def verify_block(history_temp, block, metadata):
+def verify_block(history_temp, block, blockchain):
     new_transactions = []
 
     for transaction in block.transactions[1:]:
@@ -323,7 +331,7 @@ def verify_block(history_temp, block, metadata):
 
     # Verify the reward.
     reward = block.transactions[0]
-    hist_trans = history_temp.get_transaction(reward["uuid"])
+    hist_trans = history_temp.get_transaction(reward.get_uuid())
     if hist_trans != None:
         new_trans = json.dumps(reward)
         hist_trans = hist_trans.to_string()
@@ -341,7 +349,8 @@ def verify_block(history_temp, block, metadata):
 
         new_transactions = [new_reward] + new_transactions
 
-    lastblock = metadata['blockchain'].last_block
+    lastblock = blockchain.last_block
+
 
     if lastblock.hash != block.previous_hash:
         logging.info('Bad block: hash does not match')
