@@ -104,8 +104,8 @@ All registered nodes are also registered in their peers.
     'action': 'register_nodes',
     'params': [
         'peers': [
-            (<ip1>,<port1>),
-            (<ip2>,<port2>)
+            ('<ip1>',<port1>),
+            ('<ip2>',<port2>)
         ]
     ]
 }
@@ -123,8 +123,8 @@ Unregisters peers with node through dispatcher thread
     'action': 'unregister_nodes',
     'params': [
         'peers': [
-            (<ip1>,<port1>),
-            (<ip2>,<port2>)
+            ('<ip1>',<port1>),
+            ('<ip2>',<port2>)
         ]
     ]
 }
