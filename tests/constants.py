@@ -2,17 +2,24 @@ import json
 from threading import Lock
 from uuid import uuid4
 from queue import Queue
+from datetime import datetime
 
 from blockchain import Blockchain
 from block import Block
+from coin import Coin, RewardCoin
 from encoder import ComplexEncoder
 from history import History
-from transaction import Transaction
+from transaction import Transaction, RewardTransaction
 
 uuid = str(uuid4()).replace("-", "")
 
 def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
     history = History(uuid)
+
+    transaction_id = "ABC"
+    output = Coin(transaction_id, 100, "TEST")
+    history.add_transaction(Transaction("A", [Coin("OLD", 100)], {"B": [output]}, transaction_id))
+    history.add_coin(output)
     
 
     return {
@@ -21,6 +28,7 @@ def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
         'done': Lock(),
         'uuid': uuid,
         'debug': True,
+        'no_mine': True,
         'blockchain': blockchain,
         'history': history,
         'peers': []
@@ -39,6 +47,11 @@ def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
     return json.dumps(trans, cls=ComplexEncoder)
 
 def BLANK_BLOCK(index, transactions, proof, previous_hash):
+    transaction_id = "REWARD"
+    reward_transaction = RewardTransaction([], {'A': [RewardCoin(transaction_id, 5, "REWARD_COIN")]}, transaction_id, datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
+
+    transactions = [reward_transaction] + transactions
+
     block = Block(index, transactions, proof, previous_hash)
 
     return json.dumps(block, cls=ComplexEncoder)

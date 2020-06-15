@@ -1,5 +1,6 @@
 """
 logger.py
+
 This file is responsible for handling of the logging module
 """
 
@@ -12,23 +13,18 @@ def initialize_log(node_id,debug):
     """
     initialize_log()
 
-    Not Thread Safe
-
     Initializes the folder and the logs for the respective node.
-
     Initializes the file and console handlers
 
-    :param node_id: <str> Node ID.
+    :param node_id: <str> The node ID.
     :param debug: <bool> Determines the logging level. DEBUG if debug else INFO
     """
     try:
-        mkdir("logs",0o777 )
-    except OSError as error:
+        mkdir("logs", 0o777)
+    except OSError:
         pass
-    except:
-        raise
 
-    logs_path = "logs/" + node_id +".log"
+    logs_path = "logs/" + node_id + ".log"
 
     logger = logging.getLogger()
 
@@ -36,6 +32,7 @@ def initialize_log(node_id,debug):
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
     # Create handlers
     f_handler = logging.FileHandler(logs_path)
     c_handler = logging.StreamHandler()
@@ -56,3 +53,4 @@ def initialize_log(node_id,debug):
     
     f_handler.setFormatter(log_format)
     logger.addHandler(f_handler)
+

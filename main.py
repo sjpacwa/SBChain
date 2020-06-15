@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--benchmark', default=False, 
         action='store_true', help='initialize node for benchmark use')
     parser.add_argument('--debug', default=False, action='store_true')    
+    parser.add_argument('--no_mine', default=False, action='store_true')
 
     args = parser.parse_args()
     port = args.port
@@ -32,7 +33,8 @@ if __name__ == '__main__':
     uuid = args.id
     benchmark = args.benchmark
     debug = args.debug
+    no_mine = args.no_mine
    
     # Create the node.
-    node = Node(host, port, None, uuid, debug, benchmark, INITIAL_PEERS)
+    node = Node(host, port, None, uuid, debug, no_mine, benchmark, INITIAL_PEERS)
 

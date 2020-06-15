@@ -1,3 +1,9 @@
+"""
+tasks.py
+
+This file holds all of the tasks that can be run.
+"""
+
 # Standard library imports
 from urllib.parse import urlparse
 from hashlib import sha1
@@ -11,7 +17,7 @@ from coin import *
 from encoder import ComplexEncoder
 from transaction import *
 from connection import MultipleConnectionHandler, ConnectionHandler, SingleConnectionHandler
-from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION
+from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION, RESOLVE_CONFLICTS
 from mine import mine
 
 
@@ -32,17 +38,17 @@ def thread_function(func):
     return func
 
 
+"""
+Public API calls.
+"""
+
+
 @thread_function
 def get_chain(*args, **kwargs):
     """
     get_chain()
 
-    Public and Internal
-
-    This function handles a request from the dispatcher (public and internal).
-    It returns a copy of the entire chain to the client.
-    
-    :param connection: <Socket Connection Object> The new connection.
+    This function returns a copy of the entire chain to the requestor.
     """
 
     metadata = args[0]
@@ -59,8 +65,6 @@ def get_chain(*args, **kwargs):
 def get_chain_paginated(size, *args, **kwargs):
     """
     get_chain_paginated()
-
-    Public and Internal
 
     This function handles a request from the dispatcher (public and internal). 
     It returns a subsection of the chain to the client and then waits for more 
@@ -120,8 +124,6 @@ def get_block(index, *args, **kwargs):
     """
     get_block()
 
-    Public and Internal
-
     This function handles a request from the dispatcher. 
     It returns the block that has been requested to the client.
 
@@ -144,88 +146,17 @@ def get_block(index, *args, **kwargs):
 
 
 @thread_function
-def receive_block(block_data, host, port, *args, **kwargs):
-    """
-    receive_block()
-
-    Internal
-
-    Not Thread Safe
-
-    This function handles a request from the dispatcher (internal).
-    It receives a block from a peer and forwards it along to everyone but 
-    the original sender.
-
-    :param connection: <Socket Connection Object> The new connection.
-    :param index: <int> Index of the block
-    :param transactions: <json> JSON representation of transactions.
-    :param proof: <int> Proof of block
-    :param previous hash: <str> Hash of the previous block
-    :param timestamp: <timestamp> Timestamp of the block creation
-    """
-
-    metadata = args[0]
-    queues = args[1]
-    conn = args[2]
-
-    current_index = metadata['blockchain'].last_block_index
-
-    if block_data['index'] >= current_index + 1:
-        transactions = []
-       
-        block = block_from_json(block_data)        
-
-        logging.info('Added block to queue')
-        queues['blocks'].put(((host, port), block))
-
-
-@thread_function
-def receive_transactions(trans_data, *args, **kwargs):
-    """
-    new_transaction()
-
-    Public
-
-    Not Thread Safe
-
-    This function handles request from the dispatcher (public). 
-    It creates a new transaction and adds it to the pool of transactions.
-
-    TODO: refactored in new branch to use coins
-    
-    :param connection: <Socket Connection Object> The new connection.
-    :param sender: <str> Sender id for the transaction
-    :param recipient: <str> Recipient id for the transaction
-    :param amount: <int> Amount of the transaction 
-    """
-
-    metadata = args[0]
-    queues = args[1]
-
-    
-
-    receive_transaction_internal(trans_data, metadata, queues)
-                
-
-def receive_transaction_internal(trans_data, metadata, queues):
-    history = metadata['history']
-    history_lock = history.get_lock()
-
-    with history_lock:
-        transactions = []
-        for transaction in trans_data:
-            check, new_transaction = transaction_verify(history, transaction)
-            if check:
-                queues['trans'].put(new_transaction)
-                transactions.append(new_transaction.to_json())
-            else:
-                transactions.append('Transaction verification failed' + str(transaction))
-    
-    return transactions
-
-
-@thread_function
 def new_transaction(trans_data, *args, **kwargs):
+    """
+    new_transaction
+
+    This function handles request from the dispatcher. It creates a new 
+    transaction and adds it to the list of transactions. Handles simpler transations than
+    receive transaction.
+
+    :param trans_data: <dict> The data of the transaction off the network.
+    """
+
     metadata = args[0]
     queues = args[1]
     conn = args[2]
@@ -293,8 +224,6 @@ def register_nodes(peers, *args, **kwargs):
     NOTE: We assume that nodes don't drop later in the blockchain's lifespan
 
     :param new_peers: <list> The address of the peer [[host, port], ...].
-    :param *args: <tuple> (metadata, queues, conn).
-    :param **kwargs: <dict> Additional arguments.
 
     :raises: <ValueError> When an invalid address is supplied.
     """
@@ -365,8 +294,6 @@ def unregister_nodes(peers, *args, **kwargs):
     Remove peers from our list of peers.
 
     :param peers: <list> The address of the peers [[host, port], ...].
-    :param *args: <tuple> (metadata, queues, conn).
-    :param **kwargs: <dict> Additional arguments.
     """
 
     metadata = args[0]
@@ -385,41 +312,6 @@ def unregister_nodes(peers, *args, **kwargs):
         except ValueError:
             pass
         logging.debug(peer)
-
-
-@thread_function
-def forward_transaction(transaction_list, *args, **kwargs):
-    metadata = args[0]
-
-    connection = MultipleConnectionHandler(metadata['peers'])
-
-    message = RECEIVE_TRANSACTION([transaction_list])
-
-    connection.send_wout_response(message)
-
-
-@thread_function
-def forward_block(block, host, port, *args, **kwargs):
-    metadata = args[0]
-
-    connection = MultipleConnectionHandler(metadata['peers'])
-
-    message = RECEIVE_BLOCK(block, host, port)
-
-    connection.send_wout_response(message)
-
-
-@thread_function
-def wait_test(sleep_time, message_id, *args, **kwargs):
-    logging.info("Inside wait test")
-    sleep(sleep_time)
-
-@thread_function
-def response_test(*args, **kwargs):
-    conn = args[2]
-
-    message = '20~{"message": "hello"}'
-    conn.send(message.encode())
 
 
 @thread_function
@@ -477,4 +369,234 @@ def benchmark_initialize(node_ids, value, *args, **kwargs):
     metadata['benchmark_lock'].release()
 
     return True
+
+
+@thread_function
+def resolve_conflicts(*args, **kwargs):
+    """
+    resolve_conflicts()
+
+    This function performs an active resolve conflicts, collecting 
+    information from all nodes in the network.
+    """
+
+    metadata = args[0]
+    queues = args[1]
+    conn = args[2]
+
+    # Generate random ID for request.
+    request_id = str(uuid4()).replace('-', '')
+    metadata['resolve_requests'].add(request_id)
+
+    # Send request to peers.
+    host = metadata['host']
+    port = metadata['port']
+    length = metadata['blockchain'].last_block_index
+
+    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(RESOLVE_CONFLICTS(request_id, host, port, length))
+
+    # Aggregate responses and wait for empty queue.
+    blocks_sent = 0
+    for response in responses:
+        blocks_sent += response
+
+    while not queues['blocks'].empty():
+        pass
+
+    # Notify caller process complete.
+    ConnectionHandler()._send(conn, blocks_sent)
+
+
+"""
+Private API calls.
+"""
+
+
+@thread_function
+def receive_block(block_data, host, port, *args, **kwargs):
+    """
+    receive_block()
+
+    This function handles a request from the dispatcher (internal).
+    It receives a block from a peer and forwards it along to everyone but 
+    the original sender.
+
+    :param block_data: <dict> The data of the block off the network.
+    :param host: <str> The host of the node that sent this request.
+    :param port: <str> The port of the node that sent this request.
+    """
+
+    metadata = args[0]
+    queues = args[1]
+
+    current_index = metadata['blockchain'].last_block_index
+
+    if block_data['index'] >= current_index + 1:
+        block = block_from_json(block_data)        
+        if block == None:
+            return
+
+        logging.debug('Added block to queue')
+        queues['blocks'].put(((host, port), block))
+
+
+@thread_function
+def receive_transactions(trans_data, *args, **kwargs):
+    """
+    receive_transaction()
+
+    This function handles request from the dispatcher. 
+    It creates a new transaction and adds it to the pool of transactions.
+
+    :param trans_data: <dict> The data of the transactions off the network.
+    """
+
+    metadata = args[0]
+    queues = args[1]
+
+    receive_transaction_internal(trans_data, metadata, queues)
+                
+
+def receive_transaction_internal(trans_data, metadata, queues):
+    """
+    receive_transaction_internal()
+
+    This function is an internal version to allow new transactions on the node to 
+    be added without going through the network.
+
+    :param trans_data: <dict> The data of the transactions off the network.
+    """
+
+    history = metadata['history']
+    history_lock = history.get_lock()
+
+    with history_lock:
+        transactions = []
+        for transaction in trans_data:
+            new_transaction = transaction_from_json(transaction)
+            check = transaction_verify(history, new_transaction)
+            if check:
+                queues['trans'].put(new_transaction)
+                transactions.append(new_transaction.to_json())
+            else:
+                transactions.append('Transaction verification failed' + str(transaction))
+    
+    return transactions
+
+
+@thread_function
+def forward_transaction(transaction_list, *args, **kwargs):
+    """
+    forward_transaction()
+
+    This function forwards a transaction to the peers of this node.
+
+    :param transaction_list: <list<Transaction Object>> The transactions to
+        forward to peers
+    """
+
+    metadata = args[0]
+
+    connection = MultipleConnectionHandler(metadata['peers'])
+
+    message = RECEIVE_TRANSACTION(transaction_list)
+
+    connection.send_wout_response(message)
+
+
+@thread_function
+def forward_block(block, host, port, *args, **kwargs):
+    """
+    forward_block()
+
+    This function forwards a block to the peers of this node.
+
+    :param block: <Block Object> The block to forward to peers.
+    :param host: <str> The host that is forwarding the block.
+    :param port: <int> The port that is forwarding the block.
+    """
+
+    metadata = args[0]
+
+    connection = MultipleConnectionHandler(metadata['peers'])
+
+    message = RECEIVE_BLOCK(block, host, port)
+
+    connection.send_wout_response(message)
+
+
+@thread_function
+def resolve_conflicts_internal(request_id, host, port, current_index, *args, **kwargs):
+    """
+    resolve_conflicts_internal
+
+    The private analogue to resolve_conflicts. This propogates the message
+    and sends their latest block to the node that made the original request.
+
+    :param request_id: <str> The ID of this request.
+    :param host: <str> The host of the original requestor.
+    :param port: <int> The port of the original requestor.
+    :param current_index: <int> The index of the original requestor.
+    """
+
+    metadata = args[0]
+    conn = args[2]
+
+    metadata['resolve_lock'].acquire()
+
+    if request_id in metadata['resolve_requests']:
+        ConnectionHandler()._send(conn, 0)
+        return
+
+    metadata['resolve_requests'].add(request_id)
+
+    metadata['resolve_lock'].release()
+
+    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(RESOLVE_CONFLICTS(request_id, host, port, current_index))
+
+    blocks_sent = 0
+    for response in responses:
+        blocks_sent += response
+
+    if metadata['blockchain'].last_block_index > current_index:
+        try:
+            SingleConnectionHandler(host, port).send_wout_response(RECEIVE_BLOCK(metadata['blockchain'].last_block, metadata['host'], metadata['port']))
+        except ConnectionRefusedError:
+            ConnectionHandler()._send(conn, blocks_sent)
+            return
+        ConnectionHandler()._send(conn, blocks_sent + 1)
+
+
+"""
+Testing API calls.
+"""
+
+
+@thread_function
+def wait_test(sleep_time, message_id, *args, **kwargs):
+    """
+    wait_test()
+
+    This function performs a simple wait for testing.
+
+    :param sleep_time: <int> The number of seconds to sleep.
+    :param message_id: <str> The message to display.
+    """
+
+    logging.info("Inside wait test")
+    sleep(sleep_time)
+
+
+@thread_function
+def response_test(*args, **kwargs):
+    """
+    response_test()
+
+    This function performs a simple response for testing.
+    """
+
+    conn = args[2]
+
+    message = '20~{"message": "hello"}'
+    conn.send(message.encode())
 

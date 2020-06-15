@@ -55,12 +55,12 @@ def test_send_wout_response(node_a):
 def test_send_with_response_bad_2(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
     data = conn.send_with_response({"action": "wait_test", "params": ["one"]})
-    assert data == {"error": "invalid data"} 
+    assert data == "Error: invalid data"
 
 def test_send_with_response_bad(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
     data = conn.send_with_response({"action": "wait_test", "args": [1]})
-    assert data == {"error": "Bad request"} 
+    assert data == "Error: Bad request" 
 
 def test_send_with_response_good(node_a):
     conn = SingleConnectionHandler('localhost', 5000)

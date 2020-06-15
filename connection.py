@@ -16,14 +16,17 @@ from macros import BUFFER_SIZE
 
 
 class ConnectionHandler():
+    """
+    ConnectionHandler
+    """
+
     def _send(self, conn, data):
         """
         _send()
 
-        Not Thread Safe
-
         Send data to peer
 
+        :param conn: <Connection Object> The connection to use.
         :param data: <str> Data to send JSON Object
         """
 
@@ -41,15 +44,11 @@ class ConnectionHandler():
         """
         recv()
 
-        Not Thread Safe
-
         This function will listen on the connection for the data.
 
-        :param connection: <Socket Connection Object> The new connection.
-        :param data_size: <int> The size of the incoming data.
-        :param num_buffers: <int> The number of buffer cycles required.
+        :param conn: <Connection Object> The connection to use.
 
-        :return: <json> JSON representation of the data.
+        :return: <dict> JSON Object representation of the data.
         """
 
         try:
@@ -76,12 +75,22 @@ class ConnectionHandler():
 
 
 class SingleConnectionHandler(ConnectionHandler):
+    """
+    SingleConnectionHandler
+    """
+
     def __init__(self, host, port, close=True):
         """
-        __init__
+        __init__()
+
+        :param host: <str> The host to connect to.
+        :param port: <int> The port to connect to.
+        :param close: <boolean> Whether or not the connection should stay open
+            after making a request.
 
         :raises ConnectionRefusedError: if the connection cannot be established.
         """
+
         ConnectionHandler.__init__(self)
 
         self.host = host
@@ -100,13 +109,11 @@ class SingleConnectionHandler(ConnectionHandler):
         """
         send_with_response()
 
-        Not Thread Safe
-
         Send data and expect a response from peer
 
         :param data: <str> data to send.
 
-        :return: <json> JSON representation of the data.
+        :return: <dict> JSON Object representation of the data.
         """
         
         self._send(self.conn, data)
@@ -119,13 +126,9 @@ class SingleConnectionHandler(ConnectionHandler):
         """
         send_wout_response()
 
-        Not Thread Safe
-
         Send data and don't expect a response back
 
         :param data: <str> data to send.
-
-        :return: <json> JSON representation of the data.
         """
         self._send(self.conn, data)
         if self.close:
@@ -133,7 +136,20 @@ class SingleConnectionHandler(ConnectionHandler):
 
 
 class MultipleConnectionHandler(ConnectionHandler):
+    """
+    MultipleConnectionHandler
+    """
+
     def __init__(self, peers):
+        """
+        __init__()
+
+        The constructor for the MultipleConnectionHandler object.
+
+        :param peers: <list<tuple<str, int>>> A list of the peers that
+            should be connected to.
+        """
+
         ConnectionHandler.__init__(self)
 
         self.peers = peers
@@ -147,6 +163,17 @@ class MultipleConnectionHandler(ConnectionHandler):
                 logging.warning('Error creating a connection in multiple connection handler: ' + str(e))
 
     def send_with_response(self, data):
+        """
+        send_with_response()
+
+        Send data and expect a response from peer
+
+        :param data: <str> data to send.
+
+        :return: <list<dict>> A list of the JSON Object representation of the data
+            that was received from each node.
+        """
+
         peer_responses = []
 
         for conn in self.peer_connections:
@@ -158,6 +185,14 @@ class MultipleConnectionHandler(ConnectionHandler):
         return peer_responses
 
     def send_wout_response(self, data):
+        """
+        send_wout_response()
+
+        Send data and don't expect a response back
+
+        :param data: <str> data to send.
+        """
+
         for conn in self.peer_connections:
             self._send(conn, data)
             conn.close()
