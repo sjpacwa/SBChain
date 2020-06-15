@@ -501,7 +501,7 @@ def receive_transaction_internal(trans_data, metadata, queues):
                 queues['trans'].put(new_transaction)
                 transactions.append(new_transaction.to_json())
             else:
-                transactions.append('Transaction verification failed' + str(transaction))
+                transactions.append('{"status": Transaction verification failed, "transaction":' + str(transaction) + '}')
     
     return transactions
 
