@@ -3,6 +3,9 @@ node.py
 
 This file defines the Node class which is used to store node specific 
 information.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

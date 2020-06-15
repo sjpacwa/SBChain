@@ -2,6 +2,9 @@
 tasks.py
 
 This file holds all of the tasks that can be run.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports
