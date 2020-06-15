@@ -6,49 +6,66 @@ The SBChain Blockchain project meant to explore possible performance improvement
 
 ## First Time Setup
 
-1. Make sure [Python 3.6+](https://www.python.org/downloads/) is installed. This can be tested by running `$ python -V`.
+1. Ensure that Python 3 is installed. This can be checked by running: 
+   ```
+   python3 -v
+   ```
+2. Clone the repository to the local machine and navigate to the root directory.
+3. Create a virtual environment by running: 
+   ```
+   python -m venv venv
+   ```
+    This will create a virtual environment in the venv subdirectories and helps manage dependencies associated with the project.
+4. Mount the virtual environment by running: 
+   ```
+   source venv/bin/activate
+   ```
+5. Install the dependencies that are needed by running 
+   ```
+   pip install -r requirements.txt
+   ```
+    Note that these dependencies are only necessary for running the testing suite.
 
-2. Ensure that pip runs properly by running `$ pip -V`. If this command doesn't work, try `$ python -m pip -V`.
-
-3. Install [virtualenv](https://virtualenv.pypa.io/en/stable/installation/).
-```
-$ pip install virtualenv 
-```
-
-4. Create a new virtual environment for the project. The venv folder is included in the .gitignore file, so it is safe to create in the project directory.
-```
-$ virtualenv -p python venv
-```
-
-5. Mount the virtual environment. After this line, your command prompt should be prefaced with ```(venv)```.
-```
-$ .\venv\Scripts\activate
-```
 
 ## Running
 
 1. Mount the virtual environment.
-```
-$ .\venv\Scripts\activate
-```
+    ```
+    $ .\venv\Scripts\activate
+    ```
 
 2. Run the server:
 
-```
-$ python main.py
-```
+    Run the following command:   
+    ```
+    python main.py [-p <port>] [-o <host>] [-i <id>] [-b] [--debug]
+    ```
+
+    A description of the arguments follows: 
+    * -p	--port
+        - The port to bind the node to. Default is 5000.
+    * -o	--host
+        - The host to bind the node to. Default is localhost.
+    * -i	--id
+        - The ID to assign to the node. Default is randomly generated.
+    * -b	--benchmark	
+        - Configures the node for a special benchmark initialization. This will allow each node in the network to be assigned a starting amount of money that can then be pulled from during a benchmark run. See API reference for Benchmark Initialize for more information.
+ 	* --debug
+        - Start the node in debug mode which prints more information.
+ 	* --no-mine		
+        - Start the node without allowing it to mine new blocks.
 
 ## Configuring multiple nodes
 1. Open a new terminal
 2. Mount the virtual environment.
-```
-$ .\venv\Scripts\activate
-```
+    ```
+    $ .\venv\Scripts\activate
+    ```
 
 3. Run new instance of the server with a different port numbers.
-```
-$ python main.py -p 5003
-```
+    ```
+    $ python main.py -p 5003
+    ```
 
 
 
@@ -79,12 +96,12 @@ The input amount is automatically converted to coins using the internal wallet i
 
 ```
 {
-    'action': "new_transaction",
-    'params': [
-            'input': <amount>,
-            'output': {
-                'recipient1': <amount>,
-                'recipient2': <amount>,
+    "action": "new_transaction",
+    "params": [
+            "input": <amount>,
+            "output": {
+                "recipient1": <amount>,
+                "recipient2": <amount>,
                 ... 
             }
     ]
@@ -101,11 +118,11 @@ All registered nodes are also registered in their peers.
 1. 'peers': list of IP address and Port tuples to register node with
 ```
 {
-    'action': 'register_nodes',
-    'params': [
-        'peers': [
-            ('<ip1>',<port1>),
-            ('<ip2>',<port2>)
+    "action": "register_nodes",
+    "params": [
+        "peers": [
+            ("<ip1>",<port1>),
+            ("<ip2>",<port2>)
         ]
     ]
 }
@@ -120,11 +137,11 @@ Unregisters peers with node through dispatcher thread
 1. 'peers': list of IP address and Port tuples to unregister node with
 ```
 {
-    'action': 'unregister_nodes',
-    'params': [
-        'peers': [
-            ('<ip1>',<port1>),
-            ('<ip2>',<port2>)
+    "action": "unregister_nodes",
+    "params": [
+        "peers": [
+            ("<ip1>",<port1>),
+            ("<ip2>",<port2>)
         ]
     ]
 }
@@ -138,8 +155,8 @@ Return the full blockchain for this node
 **Parameters:** None
 ```
 {
-    'action': 'get_chain',
-    'params': []
+    "action": "get_chain",
+    "params": []
 }
 ```
 
@@ -150,31 +167,35 @@ Return the blockchain of the node starting at the last block, and going to the f
 After sending this request, the node will send the last blocks in its chain with length "size"
 
 **Parameters:**
-1. "size': size of the pagination
+1. "size": size of the pagination
 
 ```
 {
-    'action': 'get_chain_paginated',
-    'params': [
-        'size': <amount>
+    "action": "get_chain_paginated",
+    "params": [
+        "size": <amount>
     ]
 }
 ```
 
 **Client:**  
 Continue to the next paginated block.   
-Send: {'action': 'inform', 'params': {'message': 'ACK'}}  
-Response: {'section': section, 'status': status} from the node
+Send: {"action": "inform", "params": {"message": "ACK"}}  
+Response: {"section": &lt;section&gt;, "status": status} from the node
 
 Stop receiving blocks  
-Send: {'action': 'inform', 'params': {'message': 'STOP'}}   
+Send: {"action": "inform", "params": {"message": "STOP"}}   
 Response: None
 
 **Statuses**:  
-    'INITIAL': The initial section of the blockchain. Receiving this status after an 'INITIAL' status has already been sent before means that the chain has been replaced, and this new section is the new start of the chain  
-    'CONTINUE': Continuation of the chain  
-    'FINISHED': End of the chain  
-    'ERROR': An error has occured with the request. Size should be greater than 0 and an integer
+   * INITIAL: 
+        - The initial section of the blockchain. Receiving this status after an 'INITIAL' status has already been sent before means that the chain has been replaced, and this new section is the new start of the chain  
+   * CONTINUE: 
+        - Continuation of the chain  
+   * FINISHED:
+        - End of the chain  
+   * ERROR: 
+        - An error has occured with the request. Size should be greater than 0 and an integer
 
 ## **get_block**
 
@@ -182,10 +203,21 @@ Response: None
 Returns the block of the given node at a certain index
 ```
 {
-    'action': 'get_block',
-    'params': [
-        'index': <amount>
+    "action": "get_block",
+    "params": [
+        "index": <amount>
     ]
+}
+```
+
+## **get_balance**
+
+**Description:**  
+Returns the wallet balance for the node
+```
+{
+    "action": "get_balance",
+    "params": []
 }
 ```
 
@@ -197,8 +229,8 @@ A special API endpoint that forces a specific node to becoming globally consiste
 **Parameters:** None
 ```
 {
-    'action': 'resolve conflicts',
-    'params': []
+    "action": "resolve conflicts",
+    "params": []
 }
 ```
 ## **benchmark_initialize**
@@ -213,14 +245,14 @@ In benchmark mode, the client must send this request to all nodes in the system.
 2. 'value': The amount of money to initialize each node with
 ```
 {
-    'action': 'benchmark_initialize',
-    'params': [
-        'node_ids' [
-            '<nodeid1>',
-            '<nodeid2>',
+    "action": "benchmark_initialize",
+    "params": [
+        "node_ids" [
+            "<nodeid1>",
+            "<nodeid2>",
             ...
         ],
-        'value': <amount>
+        "value": <amount>
     ]
 }
 ```

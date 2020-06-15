@@ -19,6 +19,7 @@ from transaction import *
 from connection import MultipleConnectionHandler, ConnectionHandler, SingleConnectionHandler
 from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION, RESOLVE_CONFLICTS
 from mine import mine
+from history import History
 
 
 THREAD_FUNCTIONS = dict()
@@ -405,6 +406,24 @@ def resolve_conflicts(*args, **kwargs):
 
     # Notify caller process complete.
     ConnectionHandler()._send(conn, blocks_sent)
+
+@thread_function
+def get_balance(*args, **kwargs):
+    """
+    get_balance()
+
+    This endpoint is used to get the wallet balance for this node
+    """
+    conn = args[2]
+  
+    history = History()
+    wallet = history.get_wallet()
+    wallet_lock = wallet.get_lock()
+
+    with wallet_lock:
+        balance = wallet.get_balance()
+
+    ConnectionHandler()._send(conn,balance)
 
 
 """
