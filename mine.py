@@ -109,7 +109,7 @@ def proof_of_work(metadata, queues, reward, last_block):
         if not queues['trans'].empty():
             handle_transactions(metadata, queues, reward)
         if not queues['blocks'].empty():
-            handle_blocks(metadata, queues)
+            handle_blocks(metadata, queues, reward)
         history_lock.release()
            
         if metadata['no_mine']:
@@ -161,7 +161,7 @@ def handle_transactions(metadata, queues, reward_transaction):
     queues['tasks'].put(('forward_transaction', [verified_transactions], {}, None))
 
 
-def handle_blocks(metadata, queues):
+def handle_blocks(metadata, queues, reward_transaction):
     """
     handle_blocks()
 
@@ -170,6 +170,8 @@ def handle_blocks(metadata, queues):
 
     :param metadata: <dict> The metadata for this node.
     :param queues: <dict> The queues for this node.
+    :param reward_transaction: <RewardTransaction Object> The transaction
+        used to track the reward value.
 
     :raise: <BlockException> When a block off the network is added to our
         chain.
@@ -201,7 +203,7 @@ def handle_blocks(metadata, queues):
             changed = True
 
         elif block.index > current_index:
-            if resolve_conflicts(block, history_temp, host_port, metadata):
+            if resolve_conflicts(block, history_temp, host_port, metadata, reward_transaction):
                 changed = True
 
     if changed:
@@ -210,7 +212,7 @@ def handle_blocks(metadata, queues):
         raise BlockException
 
 
-def resolve_conflicts(block, history_copy, host_port, metadata):
+def resolve_conflicts(block, history_copy, host_port, metadata, reward_transaction):
     """
     resolve_conflicts
 
@@ -273,6 +275,15 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
 
     blocks = blocks[index + 1:]
 
+    # Rollback current_transactions except the reward transaction
+    cur_transactions = []
+    if len(blockchain_copy.current_transactions > 1):
+        for transaction in blockchain_copy.current_transactions[1:]:
+            cur_transactions.append(transaction)
+            rollback_transaction(transaction, history_copy)
+    # Rollback reward transactions
+    reward_transaction.reset()
+
     # Rollback to common ancestor.
     for block in blockchain_copy.chain[-1:common_ancestor_index:-1]:
         rollback_block(block, history_copy)
@@ -292,6 +303,19 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
             return False
 
         i = i + 1
+
+    reward_coins = []
+    # Roll forward current transactions
+    if len(cur_transactions > 0):
+        for transaction in cur_transactions:
+            if transaction_verify(history_copy,transaction):
+                blockchain_copy.new_transaction(transaction)
+                reward_coins.extend(transaction.get_all_reward_coins())
+
+
+        reward_coin = reward_transaction.get_all_output_coins()[0]
+        reward_transaction.add_new_inputs(reward_coins)
+        reward_coin.set_value(reward_transaction.get_values()[0])
 
     blockchain_copy.increment_version_number()
 

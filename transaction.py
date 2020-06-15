@@ -354,6 +354,13 @@ class RewardTransaction(Transaction):
                 return False
 
         return True
+    
+    def reset(self):
+        self._output_value = REWARD_COIN_VALUE
+        self.inputs = []
+        self.outputs = []
+        self._input_value = 0
+        self._reward_value = 0
 
 
 def inputs_from_json(inputs):

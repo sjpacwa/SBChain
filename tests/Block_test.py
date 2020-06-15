@@ -53,7 +53,7 @@ def test_block_with_good_transaction(blockchain):
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
     with pytest.raises(BlockException):
-        handle_blocks(metadata, queues)
+        handle_blocks(metadata, queues, None)
 
     assert queues['tasks'].get(block=False) != None
     with pytest.raises(Empty):
@@ -67,7 +67,7 @@ def test_block_with_bad_transaction(blockchain):
 
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
-    handle_blocks(metadata, queues)
+    handle_blocks(metadata, queues, None)
 
     with pytest.raises(Empty):
         queues['tasks'].get(block=False)

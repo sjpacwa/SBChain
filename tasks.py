@@ -213,6 +213,8 @@ def new_transaction(trans_data, *args, **kwargs):
     transaction = Transaction(metadata['uuid'], coins, output_coins, trans_id)
     transaction_json = transaction.to_json()
 
+    metadata['blockchain'].new_transaction(transaction)
+
     response = receive_transaction_internal([transaction_json], metadata, queues)
 
     ConnectionHandler()._send(conn, response)
