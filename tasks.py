@@ -269,7 +269,8 @@ def register_nodes(peers, *args, **kwargs):
                 new_peer = (parsed_url.path, peer[1])
                 if new_peer not in metadata['peers']:
                     metadata['peers'].append(new_peer)
-                    logging.debug(parsed_url.path, peer[1])
+                    logging.debug(str(parsed_url.path))
+                    logging.debug(str(peer[1]))
                 else:
                     continue
 

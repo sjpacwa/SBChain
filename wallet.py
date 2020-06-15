@@ -8,6 +8,8 @@ coins to allow for ease of use of the blockchain.
 Santa Clara University
 """
 
+# Standard library imports
+import logging
 from threading import Lock
 
 
@@ -37,10 +39,12 @@ class Wallet:
 
         :param coin: <Coin Object> Coin to add to the wallet
         """
-        self.personal_coins.append(coin)
-        self.personal_coins.sort()
-        self.uuid_lookup[coin.get_uuid()] = coin
-        self.balance += coin.get_value()
+
+        if coin.get_uuid() not in self.uuid_lookup:
+            self.personal_coins.append(coin)
+            self.personal_coins.sort()
+            self.uuid_lookup[coin.get_uuid()] = coin
+            self.balance += coin.get_value()
 
     def remove_coin(self, uuid):
         """
@@ -55,7 +59,9 @@ class Wallet:
             del self.uuid_lookup[uuid]
             if coin != None:
                 self.balance -= coin.get_value()
-        except (ValueError, KeyError):
+
+        except (ValueError, KeyError) as e:
+            logging.debug("Error in wallet: " + str(e))
             pass
 
     def get_balance(self):
