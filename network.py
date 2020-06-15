@@ -3,6 +3,9 @@ network.py
 
 This file is responsible for storing the class that is responsible for 
 the socket-based main network loop.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports
@@ -21,21 +24,19 @@ class NetworkHandler(ConnectionHandler):
     """
     Single Connection Handler
     """
+
     def __init__(self, metadata, initial_peers, num_threads=10):
         """
         __init__
         
         The constructor for a NetworkHandler object.
 
-        :param host: <string> The IP address that the socket should be 
-            bound to.
-        :param port: <int> The port that the socket should be bound to.
-        :param node: <Node Object> Node Object to interface with
-        :param log_host: <string> The IP address of the logging interface server to connect to (optional)
-        :param log_port: <bool> The port of the logging interface server to connect to (optional)
-        :param buffer_size: <int> The size of the buffer used in data 
-            transmission.
+        :param metadata: <dict> The metadata of the node.
+        :param initial_peers: <list<tuple<str, int>> A list of initial peers this node should
+            be registered with.
+        :param num_threads: <int> The number of worker threads to initialize this node with.
         """
+
         ConnectionHandler.__init__(self)
 
         self.metadata = metadata
@@ -51,14 +52,12 @@ class NetworkHandler(ConnectionHandler):
         self.sock.bind((self.metadata['host'], self.metadata['port']))
 
         # Start thread handler.
-        self.threads = ThreadHandler(metadata, num_threads);
+        self.threads = ThreadHandler(metadata, num_threads)
 
     def event_loop(self):
         """
         event_loop
 
-        Not Thread Safe
-        
         This function will setup the socket and wait for incoming 
         connections.
         """
@@ -80,3 +79,4 @@ class NetworkHandler(ConnectionHandler):
                 continue
             else:
                 self.threads.add_task(data, conn)
+

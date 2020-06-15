@@ -3,6 +3,9 @@ block.py
 
 This file defines the Block class which is used to hold information on 
 a block that is stored in the blockchain.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports
@@ -11,11 +14,16 @@ import json
 import logging
 from datetime import datetime
 
+# Local imports
+from coin import reward_coin_from_json, coin_from_json
+from transaction import reward_transaction_from_json, transaction_from_json, transaction_verify
+
 
 class Block:
     """
     Block
     """
+
     def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
         """
         __init__
@@ -35,17 +43,15 @@ class Block:
         self.proof = proof
         self.previous_hash = previous_hash
         self.timestamp = datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ') if timestamp == -1 else timestamp
-    @property
+    
     def to_json(self):
         """
         to_json
 
-        Not Thread Safe
-
         Converts a Block object into JSON-object form, (i.e. it is 
         composed of dictionaries and lists).
 
-        :returns: <dict> JSON-object form of Block.
+        :return: <dict> JSON-object form of Block.
         """
         
         return {
@@ -55,45 +61,49 @@ class Block:
             'timestamp': self.timestamp,
             'transactions': [transaction.to_json() for transaction in self.transactions]
         }
-    @property
+    
     def to_string(self):
         """
         to_string
 
-        Not Thread Safe
-
         Converts a Block object into JSON-string form, (i.e. it is 
         composed of a string). The resulting string is always ordered.
 
-        :returns: <str> JSON-string form of Block.
+        :return: <str> JSON-string form of Block.
         """
 
         return json.dumps(
-            self.to_json,
+            self.to_json(),
             default=str
         )
+
     @property
     def hash(self):
         """
         hash
 
-        Not Thread Safe
-
         Creates a SHA-256 hash of a Block from its string form.
+
+        :return: <str> The hash of the block.
         """
         
-        return hashlib.sha256(self.to_string.encode()).hexdigest()
+        return hashlib.sha256(self.to_string().encode()).hexdigest()
 
     def __eq__(self, other):
         """
         __eq__
 
-        Not Thread Safe
-
         Checks to see if two Blocks are equal.
 
         :param other: <Block Object> The Block to compare to.
+        
+        :return: <boolean> Whether the blocks are equal or not.
         """
+        
+        if not isinstance(other, Block):
+            return False
+
+
         return (self.index == other.index
             and self.timestamp == other.timestamp
             and self.transactions == other.transactions
@@ -108,6 +118,7 @@ def block_from_json(data):
     Converts a JSON-object form into a Block object.
 
     :param data: <dict> The JSON-object form of a block.
+
     :returns: <Block Object> A new object.
 
     :raises: <KeyError> If the proper keys have not been supplied.
@@ -126,9 +137,24 @@ def block_from_json(data):
         if key not in data:
             raise KeyError('{} not found during block creation'.format(key))
 
+    try:
+        reward = data['transactions'][0]
+    except IndexError:
+        return None
+
+    # Create inputs
+    reward_trans = reward_transaction_from_json(reward)
+
+    transactions = [reward_trans]
+
+    for transaction in data['transactions'][1:]:
+        trans = transaction_from_json(transaction)
+
+        transactions.append(trans)
+
     return Block(
         data['index'],
-        [transaction_from_json(transaction) for transaction in data['transactions']],
+        transactions,
         data['proof'],
         data['previous_hash'],
         data['timestamp']
@@ -144,7 +170,6 @@ def block_from_string(data):
     :param data: <str> The JSON-string form of a block.
     
     :returns: <Block Object> A new object.
-
     """
 
     return block_from_json(json.loads(data))

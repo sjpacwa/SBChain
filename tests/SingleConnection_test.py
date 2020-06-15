@@ -22,6 +22,9 @@ Teardown:
 
 """
 
+class ThreadFailed(Exception):
+    pass
+
 @pytest.fixture(scope="module")
 def node_a():
     from node import Node
@@ -32,7 +35,9 @@ def node_a():
     thread = Thread(target=Node, args=('localhost', 5000, initialized), daemon=True)
     thread.start()
 
-    initialized.acquire()
+    while not initialized.acquire(blocking=False):
+        if not thread.is_alive():
+            raise ThreadFailed
 
     return None
 
@@ -45,17 +50,17 @@ def test_valid_connection(node_a):
 
 def test_send_wout_response(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
-    conn.send_wout_response({"action": "wait_test", "args": [1, 1]})
+    conn.send_wout_response({"action": "wait_test", "params": [1, 1]})
 
 def test_send_with_response_bad_2(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
     data = conn.send_with_response({"action": "wait_test", "params": ["one"]})
-    assert data == {"error": "invalid data"} 
+    assert data == "Error: invalid data"
 
 def test_send_with_response_bad(node_a):
     conn = SingleConnectionHandler('localhost', 5000)
     data = conn.send_with_response({"action": "wait_test", "args": [1]})
-    assert data == {"error": "Bad request"} 
+    assert data == "Error: Bad request" 
 
 def test_send_with_response_good(node_a):
     conn = SingleConnectionHandler('localhost', 5000)

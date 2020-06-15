@@ -1,95 +1,199 @@
 """
-blockchain.py
+macros.py
 
-This file defines the Blockchain class which is used to manage information 
-related to the chain.
+This file stores many functions that are used in many places to simplify 
+message creation and starting data.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
-TEST_MODE = False
 
 BUFFER_SIZE = 256
 
+
 REWARD_COIN_VALUE = 5
 
-NO_INDEX_FOUND = {
-    'name': 'broadcast',
-    'args': {
-       "Error: No Index found"
-    }
-}
 
-INVALID_INDEX = {
-    'args': {
-       "Error: Invalid Index"
-    }
-}
-
-INITIAL_PEERS = (
+INITIAL_PEERS = [
     ('localhost',5000),
     ('localhost',5001)
-)
+]
 
-GET_CHAIN = {
-    'name': "full-chain"
-}
 
-def GENERATE_ERROR(data):
-    message = '{"error": "' + data + '"}'
-    message = str(len(message)) + '~' + message
-    return message.encode()
+def RECEIVE_BLOCK(block, host, port): 
+    """
+    RECEIVE_BLOCK()
 
-def RECEIVE_BLOCK(block):
+    This function creates a message for the receive block task.
+    
+    :param block: <Block Object> The block to send.
+    :param host: <str> The node's host to facillitate callback.
+    :param port: <int> The node's port to facillitate callback.
+
+    :return: <str> The formatted message.
+    """
+
     return {
-        'name': 'receive_block',
-        'args': block
+        'action': 'receive_block',
+        'params': [
+            block,
+            host,
+            port
+        ]
     }
 
-def RECEIVE_TRANSACTION(transaction):
+
+def RECEIVE_TRANSACTION(transaction_list):
+    """
+    RECEIVE_TRANSACTION()
+
+    This function creates a message for the receive transaction task.
+
+    :param transaction_list: <list<Transaction Object>> A list of transactions 
+        to send.
+
+    :return: <str> The formatted message.
+    """
+
     return {
-        'name': 'receive_transactions', 
-        'args': transaction.to_json(),
+        'action': 'receive_transactions', 
+        'params': [transaction_list]
     }
 
-def TRANSACTION_ADDED(block_index):
+
+def REGISTER_NODES(peer_list):
+    """
+    REGISTER_NODES()
+
+    This function creates a message for the register nodes task.
+
+    :param peer_list: <list<tuple<str, int>> A list of the peers to register.
+
+    :return: <str> The formatted message.
+    """
+
     return {
-        "Transaction will be added to block {}.".format(block_index)
+        'action': 'register_nodes',
+        'params': [
+            peer_list
+        ]
     }
 
-def CHAIN(chain,length):
+
+def RESOLVE_CONFLICTS(request_id, host, port, index):
+    """
+    RESOLVE_CONFLICTS()
+
+    This function creates a message for the resolve conflicts task.
+
+    :param request_id: <str> The request ID of this resolve conflicts
+        request.
+    :param host: <str> The host of the original requestor.
+    :param port: <int> The port of the original requestor.
+    :param index: <int> The current index being mined by the original 
+        requestor.
+
+    :return: <str> The formatted message.
+    """
+
+    return {
+        'action': 'resolve_conflicts_internal',
+        'params': [
+            request_id, 
+            host,
+            port,
+            index
+        ]
+    }
+
+
+def GET_CHAIN_PAGINATED(size):
+    """
+    GET_CHAIN_PAGINATED()
+
+    This function creates a message for the get chains paginated action.
+    
+    :param size: <int> The number of blocks to send per page.
+
+    :return: <str> The formatted message.
+    """
+
+    return {
+        'action': 'get_chain_paginated',
+        'params': [
+            size
+        ]
+    }
+
+
+def GET_CHAIN_PAGINATED_ACK():
+    """
+    GET_CHAIN_PAGINATED_ACK()
+
+    This function creates a message to acknowledge the get chain paginted task.
+
+    :return: <str> The formatted message.
+    """
+
+    return {
+        'action': 'inform',
+        'params': {
+            'message': 'ACK'
+        }
+    }
+
+
+def GET_CHAIN_PAGINATED_STOP():
+    """
+    GET_CHAIN_PAGINATED_STOP()
+
+    This function creates a message to stop the get chain paginated task.
+
+    :return: <str> The formatted message.
+    """
+
+    return {
+        'action': 'inform',
+        'params': {
+            'message': 'STOP'
+        }
+    }
+
+
+def SEND_CHAIN(chain, length):
+    """
+    SEND_CHAIN()
+
+    This function creates a message to reply to a get chain request.
+
+    :param chain: <list<Block Object>> The chain to send.
+    :param length: <int> The length of the sent chain.
+
+    :return: <str> The formatted message.
+    """
+
     return {
         'chain': chain,
         'length': length
-        }
+    }
 
-def NODES(nodes):
+
+def SEND_CHAIN_SECTION(section, status):
+    """
+    SEND_CHAIN_SECTION()
+
+    This function creates a message to reply to a get chain paginated
+    request.
+
+    :param section: <list<Block Object>> The subchain to send.'
+    :param status: <str> The status of the reply message.
+    
+    :return: <str> The formatted message.
+    """
+
     return {
-        'message': 'Nodes added to peer list.',
-        'total_nodes': nodes
+        'section': section,
+        'status': status
     }
 
-def REPLACED(chain):
-   return {
-        'message': 'Our chain was replaced.',
-        'new_chain': chain
-    }
-
-def AUTHORITATIVE(chain):
-    return {
-        'message': 'Our chain is authoritative.',
-        'chain': chain
-    }
-
-def BLOCK_RECEIVED(index,transactions,proof,previous_hash):
-       return{
-        'message': "Block retrieved.",
-        'index': index,
-        'transactions': transactions,
-        'proof': proof,
-        'previous_hash': previous_hash
-    }
-
-def GET_BLOCK(index):
-    return {
-        'name':"get_block",
-        'args': index
-    }
