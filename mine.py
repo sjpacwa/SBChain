@@ -277,7 +277,7 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
 
     # Rollback current_transactions except the reward transaction
     cur_transactions = []
-    if len(blockchain_copy.current_transactions > 1):
+    if len(blockchain_copy.current_transactions) > 1:
         for transaction in blockchain_copy.current_transactions[1:]:
             cur_transactions.append(transaction)
             rollback_transaction(transaction, history_copy)
@@ -306,7 +306,7 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
 
     reward_coins = []
     # Roll forward current transactions
-    if len(cur_transactions > 0):
+    if len(cur_transactions) > 0:
         for transaction in cur_transactions:
             if transaction_verify(history_copy,transaction):
                 blockchain_copy.new_transaction(transaction)
