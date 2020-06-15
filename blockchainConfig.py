@@ -2,6 +2,9 @@
 blockchainConfig.py
 
 This file retrieves the Blockchain configuration
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

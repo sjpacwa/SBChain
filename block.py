@@ -3,6 +3,9 @@ block.py
 
 This file defines the Block class which is used to hold information on 
 a block that is stored in the blockchain.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

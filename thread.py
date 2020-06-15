@@ -3,6 +3,9 @@ thread.py
 
 This file is responsible for defining several classes that are used to 
 manage the threads that perform work.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

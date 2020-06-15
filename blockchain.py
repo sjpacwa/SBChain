@@ -3,6 +3,9 @@ blockchain.py
 
 This file defines the Blockchain class which is used to manage information 
 related to the chain.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

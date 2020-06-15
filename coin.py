@@ -2,6 +2,9 @@
 coin.py
 
 This file holds the Coin object and related helper methods.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

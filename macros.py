@@ -3,6 +3,9 @@ macros.py
 
 This file stores many functions that are used in many places to simplify 
 message creation and starting data.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 

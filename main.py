@@ -3,6 +3,9 @@ main.py
 
 This file is responsible for parsing the command line arguments and 
 starting the Flask webserver for the node.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

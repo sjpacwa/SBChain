@@ -3,6 +3,9 @@ encoder.py
 
 This file is responsible for providing a new complex encoder object that converts
 our project objects into JSON object format.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

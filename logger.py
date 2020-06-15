@@ -2,6 +2,9 @@
 logger.py
 
 This file is responsible for handling of the logging module
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

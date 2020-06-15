@@ -2,6 +2,9 @@
 transaction.py
 
 This file holds the transaction object and the related helper functions.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

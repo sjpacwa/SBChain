@@ -3,6 +3,9 @@ wallet.py
 
 The wallet is responsible for converting currency amounts to internal 
 coins to allow for ease of use of the blockchain.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 from threading import Lock

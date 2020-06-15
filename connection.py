@@ -3,6 +3,9 @@ connection.py
 
 This file is responsible for storing the class that is responsible for 
 socket-based network communication.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

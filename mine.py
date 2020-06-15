@@ -2,6 +2,9 @@
 mine.py
 
 This file is responsible for the miner functionality
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

@@ -4,6 +4,9 @@ history.py
 This class is implemented with a nested class in order to enforce the 
 Singleton property. This should guarantee that only one instance of the 
 inner __History class should exist on a node when the program is run.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 from copy import deepcopy
