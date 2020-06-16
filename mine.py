@@ -205,7 +205,8 @@ def handle_blocks(metadata, queues, reward_transaction):
                 changed = True
 
     if changed:
-        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'], metadata['port']], {}, None))
+        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'], 
+            metadata['port']], {}, None))
         queues['blocks'].task_done()
         raise BlockException
 

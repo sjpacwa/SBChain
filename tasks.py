@@ -398,7 +398,8 @@ def resolve_conflicts(*args, **kwargs):
     port = metadata['port']
     length = metadata['blockchain'].last_block_index
 
-    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(RESOLVE_CONFLICTS(request_id, host, port, length))
+    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(
+                    RESOLVE_CONFLICTS(request_id, host, port, length))
 
     # Aggregate responses and wait for empty queue.
     blocks_sent = 0
@@ -503,7 +504,8 @@ def receive_transaction_internal(trans_data, metadata, queues):
                 queues['trans'].put(new_transaction)
                 transactions.append(new_transaction.to_json())
             else:
-                transactions.append('{"status": "Transaction verification failed", "transaction": ' + json.dumps(transaction) + '}')
+                transactions.append('{"status": "Transaction verification failed", "transaction": ' + 
+                                    json.dumps(transaction) + '}')
 
     return transactions
 
@@ -576,7 +578,8 @@ def resolve_conflicts_internal(request_id, host, port, current_index, *args, **k
 
     metadata['resolve_lock'].release()
 
-    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(RESOLVE_CONFLICTS(request_id, host, port, current_index))
+    responses = MultipleConnectionHandler(metadata['peers']).send_with_response(
+                    RESOLVE_CONFLICTS(request_id, host, port, current_index))
 
     blocks_sent = 0
     for response in responses:
@@ -584,7 +587,8 @@ def resolve_conflicts_internal(request_id, host, port, current_index, *args, **k
 
     if metadata['blockchain'].last_block_index > current_index:
         try:
-            SingleConnectionHandler(host, port).send_wout_response(RECEIVE_BLOCK(metadata['blockchain'].last_block, metadata['host'], metadata['port']))
+            SingleConnectionHandler(host, port).send_wout_response(
+                RECEIVE_BLOCK(metadata['blockchain'].last_block, metadata['host'], metadata['port']))
         except ConnectionRefusedError:
             ConnectionHandler()._send(conn, blocks_sent)
             return

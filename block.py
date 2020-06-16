@@ -101,11 +101,10 @@ class Block:
         if not isinstance(other, Block):
             return False
 
-
         return (self.index == other.index 
-                and self.timestamp == other.timestamp 
-                and self.transactions == other.transactions 
-                and self.proof == other.proof 
+                and self.timestamp == other.timestamp
+                and self.transactions == other.transactions
+                and self.proof == other.proof
                 and self.previous_hash == other.previous_hash)
 
 
