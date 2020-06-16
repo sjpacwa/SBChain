@@ -59,11 +59,12 @@ def test_block_with_equal_index(blockchain):
 def test_block_with_good_transaction(blockchain):
     metadata = create_metadata(blockchain=blockchain)
 
-    block = block_from_string(BLANK_BLOCK(4, [Transaction("B", [Coin("ABC", 100, "TEST")],
-                                                            {"C": [Coin("DCE", 100, "OUTCOIN")]},
+    block = block_from_string(BLANK_BLOCK(4, 
+                                            [Transaction("B", [Coin("ABC", 100, "TEST")],
+                                                        {"C": [Coin("DCE", 100, "OUTCOIN")]},
                                                         "DCE", datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))],
-                                        25399,
-                                        "7b351d6c1a892f09469c7a44932de17b94e9fe44f94acc68f87077c2780c1f87"))
+                                            25399,
+                                            "7b351d6c1a892f09469c7a44932de17b94e9fe44f94acc68f87077c2780c1f87"))
 
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
