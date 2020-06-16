@@ -252,7 +252,6 @@ In benchmark mode, the client must send this request to all nodes in the system.
     "action": "benchmark_initialize",
     "params": [
         [
-        [
             "<nodeid1>",
             "<nodeid2>",
             ...
