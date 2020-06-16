@@ -20,6 +20,8 @@ def initial_history(initial_metadata):
     initial_metadata['history'].reset()
     transaction_id = "0"
 
+    pytest.valid_id = 0
+
     output_coins = {initial_metadata['uuid']: []}
     for i in range(20):
         coin = Coin(transaction_id, 1, str(pytest.valid_id))
@@ -203,9 +205,11 @@ def test_json_serializable(initial_history, initial_metadata):
     )
 
     invalid_transaction_data = loads(invalid_transaction_data)
-    response = receive_transaction_internal(invalid_transaction_data, initial_metadata, queues)
 
-    assert loads(response)
+    response = receive_transaction_internal([invalid_transaction_data], initial_metadata, queues)
+
+    for message in response:
+        assert loads(message)
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
@@ -245,8 +249,6 @@ def test_multiple_invalid_transactions(initial_history, initial_metadata):
 
     receive_transactions(all_transactions, initial_metadata, queues, connection)
 
-    assert queues['trans'].get(block=False) != None
-    assert queues['trans'].get(block=False) != None
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
