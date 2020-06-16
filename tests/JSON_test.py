@@ -1,7 +1,7 @@
 """
 JSON_test.py
 
-This test is responsible for testing the JSON decoder
+This test is responsible for testing the JSON encoder
 
 2020 Stephen Pacwa and Daniel Okazaki
 Santa Clara University
