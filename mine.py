@@ -8,7 +8,6 @@ Santa Clara University
 """
 
 # Standard library imports
-import json
 import logging
 from copy import deepcopy
 from random import randint
@@ -17,14 +16,13 @@ from threading import Thread
 from uuid import uuid4
 
 # Local imports
-from block import block_from_json   
+from block import block_from_json
 from blockchain import Blockchain
-from coin import Coin, RewardCoin
+from coin import RewardCoin
 from connection import MultipleConnectionHandler, SingleConnectionHandler
-from encoder import ComplexEncoder
 from history import History
 from macros import RECEIVE_BLOCK, GET_CHAIN_PAGINATED, GET_CHAIN_PAGINATED_ACK, GET_CHAIN_PAGINATED_STOP, REWARD_COIN_VALUE
-from transaction import Transaction, RewardTransaction, transaction_verify
+from transaction import RewardTransaction, transaction_verify
 
 
 class BlockException(Exception):
@@ -46,7 +44,7 @@ class Miner(Thread):
     def __init__(self, metadata, queues):
         """
         __init__()
-    
+
         The constructor for a Miner object.
 
         :param metadata: <dict> The metadata for this node.
@@ -87,7 +85,7 @@ def proof_of_work(metadata, queues, reward, last_block):
 
     :param metadata: <dict> The metadata for this node.
     :param queues: <dict> The queues for this node.
-    :param reward: <RewardTransaction Object> The reward 
+    :param reward: <RewardTransaction Object> The reward
         transaction used in the new block.
     :param last_block: <Block Object> The previous block in the chain.
 
@@ -105,13 +103,13 @@ def proof_of_work(metadata, queues, reward, last_block):
     proof = randint(0, maxsize)
     while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
         history_lock.acquire()
-        
+
         if not queues['trans'].empty():
             handle_transactions(metadata, queues, reward)
         if not queues['blocks'].empty():
-            handle_blocks(metadata, queues)
+            handle_blocks(metadata, queues, reward)
         history_lock.release()
-           
+
         if metadata['no_mine']:
             proof = proof
         else:
@@ -135,7 +133,7 @@ def handle_transactions(metadata, queues, reward_transaction):
     """
     handle_transactions()
 
-    This function handles new transactions that have been received 
+    This function handles new transactions that have been received
     off the network.
 
     :param metadata: <dict> The metadata for this node.
@@ -161,7 +159,7 @@ def handle_transactions(metadata, queues, reward_transaction):
     queues['tasks'].put(('forward_transaction', [verified_transactions], {}, None))
 
 
-def handle_blocks(metadata, queues):
+def handle_blocks(metadata, queues, reward_transaction):
     """
     handle_blocks()
 
@@ -170,6 +168,8 @@ def handle_blocks(metadata, queues):
 
     :param metadata: <dict> The metadata for this node.
     :param queues: <dict> The queues for this node.
+    :param reward_transaction: <RewardTransaction Object> The transaction
+        used to track the reward value.
 
     :raise: <BlockException> When a block off the network is added to our
         chain.
@@ -182,11 +182,11 @@ def handle_blocks(metadata, queues):
         history_temp = history.get_copy()
 
         host_port, block = queues['blocks'].get()
-        current_index = metadata['blockchain'].last_block_index        
-        
+        current_index = metadata['blockchain'].last_block_index 
+
         if block.index == current_index + 1:
             success = verify_block(history_temp, block, metadata['blockchain'])
-            if success == False:
+            if not success:
                 queues['blocks'].task_done()
                 continue
 
@@ -201,7 +201,7 @@ def handle_blocks(metadata, queues):
             changed = True
 
         elif block.index > current_index:
-            if resolve_conflicts(block, history_temp, host_port, metadata):
+            if resolve_conflicts(block, history_temp, host_port, metadata, reward_transaction):
                 changed = True
 
     if changed:
@@ -210,7 +210,7 @@ def handle_blocks(metadata, queues):
         raise BlockException
 
 
-def resolve_conflicts(block, history_copy, host_port, metadata):
+def resolve_conflicts(block, history_copy, host_port, metadata, reward_transaction):
     """
     resolve_conflicts
 
@@ -218,10 +218,8 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
     that is much further ahead of us in index.
 
     :param block: <Block Object> The block that has been taken from the network.
-    :param history_copy: <History Object> A copy of the history to allow us to
-        edit it without issue.
-    :param host_port: <tuple<str, int>> The host and port of the node that 
-        sent us the block.
+    :param history_copy: <History Object> A copy of the history to allow us to edit it without issue.
+    :param host_port: <tuple<str, int>> The host and port of the node that sent us the block.
     :param metadata: <dict> The metadata of the node.
 
     :return: <boolean> Whether or not the chain was replaced.
@@ -244,7 +242,7 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
     while response['status'] != 'FINISHED':
         our_block = blockchain_copy.get_block(blocks[0]['index'])
 
-        if our_block != None and our_block.previous_hash == blocks[0]['previous_hash']:
+        if our_block is not None and our_block.previous_hash == blocks[0]['previous_hash']:
             conn.send_wout_response(GET_CHAIN_PAGINATED_STOP())
             break
 
@@ -262,7 +260,7 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
         net_index = block['index']
         our_block = blockchain_copy.get_block(net_index)
 
-        if our_block == None:
+        if our_block is None:
             continue
 
         if block['previous_hash'] == our_block.previous_hash:
@@ -270,8 +268,16 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
             common_ancestor_index = our_block.index - 1
             break
 
-
     blocks = blocks[index + 1:]
+
+    # Rollback current_transactions except the reward transaction
+    cur_transactions = []
+    if len(blockchain_copy.current_transactions) > 1:
+        for transaction in blockchain_copy.current_transactions[1:]:
+            cur_transactions.append(transaction)
+            rollback_transaction(transaction, history_copy)
+    # Rollback reward transactions
+    reward_transaction.reset()
 
     # Rollback to common ancestor.
     for block in blockchain_copy.chain[-1:common_ancestor_index:-1]:
@@ -282,7 +288,7 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
     i = 0
     for block in blocks:
         block_obj = block_from_json(block)
-        if block_obj == None:
+        if block_obj is None:
             continue
         success = verify_block(history_copy, block_obj, blockchain_copy)
         blockchain_copy.add_block(block_obj)
@@ -292,6 +298,18 @@ def resolve_conflicts(block, history_copy, host_port, metadata):
             return False
 
         i = i + 1
+
+    reward_coins = []
+    # Roll forward current transactions
+    if len(cur_transactions) > 0:
+        for transaction in cur_transactions:
+            if transaction_verify(history_copy, transaction):
+                blockchain_copy.new_transaction(transaction)
+                reward_coins.extend(transaction.get_all_reward_coins())
+
+        reward_coin = reward_transaction.get_all_output_coins()[0]
+        reward_transaction.add_new_inputs(reward_coins)
+        reward_coin.set_value(reward_transaction.get_values()[0])
 
     blockchain_copy.increment_version_number()
 
@@ -313,8 +331,7 @@ def rollback_block(block, history_copy):
     This function rolls back a block in preparation for resolve conflicts.
 
     :param block: <Block Object> The block to rollback.
-    :param history_copy: <History Object> The history object that can be 
-        changed.
+    :param history_copy: <History Object> The history object that can be changed.
     """
 
     reward_transaction = block.transactions[0]
@@ -393,7 +410,7 @@ def verify_block(history_temp, block, blockchain):
 
     :param history_temp: <History Object> A temporary history object for testing.
     :param block: <Block Object> The block object to add.
-    :param blockchain: <Blockchain Object> The blockchain to add the block to. This 
+    :param blockchain: <Blockchain Object> The blockchain to add the block to. This
         is needed bacause sometimes we want to add to a copy of the blockchain.
 
     :return: <boolean> Whether the block was added or not.
@@ -403,7 +420,7 @@ def verify_block(history_temp, block, blockchain):
 
     for transaction in block.transactions[1:]:
         hist_trans = history_temp.get_transaction(transaction.get_uuid())
-        if hist_trans != None:
+        if hist_trans is not None:
             new_trans = transaction.to_string()
             hist_trans_string = hist_trans.to_string()
 
@@ -425,14 +442,13 @@ def verify_block(history_temp, block, blockchain):
     # Verify the reward.
     reward = block.transactions[0]
     hist_trans = history_temp.get_transaction(reward.get_uuid())
-    if hist_trans != None:
+    if hist_trans is not None:
         new_trans = reward.to_string()
         hist_trans = hist_trans.to_string()
 
         # Transaction exists but does not match
         logging.debug('Bad block: reward already exists')
         return False
-
     else:
         check = transaction_verify(history_temp, reward, True)
         if not check:
@@ -456,4 +472,3 @@ def verify_block(history_temp, block, blockchain):
         return False
 
     return True
-

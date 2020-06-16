@@ -1,7 +1,7 @@
 """
 blockchain.py
 
-This file defines the Blockchain class which is used to manage information 
+This file defines the Blockchain class which is used to manage information
 related to the chain.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -30,14 +30,14 @@ class Blockchain:
     def __init__(self):
         """
         __init__()
-    
+
         The constructor for a Blockchain object.
         """
 
         self.current_transactions = []
         self.chain = []
 
-        # The version number is incremented in resolve conflicts and is returned 
+        # The version number is incremented in resolve conflicts and is returned
         # in paginated get chain.
         self.version_number = 0
 
@@ -57,7 +57,7 @@ class Blockchain:
 
         for block in self.chain:
             json_chain.append(block.to_json())
-            
+
         return json_chain
 
     def new_block(self, proof, previous_hash, date=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')):
@@ -68,11 +68,11 @@ class Blockchain:
 
         :param proof: <int> The proof given by the Proof of Work algorithm
         :param previous_hash: <str> Hash of previous Block
-        
+
         :return: <Block Object> New Block
         """
 
-        block = Block(len(self.chain)+1,self.current_transactions,proof,previous_hash or self.chain[-1].hash,date)
+        block = Block(len(self.chain)+1, self.current_transactions, proof, previous_hash or self.chain[-1].hash, date)
 
         # Reset the current list of transactions
         self.current_transactions = []
@@ -115,7 +115,7 @@ class Blockchain:
         """
         update_reward()
 
-        Adds the reward transaction to the current transactions list when 
+        Adds the reward transaction to the current transactions list when
         starting to mine.
 
         :param reward_transaction: <RewardTransaction Object> The transaction
@@ -157,10 +157,10 @@ class Blockchain:
 
         Returns the block in the chain at a given index.
 
-        :return: <Block Object> The block object at the index or None if 
+        :return: <Block Object> The block object at the index or None if
             it does not exist.
         """
-        
+
         try:
             return self.chain[index - 1]
         except IndexError:
@@ -176,7 +176,7 @@ class Blockchain:
         :param last_proof: <int> The previous block's proof.
         :param proof: <int> The proof of the block being checked.
         :param last_hash: <str> The hash of the previous block.
-        :param current_transactions: <list<Transaction>> A list of current 
+        :param current_transactions: <list<Transaction>> A list of current
             transactions.
 
         :return: <bool> True if correct, False if not.
@@ -186,7 +186,7 @@ class Blockchain:
 
         guess = f'{last_proof}{proof}{last_hash}{transactions}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        
+
         # This is where difficulty is set.
         difficulty = config.get_block_difficulty()
         return guess_hash[:difficulty] == '0' * difficulty
@@ -195,7 +195,7 @@ class Blockchain:
         """
         get_version_number()
 
-        Returns the version number that is used to track major changes to 
+        Returns the version number that is used to track major changes to
         the blockchain.
 
         :return: <int> The current version number of the blockchain.
@@ -212,4 +212,3 @@ class Blockchain:
         """
 
         self.version_number += 1
-

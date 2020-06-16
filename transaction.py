@@ -14,7 +14,7 @@ from datetime import datetime
 from uuid import uuid4
 
 # Local imports
-from coin import Coin, coin_from_json, reward_coin_from_json
+from coin import coin_from_json, reward_coin_from_json
 from copy import deepcopy
 from history import History
 from macros import REWARD_COIN_VALUE
@@ -39,8 +39,8 @@ class Transaction:
         :param timestamp: <str> The time that this transaction was made.
         """
 
-        self._uuid = str(uuid4()).replace('-', '') if uuid == None else uuid
-        self._timestamp = str(datetime.now()) if timestamp == None else timestamp
+        self._uuid = str(uuid4()).replace('-', '') if uuid is None else uuid
+        self._timestamp = str(datetime.now()) if timestamp is None else timestamp
 
         self._sender = sender
 
@@ -59,11 +59,10 @@ class Transaction:
                 else:
                     self._output_value += coin.get_value()
 
-
     def verify(self, history=None):
         """
         verify()
-        
+
         This function verifies if a tranaction is valid.
 
         Assumptions:
@@ -72,8 +71,7 @@ class Transaction:
         3. Output coins were created from scratch.
         4. Assume that history is already locked.
 
-        :param history: <History Object> A place where a history object can be 
-            passed in to be used.
+        :param history: <History Object> A place where a history object can be passed in to be used.
 
         :return: Whether the transaction is valid or not.
         """
@@ -185,7 +183,7 @@ class Transaction:
 
         This function checks whether or not a specific coin matches what is
         stored in the transaction.
-        
+
         :param recipient: <str> The recipient of the coin.
         :param coin: <Coin Object> The coin to check.
 
@@ -354,6 +352,13 @@ class RewardTransaction(Transaction):
                 return False
 
         return True
+    
+    def reset(self):
+        self._output_value = REWARD_COIN_VALUE
+        self.inputs = []
+        self.outputs = []
+        self._input_value = 0
+        self._reward_value = 0
 
 
 def inputs_from_json(inputs):

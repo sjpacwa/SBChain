@@ -1,7 +1,7 @@
 """
 block.py
 
-This file defines the Block class which is used to hold information on 
+This file defines the Block class which is used to hold information on
 a block that is stored in the blockchain.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -11,12 +11,10 @@ Santa Clara University
 # Standard library imports
 import hashlib
 import json
-import logging
 from datetime import datetime
 
 # Local imports
-from coin import reward_coin_from_json, coin_from_json
-from transaction import reward_transaction_from_json, transaction_from_json, transaction_verify
+from transaction import reward_transaction_from_json, transaction_from_json
 
 
 class Block:
@@ -27,14 +25,14 @@ class Block:
     def __init__(self, index, transactions, proof, previous_hash, timestamp=-1):
         """
         __init__
-        
+
         The constructor for a Block object.
 
         :param index: <int> The index of the block.
         :param transactions: <list> A list of transactions in the block.
         :param proof: <str> The proof of the block.
         :param previous_hash: <str> The hash of the previous block.
-        :param timestamp: <datetime> The datetime of block creation. It 
+        :param timestamp: <datetime> The datetime of block creation. It
             is set to datetime.min for the genesis block.
         """
 
@@ -53,7 +51,7 @@ class Block:
 
         :return: <dict> JSON-object form of Block.
         """
-        
+
         return {
             'index': self.index,
             'previous_hash': self.previous_hash,

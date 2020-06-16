@@ -1,7 +1,7 @@
 """
 connection.py
 
-This file is responsible for storing the class that is responsible for 
+This file is responsible for storing the class that is responsible for
 socket-based network communication.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -100,7 +100,7 @@ class SingleConnectionHandler(ConnectionHandler):
         self.port = port
 
         self.close = close
-        
+
         self.conn = socket(AF_INET, SOCK_STREAM)
         try:
             self.conn.connect((self.host, self.port))
@@ -118,7 +118,7 @@ class SingleConnectionHandler(ConnectionHandler):
 
         :return: <dict> JSON Object representation of the data.
         """
-        
+
         self._send(self.conn, data)
         received_data = self._recv(self.conn)
         if self.close:
@@ -199,4 +199,3 @@ class MultipleConnectionHandler(ConnectionHandler):
         for conn in self.peer_connections:
             self._send(conn, data)
             conn.close()
-

@@ -1,13 +1,15 @@
 """
 wallet.py
 
-The wallet is responsible for converting currency amounts to internal 
+The wallet is responsible for converting currency amounts to internal
 coins to allow for ease of use of the blockchain.
 
 2020 Stephen Pacwa and Daniel Okazaki
 Santa Clara University
 """
 
+# Standard library imports
+import logging
 from threading import Lock
 
 
@@ -22,7 +24,7 @@ class Wallet:
     def __init__(self):
         """
         __init__()
-    
+
         The constructor for a Wallet object.
         """
         self.personal_coins = []
@@ -32,20 +34,22 @@ class Wallet:
     def add_coin(self, coin):
         """
         add_coin()
-    
-        Adds a coin to the wallet 
+
+        Adds a coin to the wallet
 
         :param coin: <Coin Object> Coin to add to the wallet
         """
-        self.personal_coins.append(coin)
-        self.personal_coins.sort()
-        self.uuid_lookup[coin.get_uuid()] = coin
-        self.balance += coin.get_value()
+
+        if coin.get_uuid() not in self.uuid_lookup:
+            self.personal_coins.append(coin)
+            self.personal_coins.sort()
+            self.uuid_lookup[coin.get_uuid()] = coin
+            self.balance += coin.get_value()
 
     def remove_coin(self, uuid):
         """
         remove_coin()
-    
+
         This function removes a coin from the wallet
 
         :param uuid: <str> UUID of the coin to remove from the wallet
@@ -53,17 +57,19 @@ class Wallet:
         try:
             coin = self.personal_coins.remove(self.uuid_lookup[uuid])
             del self.uuid_lookup[uuid]
-            if coin != None:
+            if coin is not None:
                 self.balance -= coin.get_value()
-        except (ValueError, KeyError):
+
+        except (ValueError, KeyError) as e:
+            logging.debug("Error in wallet: " + str(e))
             pass
 
     def get_balance(self):
         """
         get_balance()
-    
+
         This function returns the total balance of the wallet
-        
+
         :return: <double> Balance in wallet
         """
         return self.balance
@@ -71,7 +77,7 @@ class Wallet:
     def get_coins(self, value):
         """
         get_coins()
-    
+
         Converts an input value into coins
 
         :param value: <double> Value of input coins
@@ -99,10 +105,9 @@ class Wallet:
     def get_lock(self):
         """
         get_lock()
-    
+
         This function returns the wallet lock
-        
+
         :return: <Lock> Wallet Lock
         """
         return Wallet.wallet_lock
-

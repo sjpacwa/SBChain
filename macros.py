@@ -1,7 +1,7 @@
 """
 macros.py
 
-This file stores many functions that are used in many places to simplify 
+This file stores many functions that are used in many places to simplify
 message creation and starting data.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -10,7 +10,6 @@ Santa Clara University
 
 
 BUFFER_SIZE = 256
-
 
 REWARD_COIN_VALUE = 5
 
@@ -21,7 +20,7 @@ INITIAL_PEERS = [
 ]
 
 
-def RECEIVE_BLOCK(block, host, port): 
+def RECEIVE_BLOCK(block, host, port):
     """
     RECEIVE_BLOCK()
 
@@ -50,14 +49,14 @@ def RECEIVE_TRANSACTION(transaction_list):
 
     This function creates a message for the receive transaction task.
 
-    :param transaction_list: <list<Transaction Object>> A list of transactions 
+    :param transaction_list: <list<Transaction Object>> A list of transactions
         to send.
 
     :return: <str> The formatted message.
     """
 
     return {
-        'action': 'receive_transactions', 
+        'action': 'receive_transactions',
         'params': [transaction_list]
     }
 
@@ -91,7 +90,7 @@ def RESOLVE_CONFLICTS(request_id, host, port, index):
         request.
     :param host: <str> The host of the original requestor.
     :param port: <int> The port of the original requestor.
-    :param index: <int> The current index being mined by the original 
+    :param index: <int> The current index being mined by the original
         requestor.
 
     :return: <str> The formatted message.
@@ -100,13 +99,12 @@ def RESOLVE_CONFLICTS(request_id, host, port, index):
     return {
         'action': 'resolve_conflicts_internal',
         'params': [
-            request_id, 
+            request_id,
             host,
             port,
             index
         ]
     }
-
 
 def GET_CHAIN_PAGINATED(size):
     """
@@ -188,7 +186,7 @@ def SEND_CHAIN_SECTION(section, status):
 
     :param section: <list<Block Object>> The subchain to send.'
     :param status: <str> The status of the reply message.
-    
+
     :return: <str> The formatted message.
     """
 

@@ -1,7 +1,9 @@
+# Standard library imports
 from datetime import datetime
 from json import loads
 from queue import Empty
-import socket
+import pytest
+
 
 from block import block_from_string
 from blockchain import Blockchain
@@ -9,7 +11,6 @@ from tests.constants import *
 from tasks import receive_block
 from mine import handle_blocks, proof_of_work, BlockException
 
-import pytest
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +54,7 @@ def test_block_with_good_transaction(blockchain):
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
     with pytest.raises(BlockException):
-        handle_blocks(metadata, queues)
+        handle_blocks(metadata, queues, None)
 
     assert queues['tasks'].get(block=False) != None
     with pytest.raises(Empty):
@@ -67,7 +68,7 @@ def test_block_with_bad_transaction(blockchain):
 
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
-    handle_blocks(metadata, queues)
+    handle_blocks(metadata, queues, None)
 
     with pytest.raises(Empty):
         queues['tasks'].get(block=False)

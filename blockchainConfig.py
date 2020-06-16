@@ -10,6 +10,7 @@ Santa Clara University
 # Standard library imports
 import configparser
 
+
 class BlockchainConfig:
     """
     Blockchain Config
@@ -18,7 +19,7 @@ class BlockchainConfig:
     def __init__(self):
         """
         __init__()
-        
+
         The constructor for a BlockChain Config object
         """
 

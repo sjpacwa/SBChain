@@ -1,7 +1,7 @@
 """
 thread.py
 
-This file is responsible for defining several classes that are used to 
+This file is responsible for defining several classes that are used to
 manage the threads that perform work.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -10,12 +10,12 @@ Santa Clara University
 
 # Standard library imports
 import traceback
+import logging
 from queue import Queue
 from threading import Thread
 
 # Local imports
 from connection import ConnectionHandler
-from macros import BUFFER_SIZE
 from mine import Miner
 from tasks import *
 
@@ -83,8 +83,7 @@ class ThreadHandler():
         The constructor for the ThreadHandler object.
 
         :param metadata: <dict> The metadata for the node.
-        :param num_threads: <int> The number of threads to 
-            create.
+        :param num_threads: <int> The number of threads to create.
         """
 
         self.queues = {}
@@ -119,4 +118,3 @@ class ThreadHandler():
             logging.warning(traceback.format_exc())
             logging.warning(''.join(traceback.format_stack()))
             conn.close()
-            

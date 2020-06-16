@@ -30,7 +30,7 @@ class Coin:
 
         self._transaction_id = transaction_id
         self._value = value
-        self._uuid = str(uuid4()).replace('-', '') if uuid == None else uuid
+        self._uuid = str(uuid4()).replace('-', '') if uuid is None else uuid
 
     def get_transaction_id(self):
         """
@@ -103,13 +103,13 @@ class Coin:
         :return: <boolean> Whether they are equal or not.
         """
 
-        if other == None:
+        if other is None:
             return False
 
         if not isinstance(other, Coin):
             return False
 
-        return (self._transaction_id == other.get_transaction_id() 
+        return (self._transaction_id == other.get_transaction_id()
                 and self._value == other.get_value()
                 and self._uuid == other.get_uuid())
 
@@ -124,7 +124,7 @@ class Coin:
         :return: <boolean> Whether they are equal or not.
         """
 
-        if other == None:
+        if other is None:
             raise TypeError
 
         if not isinstance(other, Coin):
@@ -140,11 +140,11 @@ class RewardCoin(Coin):
 
     def __init__(self, transaction_id, value, uuid=None):
         """
-        __init__() 
+        __init__()
 
         The constructor for the RewardCoin object.
 
-        :param transaction_id: <str> The transaction the coin is 
+        :param transaction_id: <str> The transaction the coin is
             attached to.
         :param value: <int> The value of the coin.
         :param uuid: <str> The identifier for this coin.
@@ -156,7 +156,7 @@ class RewardCoin(Coin):
         """
         set_value()
 
-        Change the value of the reward coin. This is used when a new 
+        Change the value of the reward coin. This is used when a new
         transaction is added during mining.
 
         :param value: <int> The new value of the coin.
@@ -205,4 +205,3 @@ def coin_from_string(data):
     """
 
     return coin_from_json(json.loads(data))
-
