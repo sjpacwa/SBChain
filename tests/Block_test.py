@@ -79,7 +79,7 @@ def test_block_with_bad_transaction(blockchain):
     metadata = create_metadata(blockchain=blockchain)
 
     block = block_from_string(BLANK_BLOCK(4, [Transaction("B", [Coin("XYZ", 100, "TEST")],
-                                                         {"C": [Coin("DCE", 100)]}, "DCE")], "3", "3"))
+                                                          {"C": [Coin("DCE", 100)]}, "DCE")], "3", "3"))
 
     queues['blocks'].put((('127.0.0.1', 5000), block))
 
