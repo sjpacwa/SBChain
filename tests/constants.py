@@ -22,7 +22,15 @@ from encoder import ComplexEncoder
 from history import History
 from transaction import Transaction, RewardTransaction
 
+
 uuid = str(uuid4()).replace("-", "")
+connection = None
+queues = {
+    'tasks': Queue(),
+    'trans': Queue(),
+    'blocks': Queue()
+}
+
 
 def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
     history = History(uuid)
@@ -44,17 +52,13 @@ def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
         'peers': []
     }
 
-queues = {
-    'tasks': Queue(),
-    'trans': Queue(),
-    'blocks': Queue()
-}
 
 def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
 
     trans = Transaction(sender, inputs, outputs, uuid, "now")
 
     return json.dumps(trans, cls=ComplexEncoder)
+
 
 def BLANK_BLOCK(index, transactions, proof, previous_hash):
     transaction_id = "REWARD"
@@ -65,8 +69,6 @@ def BLANK_BLOCK(index, transactions, proof, previous_hash):
     block = Block(index, transactions, proof, previous_hash)
 
     return json.dumps(block, cls=ComplexEncoder)
-
-connection = None
 
 
 class FakeConnection():
@@ -124,4 +126,3 @@ class FakeBlockchain():
 
     def increment_version_number(self):
         self.version_number += 1
-

@@ -56,7 +56,7 @@ def test_paginated_chain_multiple(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -84,7 +84,7 @@ def test_paginated_chain_non_multiple(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -143,7 +143,7 @@ def test_paginated_chain_with_reset(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -157,4 +157,3 @@ def test_paginated_chain_with_reset(fake_socket, initial_data):
 
     assert total_list == blockchain.get_chain()
     assert data['status'] == 'FINISHED'
-

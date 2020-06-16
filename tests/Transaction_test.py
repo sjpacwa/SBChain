@@ -13,19 +13,22 @@ from queue import Empty
 import pytest
 
 # Local imports
-from tests.constants import *
-from coin import Coin
-from transaction import Transaction
+from tests.constants import create_metadata, BLANK_TRANSACTION, queues, connection, FakeConnection
+from coin import Coin, RewardCoin
+from transaction import Transaction, RewardTransaction
 from tasks import receive_transactions, new_transaction, receive_transaction_internal
 from macros import REWARD_COIN_VALUE
 from mine import handle_transactions
+from history import History
 
 
 pytest.valid_id = 0
 
+
 @pytest.fixture(scope="module")
 def initial_metadata():
     return create_metadata()
+
 
 @pytest.fixture()
 def initial_history(initial_metadata):

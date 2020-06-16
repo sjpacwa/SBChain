@@ -17,7 +17,7 @@ from threading import Thread
 # Local imports
 from connection import ConnectionHandler
 from mine import Miner
-from tasks import *
+from tasks import THREAD_FUNCTIONS
 
 
 class Worker(Thread):

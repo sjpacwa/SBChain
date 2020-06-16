@@ -103,10 +103,10 @@ class Block:
 
 
         return (self.index == other.index 
-            and self.timestamp == other.timestamp \
-            and self.transactions == other.transactions \
-            and self.proof == other.proof \
-            and self.previous_hash == other.previous_hash)
+                and self.timestamp == other.timestamp 
+                and self.transactions == other.transactions 
+                and self.proof == other.proof 
+                and self.previous_hash == other.previous_hash)
 
 
 def block_from_json(data):

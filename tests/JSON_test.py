@@ -15,12 +15,14 @@ from coin import Coin
 from encoder import ComplexEncoder
 from transaction import Transaction
 
+
 def test_complex_encoder_coin():
     coin = Coin("test", 1, "test2")
 
     json_obj = json.dumps(coin, cls=ComplexEncoder)
 
     assert json_obj == '{"uuid": "test2", "transaction_id": "test", "value": 1}'
+
 
 def test_complex_encoder_coin_list():
     coin = [Coin("test", 1, "test2")]
@@ -29,7 +31,8 @@ def test_complex_encoder_coin_list():
 
     assert json_obj == '[{"uuid": "test2", "transaction_id": "test", "value": 1}]'
 
-def test_complex_encoder_transaction():  
+
+def test_complex_encoder_transaction():
     inputs = [Coin("test", 1, "test")]
     outputs = {"1": [Coin("test", 1, "test2")]}
 

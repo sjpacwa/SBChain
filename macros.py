@@ -15,8 +15,8 @@ REWARD_COIN_VALUE = 5
 
 
 INITIAL_PEERS = [
-    ('localhost', 5000),
-    ('localhost', 5001)
+    ['localhost', 5000],
+    ['localhost', 5001]
 ]
 
 

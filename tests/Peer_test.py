@@ -90,6 +90,7 @@ def test_remove_present_peer(initial_metadata):
 
     assert initial_metadata['peers'] == []
 
+
 def test_remove_non_present_peer(initial_metadata):
 
     non_present_peer = [['127.0.0.1', 5001]]

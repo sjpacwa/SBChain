@@ -18,8 +18,8 @@ from datetime import datetime
 
 # Local imports
 from block import block_from_json
-from coin import *
-from transaction import *
+from coin import Coin
+from transaction import Transaction, transaction_from_json, transaction_verify
 from connection import MultipleConnectionHandler, ConnectionHandler, SingleConnectionHandler
 from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION, RESOLVE_CONFLICTS
 from history import History
