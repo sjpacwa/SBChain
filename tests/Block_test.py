@@ -1,7 +1,9 @@
+# Standard library imports
 from datetime import datetime
 from json import loads
 from queue import Empty
-import socket
+import pytest
+
 
 from block import block_from_string
 from blockchain import Blockchain
@@ -9,7 +11,6 @@ from tests.constants import *
 from tasks import receive_block
 from mine import handle_blocks, proof_of_work, BlockException
 
-import pytest
 
 
 @pytest.fixture(scope="module")

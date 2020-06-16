@@ -1,17 +1,19 @@
 """
 history.py
 
-This class is implemented with a nested class in order to enforce the 
-Singleton property. This should guarantee that only one instance of the 
+This class is implemented with a nested class in order to enforce the
+Singleton property. This should guarantee that only one instance of the
 inner __History class should exist on a node when the program is run.
 
 2020 Stephen Pacwa and Daniel Okazaki
 Santa Clara University
 """
 
+# Standard library imports
 from copy import deepcopy
 from threading import Lock
 
+# Local imports
 from wallet import Wallet
 
 
@@ -22,7 +24,7 @@ class History:
 
     class __History:
         history_lock = Lock()
-        
+
         def __init__(self, uuid):
             self.coins = {}
             self.transactions = {}
@@ -46,10 +48,10 @@ class History:
             self.transactions[transaction.get_uuid()] = transaction
 
             our_new_coins = transaction.get_output_coins(self.uuid)
-            if our_new_coins != None:
+            if our_new_coins is not None:
                 for coin in our_new_coins:
                     self.wallet.add_coin(coin)
-  
+
             if transaction.get_sender() == self.uuid:
                 for coin in transaction.get_inputs():
                     self.wallet.remove_coin(coin.get_uuid())
@@ -68,7 +70,7 @@ class History:
                     self.wallet.add_coin(coin)
 
             our_bad_coins = transaction.get_output_coins(self.uuid)
-            if our_bad_coins != None:
+            if our_bad_coins is not None:
                 for coin in our_bad_coins:
                     self.wallet.remove_coin(coin.get_uuid())
 
@@ -104,7 +106,7 @@ class History:
             if uuid == "":
                 raise ValueError("Initial history needs proper UUID")
             History.instance = History.__History(uuid)
-    
+
     def get_coin(self, uuid):
         """
         get_coin()
@@ -159,10 +161,10 @@ class History:
         """
         add_transaction()
 
-        Adds a new transaction to the history. If the owner of the coin is 
+        Adds a new transaction to the history. If the owner of the coin is
             this node it also interfaces with the wallet to update it.
 
-        :param transaction: <Transaction Object> The new 
+        :param transaction: <Transaction Object> The new
             transaction to add.
         """
 
@@ -218,7 +220,7 @@ class History:
         replace_history()
 
         Replaces the inner History instance with a new one.
-        
+
         :param history: <History object> The object to replace the instance
             with.
         """
@@ -244,4 +246,3 @@ class History:
         """
 
         History.instance.reset()
-

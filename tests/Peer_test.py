@@ -4,10 +4,12 @@ Peer_test.py
 This file tests the registering and unregistering of peers.
 """
 
+# Standard library imports
+import pytest
+
+# Local imports
 from tasks import register_nodes, unregister_nodes
 from tests.constants import create_metadata
-
-import pytest
 
 
 @pytest.fixture()
@@ -44,7 +46,7 @@ def test_adding_duplicate_peers(initial_metadata):
 
 def test_adding_valid_netloc_peer(initial_metadata):
     valid_peer = [['localhost', 5001]]
-    response = [('localhost',5001)]
+    response = [('localhost', 5001)]
 
     register_nodes(valid_peer, initial_metadata)
 
@@ -86,6 +88,7 @@ def test_remove_present_peer(initial_metadata):
     assert initial_metadata['peers'] == []
 
 def test_remove_non_present_peer(initial_metadata):
+
     non_present_peer = [['127.0.0.1', 5001]]
     present_peer = [('127.0.0.1', 5002)]
     initial_metadata['peers'] = present_peer
@@ -98,10 +101,9 @@ def test_remove_non_present_peer(initial_metadata):
 def test_remove_not_wrapped(initial_metadata):
     present_peer = ['127.0.0.1', 5001]
     response = ('127.0.0.1', 5001)
-    
+
     initial_metadata['peers'].append(response)
 
     unregister_nodes(present_peer, initial_metadata)
 
     assert initial_metadata['peers'] == [response]
-

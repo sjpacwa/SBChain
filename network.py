@@ -1,7 +1,7 @@
 """
 network.py
 
-This file is responsible for storing the class that is responsible for 
+This file is responsible for storing the class that is responsible for
 the socket-based main network loop.
 
 2020 Stephen Pacwa and Daniel Okazaki
@@ -10,15 +10,12 @@ Santa Clara University
 
 # Standard library imports
 from socket import socket, AF_INET, SOCK_STREAM
-import json
 import logging
 
 # Local Imports
 from connection import ConnectionHandler
 from tasks import register_nodes
 from thread import ThreadHandler
-from macros import BUFFER_SIZE
-
 
 class NetworkHandler(ConnectionHandler):
     """
@@ -41,7 +38,7 @@ class NetworkHandler(ConnectionHandler):
 
         self.metadata = metadata
         self.metadata['peers'] = [] 
-        
+
         # Automatically register neighbors.
         register_nodes(initial_peers, self.metadata)
 
@@ -70,8 +67,7 @@ class NetworkHandler(ConnectionHandler):
             logging.info('Waiting for new connections')
             self.sock.listen(5)
             conn, client = self.sock.accept()
-            logging.info('Created connection to %s:%s', client[0], 
-                client[1])
+            logging.info('Created connection to %s:%s', client[0], client[1])
 
             data = self._recv(conn)
 
@@ -79,4 +75,3 @@ class NetworkHandler(ConnectionHandler):
                 continue
             else:
                 self.threads.add_task(data, conn)
-

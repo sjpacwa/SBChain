@@ -32,4 +32,3 @@ class ComplexEncoder(JSONEncoder):
             return obj.to_json()
         else:
             return JSONEncoder.default(self, obj)
-

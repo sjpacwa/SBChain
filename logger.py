@@ -12,7 +12,7 @@ import logging
 from os import mkdir
 
 
-def initialize_log(node_id,debug):
+def initialize_log(node_id, debug):
     """
     initialize_log()
 
@@ -53,7 +53,6 @@ def initialize_log(node_id,debug):
 
     c_handler.setFormatter(log_format)
     logger.addHandler(c_handler)
-    
+
     f_handler.setFormatter(log_format)
     logger.addHandler(f_handler)
-

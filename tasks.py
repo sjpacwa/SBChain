@@ -469,7 +469,7 @@ def receive_transactions(trans_data, *args, **kwargs):
     """
     receive_transaction()
 
-    This function handles request from the dispatcher. 
+    This function handles request from the dispatcher.
     It creates a new transaction and adds it to the pool of transactions.
 
     :param trans_data: <dict> The data of the transactions off the network.
@@ -479,13 +479,13 @@ def receive_transactions(trans_data, *args, **kwargs):
     queues = args[1]
 
     receive_transaction_internal(trans_data, metadata, queues)
-                
+
 
 def receive_transaction_internal(trans_data, metadata, queues):
     """
     receive_transaction_internal()
 
-    This function is an internal version to allow new transactions on the node to 
+    This function is an internal version to allow new transactions on the node to
     be added without going through the network.
 
     :param trans_data: <dict> The data of the transactions off the network.

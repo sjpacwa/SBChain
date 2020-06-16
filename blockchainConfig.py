@@ -10,6 +10,7 @@ Santa Clara University
 # Standard library imports
 import configparser
 
+
 class BlockchainConfig:
     """
     Blockchain Config
@@ -24,7 +25,6 @@ class BlockchainConfig:
 
         self.parser = configparser.ConfigParser()
         self.parser.read('config.ini')
-
 
     def get_block_difficulty(self):
         """

@@ -4,6 +4,7 @@ from uuid import uuid4
 from queue import Queue
 from datetime import datetime
 
+# Local imports
 from blockchain import Blockchain
 from block import Block
 from coin import Coin, RewardCoin
@@ -20,7 +21,6 @@ def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
     output = Coin(transaction_id, 100, "TEST")
     history.add_transaction(Transaction("A", [Coin("OLD", 100)], {"B": [output]}, transaction_id))
     history.add_coin(output)
-    
 
     return {
         'host': host,
@@ -37,7 +37,7 @@ def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
 queues = {
     'tasks': Queue(),
     'trans': Queue(),
-    'blocks': Queue(),
+    'blocks': Queue()
 }
 
 def BLANK_TRANSACTION(sender, uuid, inputs, outputs):

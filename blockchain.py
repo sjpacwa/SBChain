@@ -57,7 +57,7 @@ class Blockchain:
 
         for block in self.chain:
             json_chain.append(block.to_json())
-    
+
         return json_chain
 
     def new_block(self, proof, previous_hash, date=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')):
