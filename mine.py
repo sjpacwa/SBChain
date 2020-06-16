@@ -206,7 +206,7 @@ def handle_blocks(metadata, queues, reward_transaction):
 
     if changed:
         queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'],
-                                                metadata['port']], {}, None))
+                                metadata['port']], {}, None))
         queues['blocks'].task_done()
         raise BlockException
 
@@ -398,7 +398,7 @@ def mine(*args, **kwargs):
     block = metadata['blockchain'].new_block(proof, last_block.hash)
 
     MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json(),
-                                                                                    metadata['host'], metadata['port']))
+                                                                    metadata['host'], metadata['port']))
 
     logging.debug("Mined block: " + block.to_string())
 
