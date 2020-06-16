@@ -1,8 +1,20 @@
+"""
+SingleConnection_test.py
+
+This file tests the SingleConnectionHandler
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
+# Standard library imports
+import logging
 import pytest
+
+# Local imports
 from connection import SingleConnectionHandler
 from node import Node
 from time import sleep
-import logging
 
 """
 

@@ -182,7 +182,7 @@ def handle_blocks(metadata, queues, reward_transaction):
         history_temp = history.get_copy()
 
         host_port, block = queues['blocks'].get()
-        current_index = metadata['blockchain'].last_block_index 
+        current_index = metadata['blockchain'].last_block_index
 
         if block.index == current_index + 1:
             success = verify_block(history_temp, block, metadata['blockchain'])
@@ -460,13 +460,12 @@ def verify_block(history_temp, block, blockchain):
 
     lastblock = blockchain.last_block
 
-
     if lastblock.hash != block.previous_hash:
         logging.debug('Bad block: hash does not match')
         return False
 
     block.transactions = new_transactions
-    
+
     if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash, block.transactions):
         logging.debug('Bad block: invalid proof')
         return False

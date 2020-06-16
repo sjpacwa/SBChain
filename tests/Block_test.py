@@ -1,16 +1,26 @@
+"""
+Block_test.py
+
+This file tests the Block functionality
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
 # Standard library imports
 from datetime import datetime
 from json import loads
 from queue import Empty
 import pytest
 
-
+# Local imports
 from block import block_from_string
 from blockchain import Blockchain
-from tests.constants import *
+from tests.constants import create_metadata, queues, FakeConnection, BLANK_BLOCK
 from tasks import receive_block
 from mine import handle_blocks, proof_of_work, BlockException
-
+from transaction import Transaction
+from coin import Coin
 
 
 @pytest.fixture(scope="module")
@@ -23,7 +33,6 @@ def blockchain():
     return blockchain
 
 
-
 def test_block_with_lower_index(blockchain):
     metadata = create_metadata(blockchain=blockchain)
 
@@ -33,6 +42,7 @@ def test_block_with_lower_index(blockchain):
 
     with pytest.raises(Empty):
         queues['blocks'].get(block=False)
+
 
 def test_block_with_equal_index(blockchain):
     metadata = create_metadata(blockchain=blockchain)

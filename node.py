@@ -74,8 +74,7 @@ class Node:
 class InvalidID(Exception):
     """
     InvalidID
-    
+
     A dummy exception to throw when an ID is passed that is not allowed.
     """
     pass
-

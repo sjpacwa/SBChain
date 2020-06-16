@@ -1,5 +1,16 @@
+"""
+JSON_test.py
+
+This test is responsible for testing the JSON decoder
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
+# Standard library imports
 import json
 
+# Local imports
 from coin import Coin
 from encoder import ComplexEncoder
 from transaction import Transaction

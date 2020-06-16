@@ -2,15 +2,19 @@
 Benchmark_test.py
 
 This file tests the initialize functionality of the benchmark.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
+# Standard library imports
 from threading import Semaphore
+import pytest
 
+# Local imports
 from blockchain import Blockchain
 from tasks import benchmark_initialize
 from tests.constants import create_metadata
-
-import pytest
 
 
 @pytest.fixture()

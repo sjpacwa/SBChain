@@ -41,12 +41,12 @@ class Block:
         self.proof = proof
         self.previous_hash = previous_hash
         self.timestamp = datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ') if timestamp == -1 else timestamp
-    
+
     def to_json(self):
         """
         to_json
 
-        Converts a Block object into JSON-object form, (i.e. it is 
+        Converts a Block object into JSON-object form, (i.e. it is
         composed of dictionaries and lists).
 
         :return: <dict> JSON-object form of Block.
@@ -59,12 +59,12 @@ class Block:
             'timestamp': self.timestamp,
             'transactions': [transaction.to_json() for transaction in self.transactions]
         }
-    
+
     def to_string(self):
         """
         to_string
 
-        Converts a Block object into JSON-string form, (i.e. it is 
+        Converts a Block object into JSON-string form, (i.e. it is
         composed of a string). The resulting string is always ordered.
 
         :return: <str> JSON-string form of Block.
@@ -84,7 +84,7 @@ class Block:
 
         :return: <str> The hash of the block.
         """
-        
+
         return hashlib.sha256(self.to_string().encode()).hexdigest()
 
     def __eq__(self, other):
@@ -94,18 +94,18 @@ class Block:
         Checks to see if two Blocks are equal.
 
         :param other: <Block Object> The Block to compare to.
-        
+
         :return: <boolean> Whether the blocks are equal or not.
         """
-        
+
         if not isinstance(other, Block):
             return False
 
 
-        return (self.index == other.index
-            and self.timestamp == other.timestamp
-            and self.transactions == other.transactions
-            and self.proof == other.proof
+        return (self.index == other.index 
+            and self.timestamp == other.timestamp \
+            and self.transactions == other.transactions \
+            and self.proof == other.proof \
             and self.previous_hash == other.previous_hash)
 
 
@@ -166,9 +166,8 @@ def block_from_string(data):
     Converts a JSON-string form into a Block object.
 
     :param data: <str> The JSON-string form of a block.
-    
+
     :returns: <Block Object> A new object.
     """
 
     return block_from_json(json.loads(data))
-

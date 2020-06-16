@@ -3,14 +3,18 @@ GetChain_test.py
 
 This test is responsible for testing the get chain and get paginated
 chain functionality.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
+# Standard library imports
 from threading import Thread
+import pytest
 
+# Local imports
 from tasks import get_chain, get_chain_paginated
 from tests.constants import FakeBlockchain, FakeConnection, create_metadata
-
-import pytest
 
 
 @pytest.fixture()

@@ -2,6 +2,9 @@
 Peer_test.py
 
 This file tests the registering and unregistering of peers.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
 # Standard library imports

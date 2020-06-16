@@ -1,3 +1,13 @@
+"""
+constants.py
+
+This file provides macros for the pytest infrastructure
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
+# Standard library imports
 import json
 from threading import Lock
 from uuid import uuid4

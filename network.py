@@ -17,6 +17,7 @@ from connection import ConnectionHandler
 from tasks import register_nodes
 from thread import ThreadHandler
 
+
 class NetworkHandler(ConnectionHandler):
     """
     Single Connection Handler
@@ -25,7 +26,7 @@ class NetworkHandler(ConnectionHandler):
     def __init__(self, metadata, initial_peers, num_threads=10):
         """
         __init__
-        
+
         The constructor for a NetworkHandler object.
 
         :param metadata: <dict> The metadata of the node.
@@ -37,14 +38,13 @@ class NetworkHandler(ConnectionHandler):
         ConnectionHandler.__init__(self)
 
         self.metadata = metadata
-        self.metadata['peers'] = [] 
+        self.metadata['peers'] = []
 
         # Automatically register neighbors.
         register_nodes(initial_peers, self.metadata)
 
         # Set up socket.
-        logging.info("Setting up socket and binding to %s:%s", metadata['host'], 
-            metadata['port'])
+        logging.info("Setting up socket and binding to %s:%s", metadata['host'], metadata['port'])
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.sock.bind((self.metadata['host'], self.metadata['port']))
 
@@ -55,7 +55,7 @@ class NetworkHandler(ConnectionHandler):
         """
         event_loop
 
-        This function will setup the socket and wait for incoming 
+        This function will setup the socket and wait for incoming
         connections.
         """
 

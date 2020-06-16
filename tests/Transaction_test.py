@@ -1,13 +1,25 @@
+"""
+Transaction_test.py
+
+This file tests the Transaction functionality
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
+# Standard library imports
+from json import loads
+from queue import Empty
+import pytest
+
+# Local imports
 from tests.constants import *
 from coin import Coin
 from transaction import Transaction
 from tasks import receive_transactions, new_transaction, receive_transaction_internal
-from json import loads
-from queue import Empty
 from macros import REWARD_COIN_VALUE
 from mine import handle_transactions
 
-import pytest
 
 pytest.valid_id = 0
 

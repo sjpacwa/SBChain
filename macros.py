@@ -15,8 +15,8 @@ REWARD_COIN_VALUE = 5
 
 
 INITIAL_PEERS = [
-    ('localhost',5000),
-    ('localhost',5001)
+    ('localhost', 5000),
+    ('localhost', 5001)
 ]
 
 
@@ -25,7 +25,7 @@ def RECEIVE_BLOCK(block, host, port):
     RECEIVE_BLOCK()
 
     This function creates a message for the receive block task.
-    
+
     :param block: <Block Object> The block to send.
     :param host: <str> The node's host to facillitate callback.
     :param port: <int> The node's port to facillitate callback.
@@ -106,12 +106,13 @@ def RESOLVE_CONFLICTS(request_id, host, port, index):
         ]
     }
 
+
 def GET_CHAIN_PAGINATED(size):
     """
     GET_CHAIN_PAGINATED()
 
     This function creates a message for the get chains paginated action.
-    
+
     :param size: <int> The number of blocks to send per page.
 
     :return: <str> The formatted message.
@@ -194,4 +195,3 @@ def SEND_CHAIN_SECTION(section, status):
         'section': section,
         'status': status
     }
-
