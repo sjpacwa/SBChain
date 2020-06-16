@@ -31,7 +31,7 @@ The SBChain Blockchain project meant to explore possible performance improvement
 
 1. Mount the virtual environment.
     ```
-    $ .\venv\Scripts\activate
+    $  source venv/bin/activate
     ```
 
 2. Run the server:
