@@ -63,7 +63,7 @@ def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
 def BLANK_BLOCK(index, transactions, proof, previous_hash):
     transaction_id = "REWARD"
     reward_transaction = RewardTransaction([], {'A': [RewardCoin(transaction_id, 5, "REWARD_COIN")]},
-                                        transaction_id, datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
+                                           transaction_id, datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     transactions = [reward_transaction] + transactions
 
