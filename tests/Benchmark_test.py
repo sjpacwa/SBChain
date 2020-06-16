@@ -55,7 +55,7 @@ def test_benchmark_runs_once(initial_metadata, node_list):
     response_two = benchmark_initialize(node_list, 5, initial_metadata)
 
     # Ensure second run is failure
-    assert response_one 
+    assert response_one
     assert not response_two
 
     # Check the flags are set.

@@ -47,6 +47,7 @@ def initial_history(initial_metadata):
     transaction = Transaction(initial_metadata['uuid'], [], output_coins, transaction_id)
     initial_metadata['history'].add_transaction(transaction)
 
+
 def test_single_valid_transaction(initial_history, initial_metadata):
     transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
@@ -59,7 +60,7 @@ def test_single_valid_transaction(initial_history, initial_metadata):
 
     receive_transactions([transaction_data], initial_metadata, queues, connection)
 
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
@@ -87,7 +88,7 @@ def test_single_invalid_transaction_bad_input_value(initial_history, initial_met
             [Coin("0", 2, "2")],
             {"1": [Coin("fakeid11", 1, str(pytest.valid_id))]}
     )
-    
+
     transaction_data = loads(transaction_data)
 
     receive_transactions([transaction_data], initial_metadata, queues, connection)
@@ -145,7 +146,6 @@ def test_single_invalid_transaction_output_higher_than_input(initial_history, in
 
 
 def test_single_invalid_transaction_reused_input_coin(initial_history, initial_metadata):
-    history = History()
     valid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
             "fakeid5",
@@ -155,7 +155,7 @@ def test_single_invalid_transaction_reused_input_coin(initial_history, initial_m
 
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
 
     invalid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
@@ -173,7 +173,6 @@ def test_single_invalid_transaction_reused_input_coin(initial_history, initial_m
 
 
 def test_single_invalid_transaction_reused_output_coin(initial_history, initial_metadata):
-    history = History()
     valid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
             "fakeid7",
@@ -183,7 +182,7 @@ def test_single_invalid_transaction_reused_output_coin(initial_history, initial_
 
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
 
     invalid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
@@ -199,8 +198,8 @@ def test_single_invalid_transaction_reused_output_coin(initial_history, initial_
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
+
 def test_json_serializable(initial_history, initial_metadata):
-    history = History()
     valid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
             "fakeid9",
@@ -210,7 +209,7 @@ def test_json_serializable(initial_history, initial_metadata):
 
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
 
     invalid_transaction_data = BLANK_TRANSACTION(
             initial_metadata['uuid'],
@@ -233,18 +232,18 @@ def test_multiple_valid_transactions(initial_history, initial_metadata):
     transactions = []
     for i in range(3):
         transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
-            "validid" + str(i),
-            [Coin("0", 1, str(i))],
-            {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id + i))]}))
+                                "validid" + str(i),
+                                [Coin("0", 1, str(i))],
+                                {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     all_transactions = '[' + ', '.join(transactions) + ']'
     all_transactions = loads(all_transactions)
 
     receive_transactions(all_transactions, initial_metadata, queues, connection)
 
-    assert queues['trans'].get(block=False) != None
-    assert queues['trans'].get(block=False) != None
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
+    assert queues['trans'].get(block=False) is not None
+    assert queues['trans'].get(block=False) is not None
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
@@ -253,9 +252,9 @@ def test_multiple_invalid_transactions(initial_history, initial_metadata):
     transactions = []
     for i in range(2):
         transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
-            "invalidid" + str(pytest.valid_id),
-            [Coin("0", 1, str(i))],
-            {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id + i))]}))
+                                "invalidid" + str(pytest.valid_id),
+                                [Coin("0", 1, str(i))],
+                                {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     transactions.append(transactions[1])
 
@@ -267,10 +266,11 @@ def test_multiple_invalid_transactions(initial_history, initial_metadata):
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
+
 def test_new_transaction(initial_history, initial_metadata):
     new_transaction({'input': 2.5, 'output': {'A': 1, 'B': 0.5}}, initial_metadata, queues, FakeConnection())
 
-    assert queues['trans'].get(block=False) != None
+    assert queues['trans'].get(block=False) is not None
     with pytest.raises(Empty):
         queues['trans'].get(block=False)
 
@@ -293,10 +293,12 @@ def test_verify_multiple_transactions(initial_history, initial_metadata):
     for i in range(5):
         new_transaction({'input': 1, 'output': {'A': 1}}, initial_metadata, queues, FakeConnection())
 
-    reward_transaction = RewardTransaction([], {initial_metadata['uuid']: [RewardCoin('REWARD_ID', REWARD_COIN_VALUE)]}, 'REWARD_ID')
+    reward_transaction = RewardTransaction([],
+                                            {initial_metadata['uuid']: [RewardCoin('REWARD_ID', REWARD_COIN_VALUE)]},
+                                            'REWARD_ID')
     for i in range(5):
         handle_transactions(initial_metadata, queues, reward_transaction)
-        
-        assert queues['tasks'].get(block=False) != None
+
+        assert queues['tasks'].get(block=False) is not None
         with pytest.raises(Empty):
             queues['tasks'].get(block=False)

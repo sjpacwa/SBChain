@@ -40,4 +40,7 @@ def test_complex_encoder_transaction():
 
     json_obj = json.dumps(transaction, cls=ComplexEncoder)
 
-    assert json_obj == '{"uuid": "test2", "timestamp": "time", "sender": "test", "inputs": [{"uuid": "test", "transaction_id": "test", "value": 1}], "outputs": {"1": [{"uuid": "test2", "transaction_id": "test", "value": 1}]}, "input_value": 1, "output_value": 1, "reward_value": 0}'
+    assert json_obj == '{"uuid": "test2", "timestamp": "time", "sender": "test",
+                        "inputs": [{"uuid": "test", "transaction_id": "test", "value": 1}],
+                        "outputs": {"1": [{"uuid": "test2", "transaction_id": "test", "value": 1}]},
+                        "input_value": 1, "output_value": 1, "reward_value": 0}'
