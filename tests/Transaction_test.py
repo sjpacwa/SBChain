@@ -37,7 +37,6 @@ def test_single_valid_transaction(initial_history, initial_metadata):
             [Coin("0", 1, "0")],
             {"1": [Coin("fakeid", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     transaction_data = loads(transaction_data)
 
@@ -55,7 +54,6 @@ def test_single_invalid_transaction_bad_input_id(initial_history, initial_metada
             [Coin("0", 1, "-1")],
             {"1": [Coin("fakeid2", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     transaction_data = loads(transaction_data)
 
@@ -72,7 +70,7 @@ def test_single_invalid_transaction_bad_input_value(initial_history, initial_met
             [Coin("0", 2, "2")],
             {"1": [Coin("fakeid11", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
+    
     transaction_data = loads(transaction_data)
 
     receive_transactions([transaction_data], initial_metadata, queues, connection)
@@ -88,7 +86,6 @@ def test_single_invalid_transaction_bad_input_transaction_id(initial_history, in
             [Coin("3", 1, "2")],
             {"1": [Coin("fakeid12", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     transaction_data = loads(transaction_data)
 
@@ -105,7 +102,6 @@ def test_single_invalid_transaction_nonmatching_input_coin(initial_history, init
             [Coin("0", 3, "2")],
             {"1": [Coin("fakeid3", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     transaction_data = loads(transaction_data)
 
@@ -122,7 +118,6 @@ def test_single_invalid_transaction_output_higher_than_input(initial_history, in
             [Coin("0", 1, "3")],
             {"1": [Coin("fakeid4", 2, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     transaction_data = loads(transaction_data)
 
@@ -140,7 +135,6 @@ def test_single_invalid_transaction_reused_input_coin(initial_history, initial_m
             [Coin("0", 1, "1")],
             {"1": [Coin("fakeid5", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
@@ -150,9 +144,8 @@ def test_single_invalid_transaction_reused_input_coin(initial_history, initial_m
             initial_metadata['uuid'],
             "fakeid6",
             [Coin("0", 1, "1")],
-            {"1": [Coin("fakeid6", 1, str(pytest.valid_id))]}
+            {"1": [Coin("fakeid6", 1, str(pytest.valid_id + 1))]}
     )
-    pytest.valid_id += 1
 
     invalid_transaction_data = loads(invalid_transaction_data)
 
@@ -170,7 +163,6 @@ def test_single_invalid_transaction_reused_output_coin(initial_history, initial_
             [Coin("0", 1, "2")],
             {"1": [Coin("fakeid7", 1, str(pytest.valid_id))]}
     )
-    pytest.valid_id += 1
 
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
@@ -199,8 +191,6 @@ def test_json_serializable(initial_history, initial_metadata):
             {"1": [Coin("fakeid9", 1, str(pytest.valid_id))]}
     )
 
-    pytest.valid_id += 1
-
     valid_transaction_data = loads(valid_transaction_data)
     receive_transactions([valid_transaction_data], initial_metadata, queues, connection)
     assert queues['trans'].get(block=False) != None
@@ -226,8 +216,7 @@ def test_multiple_valid_transactions(initial_history, initial_metadata):
         transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
             "validid" + str(i),
             [Coin("0", 1, str(i))],
-            {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id))]}))
-        pytest.valid_id += 1
+            {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     all_transactions = '[' + ', '.join(transactions) + ']'
     all_transactions = loads(all_transactions)
@@ -247,8 +236,7 @@ def test_multiple_invalid_transactions(initial_history, initial_metadata):
         transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
             "invalidid" + str(pytest.valid_id),
             [Coin("0", 1, str(i))],
-            {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id))]}))
-        pytest.valid_id += 1
+            {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     transactions.append(transactions[1])
 
