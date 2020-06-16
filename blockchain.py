@@ -37,7 +37,7 @@ class Blockchain:
         self.current_transactions = []
         self.chain = []
 
-        # The version number is incremented in resolve conflicts and is returned 
+        # The version number is incremented in resolve conflicts and is returned
         # in paginated get chain.
         self.version_number = 0
 
@@ -57,7 +57,7 @@ class Blockchain:
 
         for block in self.chain:
             json_chain.append(block.to_json())
-            
+    
         return json_chain
 
     def new_block(self, proof, previous_hash, date=datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')):
@@ -68,7 +68,7 @@ class Blockchain:
 
         :param proof: <int> The proof given by the Proof of Work algorithm
         :param previous_hash: <str> Hash of previous Block
-    
+
         :return: <Block Object> New Block
         """
 
@@ -160,7 +160,7 @@ class Blockchain:
         :return: <Block Object> The block object at the index or None if
             it does not exist.
         """
-    
+
         try:
             return self.chain[index - 1]
         except IndexError:
@@ -186,7 +186,7 @@ class Blockchain:
 
         guess = f'{last_proof}{proof}{last_hash}{transactions}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-    
+
         # This is where difficulty is set.
         difficulty = config.get_block_difficulty()
         return guess_hash[:difficulty] == '0' * difficulty

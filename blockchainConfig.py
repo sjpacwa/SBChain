@@ -18,12 +18,13 @@ class BlockchainConfig:
     def __init__(self):
         """
         __init__()
-        
+
         The constructor for a BlockChain Config object
         """
 
         self.parser = configparser.ConfigParser()
         self.parser.read('config.ini')
+
 
     def get_block_difficulty(self):
         """

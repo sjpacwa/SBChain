@@ -12,8 +12,9 @@ from urllib.parse import urlparse
 from hashlib import sha1
 import logging
 import json
-import uuid
+from import uuid import uuid4
 from time import sleep
+from datetime import datetime
 
 # Local imports
 from block import block_from_json
@@ -31,7 +32,7 @@ def thread_function(func):
     """
     register
 
-    This function registers a function with the THREAD_FUNCTIONS 
+    This function registers a function with the THREAD_FUNCTIONS
     dictionary.
 
     :param func: <Function Object> The function to be registered.
@@ -69,7 +70,7 @@ def get_chain_paginated(size, *args, **kwargs):
     """
     get_chain_paginated()
 
-    This function handles a request from the dispatcher (public and internal). 
+    This function handles a request from the dispatcher (public and internal).
     It returns a subsection of the chain to the client and then waits for more messages.
 
     :param size: <integer> The number of blocks to receive
@@ -125,7 +126,7 @@ def get_block(index, *args, **kwargs):
     """
     get_block()
 
-    This function handles a request from the dispatcher. 
+    This function handles a request from the dispatcher.
     It returns the block that has been requested to the client.
 
     :param connection: <Socket Connection Object> The new connection.
@@ -134,15 +135,15 @@ def get_block(index, *args, **kwargs):
 
     metadata = args[0]
     conn = args[2]
- 
+
     logging.info("Received get block request (from dispatcher)")
 
     block = metadata['blockchain'].get_block(index)
 
-    if block == None:
+    if block is None:
         ConnectionHandler()._send(conn, "Block does not exist")
         return
-    
+
     ConnectionHandler()._send(conn, block)
 
 
@@ -151,7 +152,7 @@ def new_transaction(trans_data, *args, **kwargs):
     """
     new_transaction
 
-    This function handles request from the dispatcher. It creates a new 
+    This function handles request from the dispatcher. It creates a new
     transaction and adds it to the list of transactions. Handles simpler transations than
     receive transaction.
 
@@ -254,7 +255,7 @@ def register_nodes(peers, *args, **kwargs):
             parsed_url = urlparse(peer[0])
             logging.debug("Parsed url")
             logging.debug(parsed_url)
-            
+
             if parsed_url.netloc:
                 new_peer = (parsed_url.netloc, peer[1])
                 if new_peer not in metadata['peers']:
@@ -262,7 +263,7 @@ def register_nodes(peers, *args, **kwargs):
                     logging.debug(parsed_url.netloc, peer[1])
                 else:
                     continue
-            
+
             elif parsed_url.path:
                 # Accepts an URL without scheme like '192.168.0.5:5000'.
                 new_peer = (parsed_url.path, peer[1])
@@ -278,7 +279,7 @@ def register_nodes(peers, *args, **kwargs):
                 logging.error(peer)
                 continue
 
-            # Connect to new node and give them our address. The outer list is 
+            # Connect to new node and give them our address. The outer list is
             # necessary because this function takes a list of nodes and the inner
             # list combines the host and port into one object.
             try:
@@ -305,7 +306,7 @@ def unregister_nodes(peers, *args, **kwargs):
     if not isinstance(peers, list):
         return
 
-    for peer in peers: 
+    for peer in peers:
         if isinstance(peer, list):
             peer = tuple(peer)
         else:
@@ -323,9 +324,9 @@ def benchmark_initialize(node_ids, value, *args, **kwargs):
     """
     benchmark_initialize()
 
-    This endpoint can be used in the case that the chain is being 
+    This endpoint can be used in the case that the chain is being
     benchmarked to initialized each node in the system with a starting
-    value. Note that for this to work properly, every node must 
+    value. Note that for this to work properly, every node must
     successfully complete this task.
 
     :param node_ids: <list> A list of the node ids in the system.
@@ -367,7 +368,7 @@ def benchmark_initialize(node_ids, value, *args, **kwargs):
     # Add transaction to genesis block.
     metadata['blockchain'].chain[0].transactions.append(transaction)
 
-    # Mark benchmark as false to prevent repeat calls and release the 
+    # Mark benchmark as false to prevent repeat calls and release the
     # semaphore so that mining can begin.
     metadata['benchmark'] = False
     metadata['benchmark_lock'].release()
@@ -380,7 +381,7 @@ def resolve_conflicts(*args, **kwargs):
     """
     resolve_conflicts()
 
-    This function performs an active resolve conflicts, collecting 
+    This function performs an active resolve conflicts, collecting
     information from all nodes in the network.
     """
 
@@ -410,6 +411,7 @@ def resolve_conflicts(*args, **kwargs):
     # Notify caller process complete.
     ConnectionHandler()._send(conn, blocks_sent)
 
+
 @thread_function
 def get_balance(*args, **kwargs):
     """
@@ -418,7 +420,7 @@ def get_balance(*args, **kwargs):
     This endpoint is used to get the wallet balance for this node
     """
     conn = args[2]
-  
+
     history = History()
     wallet = history.get_wallet()
     wallet_lock = wallet.get_lock()
@@ -426,7 +428,7 @@ def get_balance(*args, **kwargs):
     with wallet_lock:
         balance = wallet.get_balance()
 
-    ConnectionHandler()._send(conn,balance)
+    ConnectionHandler()._send(conn, balance)
 
 
 """
@@ -440,7 +442,7 @@ def receive_block(block_data, host, port, *args, **kwargs):
     receive_block()
 
     This function handles a request from the dispatcher (internal).
-    It receives a block from a peer and forwards it along to everyone but 
+    It receives a block from a peer and forwards it along to everyone but
     the original sender.
 
     :param block_data: <dict> The data of the block off the network.
@@ -454,8 +456,8 @@ def receive_block(block_data, host, port, *args, **kwargs):
     current_index = metadata['blockchain'].last_block_index
 
     if block_data['index'] >= current_index + 1:
-        block = block_from_json(block_data)        
-        if block == None:
+        block = block_from_json(block_data)
+        if block is None:
             return
 
         logging.debug('Added block to queue')
@@ -621,4 +623,3 @@ def response_test(*args, **kwargs):
 
     message = '20~{"message": "hello"}'
     conn.send(message.encode())
-

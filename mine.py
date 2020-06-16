@@ -8,7 +8,6 @@ Santa Clara University
 """
 
 # Standard library imports
-import json
 import logging
 from copy import deepcopy
 from random import randint
@@ -17,14 +16,13 @@ from threading import Thread
 from uuid import uuid4
 
 # Local imports
-from block import block_from_json   
+from block import block_from_json
 from blockchain import Blockchain
-from coin import Coin, RewardCoin
+from coin import RewardCoin
 from connection import MultipleConnectionHandler, SingleConnectionHandler
-from encoder import ComplexEncoder
 from history import History
 from macros import RECEIVE_BLOCK, GET_CHAIN_PAGINATED, GET_CHAIN_PAGINATED_ACK, GET_CHAIN_PAGINATED_STOP, REWARD_COIN_VALUE
-from transaction import Transaction, RewardTransaction, transaction_verify
+from transaction import RewardTransaction, transaction_verify
 
 
 class BlockException(Exception):
@@ -46,7 +44,7 @@ class Miner(Thread):
     def __init__(self, metadata, queues):
         """
         __init__()
-    
+
         The constructor for a Miner object.
 
         :param metadata: <dict> The metadata for this node.
@@ -87,7 +85,7 @@ def proof_of_work(metadata, queues, reward, last_block):
 
     :param metadata: <dict> The metadata for this node.
     :param queues: <dict> The queues for this node.
-    :param reward: <RewardTransaction Object> The reward 
+    :param reward: <RewardTransaction Object> The reward
         transaction used in the new block.
     :param last_block: <Block Object> The previous block in the chain.
 
@@ -105,13 +103,13 @@ def proof_of_work(metadata, queues, reward, last_block):
     proof = randint(0, maxsize)
     while not metadata['blockchain'].valid_proof(last_proof, proof, last_hash, current_trans):
         history_lock.acquire()
-        
+     
         if not queues['trans'].empty():
             handle_transactions(metadata, queues, reward)
         if not queues['blocks'].empty():
             handle_blocks(metadata, queues, reward)
         history_lock.release()
-           
+     
         if metadata['no_mine']:
             proof = proof
         else:
@@ -188,7 +186,7 @@ def handle_blocks(metadata, queues, reward_transaction):
         
         if block.index == current_index + 1:
             success = verify_block(history_temp, block, metadata['blockchain'])
-            if success == False:
+            if not success:
                 queues['blocks'].task_done()
                 continue
 
@@ -220,10 +218,8 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
     that is much further ahead of us in index.
 
     :param block: <Block Object> The block that has been taken from the network.
-    :param history_copy: <History Object> A copy of the history to allow us to
-        edit it without issue.
-    :param host_port: <tuple<str, int>> The host and port of the node that 
-        sent us the block.
+    :param history_copy: <History Object> A copy of the history to allow us to edit it without issue.
+    :param host_port: <tuple<str, int>> The host and port of the node that sent us the block.
     :param metadata: <dict> The metadata of the node.
 
     :return: <boolean> Whether or not the chain was replaced.
