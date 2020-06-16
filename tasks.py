@@ -12,16 +12,15 @@ from urllib.parse import urlparse
 from hashlib import sha1
 import logging
 import json
+import uuid
 from time import sleep
 
 # Local imports
-from block import Block, block_from_json
+from block import block_from_json
 from coin import *
-from encoder import ComplexEncoder
 from transaction import *
 from connection import MultipleConnectionHandler, ConnectionHandler, SingleConnectionHandler
 from macros import RECEIVE_BLOCK, RECEIVE_TRANSACTION, REGISTER_NODES, SEND_CHAIN, SEND_CHAIN_SECTION, RESOLVE_CONFLICTS
-from mine import mine
 from history import History
 
 
@@ -71,8 +70,7 @@ def get_chain_paginated(size, *args, **kwargs):
     get_chain_paginated()
 
     This function handles a request from the dispatcher (public and internal). 
-    It returns a subsection of the chain to the client and then waits for more 
-    messages.
+    It returns a subsection of the chain to the client and then waits for more messages.
 
     :param size: <integer> The number of blocks to receive
     """
@@ -94,7 +92,6 @@ def get_chain_paginated(size, *args, **kwargs):
 
             if version_inner != version_initial:
                 break
-
 
             if offset == 0 and size < len(chain):
                 section = chain[offset - size:]
@@ -137,7 +134,7 @@ def get_block(index, *args, **kwargs):
 
     metadata = args[0]
     conn = args[2]
-    
+ 
     logging.info("Received get block request (from dispatcher)")
 
     block = metadata['blockchain'].get_block(index)
