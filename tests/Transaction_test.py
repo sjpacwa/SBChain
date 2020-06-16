@@ -19,7 +19,6 @@ from transaction import Transaction, RewardTransaction
 from tasks import receive_transactions, new_transaction, receive_transaction_internal
 from macros import REWARD_COIN_VALUE
 from mine import handle_transactions
-from history import History
 
 
 pytest.valid_id = 0
@@ -231,10 +230,9 @@ def test_json_serializable(initial_history, initial_metadata):
 def test_multiple_valid_transactions(initial_history, initial_metadata):
     transactions = []
     for i in range(3):
-        transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
-                                "validid" + str(i),
-                                [Coin("0", 1, str(i))],
-                                {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id + i))]}))
+        transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'], "validid" + str(i),
+                                                [Coin("0", 1, str(i))],
+                                                {"1": [Coin("validid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     all_transactions = '[' + ', '.join(transactions) + ']'
     all_transactions = loads(all_transactions)
@@ -251,10 +249,9 @@ def test_multiple_valid_transactions(initial_history, initial_metadata):
 def test_multiple_invalid_transactions(initial_history, initial_metadata):
     transactions = []
     for i in range(2):
-        transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'],
-                                "invalidid" + str(pytest.valid_id),
-                                [Coin("0", 1, str(i))],
-                                {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id + i))]}))
+        transactions.append(BLANK_TRANSACTION(initial_metadata['uuid'], "invalidid" + str(pytest.valid_id),
+                                                [Coin("0", 1, str(i))],
+                                                {"1": [Coin("invalidid" + str(i), 1, str(pytest.valid_id + i))]}))
 
     transactions.append(transactions[1])
 
@@ -294,8 +291,8 @@ def test_verify_multiple_transactions(initial_history, initial_metadata):
         new_transaction({'input': 1, 'output': {'A': 1}}, initial_metadata, queues, FakeConnection())
 
     reward_transaction = RewardTransaction([],
-                                            {initial_metadata['uuid']: [RewardCoin('REWARD_ID', REWARD_COIN_VALUE)]},
-                                            'REWARD_ID')
+                                        {initial_metadata['uuid']: [RewardCoin('REWARD_ID', REWARD_COIN_VALUE)]},
+                                        'REWARD_ID')
     for i in range(5):
         handle_transactions(initial_metadata, queues, reward_transaction)
 
