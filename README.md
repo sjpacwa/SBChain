@@ -29,7 +29,7 @@ The SBChain Blockchain project meant to explore possible performance improvement
 
 ## Running
 
-1. Mount the virtual environment.
+1. Mount the virtual environment if not already mounted.
     ```
     $  source venv/bin/activate
     ```
@@ -59,7 +59,7 @@ The SBChain Blockchain project meant to explore possible performance improvement
 1. Open a new terminal
 2. Mount the virtual environment.
     ```
-    $ .\venv\Scripts\activate
+    $ source venv/bin/activate
     ```
 
 3. Run new instance of the server with a different port numbers.
