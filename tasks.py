@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from hashlib import sha1
 import logging
 import json
-from import uuid import uuid4
+from uuid import uuid4
 from time import sleep
 from datetime import datetime
 
