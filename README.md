@@ -85,8 +85,8 @@ To execute any of these commands.
 Creates a new transaction at a node at the current block. 
 
 **Parameters**:
-1. 'input': the amount of money to be used as an input
-2. 'output': Dictionary of all recipients of this transactions as well as the amount to give each recipient
+1. "input": the amount of money to be used as an input
+2. "output": Dictionary of all recipients of this transactions as well as the amount to give each recipient
 
 **Assumptions**:
 1. The node that receives this endpoint call is the sender
@@ -98,12 +98,14 @@ The input amount is automatically converted to coins using the internal wallet i
 {
     "action": "new_transaction",
     "params": [
+        {
             "input": <amount>,
             "output": {
                 "recipient1": <amount>,
                 "recipient2": <amount>,
                 ... 
             }
+        }
     ]
 }
 ```
@@ -115,14 +117,15 @@ Registers peers with node through dispatcher thread. The node who receives this 
 All registered nodes are also registered in their peers.
 
 **Parameters:**
-1. 'peers': list of IP address and Port tuples to register node with
+1. peers: list of IP address and Port tuples to register node with
 ```
 {
     "action": "register_nodes",
     "params": [
-        "peers": [
-            ("<ip1>",<port1>),
-            ("<ip2>",<port2>)
+        [
+            ["<ip1>",<port1>],
+            ["<ip2>",<port2>]
+            ...
         ]
     ]
 }
@@ -134,14 +137,15 @@ All registered nodes are also registered in their peers.
 Unregisters peers with node through dispatcher thread
 
 **Parameters:**
-1. 'peers': list of IP address and Port tuples to unregister node with
+1. peers: list of IP address and Port tuples to unregister node with
 ```
 {
     "action": "unregister_nodes",
     "params": [
-        "peers": [
-            ("<ip1>",<port1>),
-            ("<ip2>",<port2>)
+        [
+            ["<ip1>",<port1>],
+            ["<ip2>",<port2>]
+            ...
         ]
     ]
 }
@@ -167,13 +171,13 @@ Return the blockchain of the node starting at the last block, and going to the f
 After sending this request, the node will send the last blocks in its chain with length "size"
 
 **Parameters:**
-1. "size": size of the pagination
+1. size: size of the pagination
 
 ```
 {
     "action": "get_chain_paginated",
     "params": [
-        "size": <amount>
+        <amount>
     ]
 }
 ```
@@ -205,7 +209,7 @@ Returns the block of the given node at a certain index
 {
     "action": "get_block",
     "params": [
-        "index": <amount>
+        <amount>
     ]
 }
 ```
@@ -241,18 +245,19 @@ This is a special API endpoint that isn't available unless the --benchmark flag 
 In benchmark mode, the client must send this request to all nodes in the system.
 
 **Parameters:**
-1. 'node_ids': a list of all nodes in the benchmark universe
-2. 'value': The amount of money to initialize each node with
+1. node_ids: a list of all nodes in the benchmark universe
+2. value: The amount of money to initialize each node with
 ```
 {
     "action": "benchmark_initialize",
     "params": [
-        "node_ids" [
+        [
+        [
             "<nodeid1>",
             "<nodeid2>",
             ...
         ],
-        "value": <amount>
+        <amount>
     ]
 }
 ```

@@ -240,9 +240,11 @@ def register_nodes(peers, *args, **kwargs):
     for peer in peers:
         logging.debug("Peer")
         logging.debug(peer)
-
-        if not isinstance(peer, tuple):
+        if isinstance(peer, list):
+            peer = tuple(peer)
+        else:
             continue
+
         if not len(peer) == 2:
             continue
         if not isinstance(peer[0], str):
@@ -309,7 +311,7 @@ def unregister_nodes(peers, *args, **kwargs):
     for peer in peers: 
         if isinstance(peer, list):
             peer = tuple(peer)
-        elif not isinstance(peer, tuple):
+        else:
             continue
 
         try:
