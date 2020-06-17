@@ -9,7 +9,7 @@ Santa Clara University
 """
 
 # Standard library imports
-from uuid import UUID
+from hashlib import sha1
 
 # Local imports
 from blockchain import Blockchain
@@ -40,11 +40,15 @@ class Node:
         :param neighbors: <list> The neighbors the node should be initialized with.
         """
 
+        m = sha1()
+        m.update(host.encode())
+        m.update(str(port).encode())
+
         self.metadata = {}
         self.metadata['done'] = initialized
         self.metadata['host'] = host
         self.metadata['port'] = port
-        self.metadata['uuid'] = str(UUID(int=port)).replace('-', '') if uuid is None else uuid
+        self.metadata['uuid'] = str(m.hexdigest()) if uuid is None else uuid
         self.metadata['debug'] = debug
         self.metadata['no_mine'] = no_mine
         self.metadata['benchmark'] = benchmark
