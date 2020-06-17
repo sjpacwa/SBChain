@@ -9,12 +9,14 @@ Santa Clara University
 
 # Standard library imports
 from threading import Semaphore
-import pytest
 
 # Local imports
 from blockchain import Blockchain
 from tasks import benchmark_initialize
 from tests.constants import create_metadata
+
+# Third party imports
+import pytest
 
 
 @pytest.fixture()

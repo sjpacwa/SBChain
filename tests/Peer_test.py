@@ -7,12 +7,12 @@ This file tests the registering and unregistering of peers.
 Santa Clara University
 """
 
-# Standard library imports
-import pytest
-
 # Local imports
 from tasks import register_nodes, unregister_nodes
 from tests.constants import create_metadata
+
+# Third party imports
+import pytest
 
 
 @pytest.fixture()

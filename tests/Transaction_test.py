@@ -10,7 +10,6 @@ Santa Clara University
 # Standard library imports
 from json import loads
 from queue import Empty
-import pytest
 
 # Local imports
 from tests.constants import create_metadata, BLANK_TRANSACTION, queues, connection, FakeConnection
@@ -19,6 +18,9 @@ from transaction import Transaction, RewardTransaction
 from tasks import receive_transactions, new_transaction, receive_transaction_internal
 from macros import REWARD_COIN_VALUE
 from mine import handle_transactions
+
+# Third party imports
+import pytest
 
 
 pytest.valid_id = 0

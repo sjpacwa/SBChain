@@ -11,7 +11,6 @@ Santa Clara University
 from datetime import datetime
 from json import loads
 from queue import Empty
-import pytest
 
 # Local imports
 from block import block_from_string
@@ -21,6 +20,9 @@ from tasks import receive_block
 from mine import handle_blocks, BlockException
 from transaction import Transaction
 from coin import Coin
+
+# Third party imports
+import pytest
 
 
 @pytest.fixture(scope="module")

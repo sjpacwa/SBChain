@@ -7,11 +7,12 @@ This file tests the SingleConnectionHandler
 Santa Clara University
 """
 
-# Standard library imports
-import pytest
-
 # Local imports
 from connection import SingleConnectionHandler
+
+# Third party imports
+import pytest
+
 
 """
 
