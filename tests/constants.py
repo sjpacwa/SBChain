@@ -1,3 +1,13 @@
+"""
+constants.py
+
+This file provides macros for the pytest infrastructure
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
+
+# Standard library imports
 import json
 from threading import Lock
 from uuid import uuid4
@@ -12,7 +22,15 @@ from encoder import ComplexEncoder
 from history import History
 from transaction import Transaction, RewardTransaction
 
+
 uuid = str(uuid4()).replace("-", "")
+connection = None
+queues = {
+    'tasks': Queue(),
+    'trans': Queue(),
+    'blocks': Queue()
+}
+
 
 def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
     history = History(uuid)
@@ -34,11 +52,6 @@ def create_metadata(host='127.0.0.1', port=5000, blockchain=Blockchain()):
         'peers': []
     }
 
-queues = {
-    'tasks': Queue(),
-    'trans': Queue(),
-    'blocks': Queue()
-}
 
 def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
 
@@ -46,17 +59,17 @@ def BLANK_TRANSACTION(sender, uuid, inputs, outputs):
 
     return json.dumps(trans, cls=ComplexEncoder)
 
+
 def BLANK_BLOCK(index, transactions, proof, previous_hash):
     transaction_id = "REWARD"
-    reward_transaction = RewardTransaction([], {'A': [RewardCoin(transaction_id, 5, "REWARD_COIN")]}, transaction_id, datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    reward_transaction = RewardTransaction([], {'A': [RewardCoin(transaction_id, 5, "REWARD_COIN")]},
+                                           transaction_id, datetime.min.strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     transactions = [reward_transaction] + transactions
 
     block = Block(index, transactions, proof, previous_hash)
 
     return json.dumps(block, cls=ComplexEncoder)
-
-connection = None
 
 
 class FakeConnection():
@@ -114,4 +127,3 @@ class FakeBlockchain():
 
     def increment_version_number(self):
         self.version_number += 1
-

@@ -3,13 +3,19 @@ GetChain_test.py
 
 This test is responsible for testing the get chain and get paginated
 chain functionality.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
+# Standard library imports
 from threading import Thread
 
+# Local imports
 from tasks import get_chain, get_chain_paginated
 from tests.constants import FakeBlockchain, FakeConnection, create_metadata
 
+# Third party imports
 import pytest
 
 
@@ -52,7 +58,7 @@ def test_paginated_chain_multiple(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -80,7 +86,7 @@ def test_paginated_chain_non_multiple(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -139,7 +145,7 @@ def test_paginated_chain_with_reset(fake_socket, initial_data):
         fake_socket.set_data({"action": "inform", "params": {"message": "ACK"}})
 
         data = fake_socket.read_data()
-    
+
         total_list = data['section'] + total_list
 
         if data['status'] == 'FINISHED':
@@ -153,4 +159,3 @@ def test_paginated_chain_with_reset(fake_socket, initial_data):
 
     assert total_list == blockchain.get_chain()
     assert data['status'] == 'FINISHED'
-

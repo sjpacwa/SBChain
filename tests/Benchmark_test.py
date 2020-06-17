@@ -2,14 +2,20 @@
 Benchmark_test.py
 
 This file tests the initialize functionality of the benchmark.
+
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
 """
 
+# Standard library imports
 from threading import Semaphore
 
+# Local imports
 from blockchain import Blockchain
 from tasks import benchmark_initialize
 from tests.constants import create_metadata
 
+# Third party imports
 import pytest
 
 
@@ -36,7 +42,7 @@ def test_valid_initialize(initial_metadata, node_list):
     benchmark_initialize(node_list, 5, initial_metadata)
 
     # Check the flags are set.
-    assert initial_metadata['benchmark'] == False
+    assert not initial_metadata['benchmark']
     assert initial_metadata['benchmark_lock']._value == 1
 
     assert len(initial_metadata['history'].instance.coins.values()) == len(node_list)
@@ -51,15 +57,14 @@ def test_benchmark_runs_once(initial_metadata, node_list):
     response_two = benchmark_initialize(node_list, 5, initial_metadata)
 
     # Ensure second run is failure
-    assert response_one == True
-    assert response_two == False
+    assert response_one
+    assert not response_two
 
     # Check the flags are set.
-    assert initial_metadata['benchmark'] == False
+    assert not initial_metadata['benchmark']
     assert initial_metadata['benchmark_lock']._value == 1
 
     assert len(initial_metadata['history'].instance.coins.values()) == len(node_list)
     assert len(initial_metadata['history'].instance.transactions.values()) == 1
 
     assert len(initial_metadata['blockchain'].chain[0].transactions) == 1
-

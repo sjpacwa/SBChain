@@ -182,7 +182,7 @@ def handle_blocks(metadata, queues, reward_transaction):
         history_temp = history.get_copy()
 
         host_port, block = queues['blocks'].get()
-        current_index = metadata['blockchain'].last_block_index 
+        current_index = metadata['blockchain'].last_block_index
 
         if block.index == current_index + 1:
             success = verify_block(history_temp, block, metadata['blockchain'])
@@ -205,7 +205,8 @@ def handle_blocks(metadata, queues, reward_transaction):
                 changed = True
 
     if changed:
-        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'], metadata['port']], {}, None))
+        queues['tasks'].put(('forward_block', [metadata['blockchain'].last_block, metadata['host'],
+                                               metadata['port']], {}, None))
         queues['blocks'].task_done()
         raise BlockException
 
@@ -285,7 +286,6 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
         blockchain_copy.chain = blockchain_copy.chain[:-1]
 
     # Add new blocks moving forward.
-    i = 0
     for block in blocks:
         block_obj = block_from_json(block)
         if block_obj is None:
@@ -296,8 +296,6 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
         if not success:
             logging.debug("Could not replace chain")
             return False
-
-        i = i + 1
 
     reward_coins = []
     # Roll forward current transactions
@@ -396,7 +394,8 @@ def mine(*args, **kwargs):
     # Create the new block and add it to the end of the chain.
     block = metadata['blockchain'].new_block(proof, last_block.hash)
 
-    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json(), metadata['host'], metadata['port']))
+    MultipleConnectionHandler(metadata['peers']).send_wout_response(RECEIVE_BLOCK(block.to_json(),
+                                                                    metadata['host'], metadata['port']))
 
     logging.debug("Mined block: " + block.to_string())
 
@@ -460,13 +459,12 @@ def verify_block(history_temp, block, blockchain):
 
     lastblock = blockchain.last_block
 
-
     if lastblock.hash != block.previous_hash:
         logging.debug('Bad block: hash does not match')
         return False
 
     block.transactions = new_transactions
-    
+
     if not Blockchain.valid_proof(lastblock.proof, block.proof, lastblock.hash, block.transactions):
         logging.debug('Bad block: invalid proof')
         return False

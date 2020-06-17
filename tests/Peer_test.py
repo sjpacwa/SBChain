@@ -2,14 +2,17 @@
 Peer_test.py
 
 This file tests the registering and unregistering of peers.
-"""
 
-# Standard library imports
-import pytest
+2020 Stephen Pacwa and Daniel Okazaki
+Santa Clara University
+"""
 
 # Local imports
 from tasks import register_nodes, unregister_nodes
 from tests.constants import create_metadata
+
+# Third party imports
+import pytest
 
 
 @pytest.fixture()
@@ -86,6 +89,7 @@ def test_remove_present_peer(initial_metadata):
     unregister_nodes(present_peer, initial_metadata)
 
     assert initial_metadata['peers'] == []
+
 
 def test_remove_non_present_peer(initial_metadata):
 

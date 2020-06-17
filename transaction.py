@@ -110,7 +110,7 @@ class Transaction:
             'timestamp': self._timestamp,
             'sender': self._sender,
             'inputs': [coin.to_json() for coin in self._inputs],
-            'outputs': {recipient:[coin.to_json() for coin in self._outputs[recipient]] for recipient in self._outputs},
+            'outputs': {recipient: [coin.to_json() for coin in self._outputs[recipient]] for recipient in self._outputs},
             'input_value': self._input_value,
             'output_value': self._output_value,
             'reward_value': self._reward_value
@@ -270,7 +270,7 @@ class Transaction:
         :return: <boolean> Whether the transactions are equal.
         """
 
-        if other == None:
+        if other is None:
             return False
 
         if not isinstance(other, Transaction):
@@ -309,7 +309,7 @@ class RewardTransaction(Transaction):
         for coin in coins:
             self._inputs.append(coin)
             self._input_value += coin.get_value()
-        
+
         self._output_value = self._input_value + REWARD_COIN_VALUE
 
         for i in self._outputs:
@@ -318,7 +318,7 @@ class RewardTransaction(Transaction):
     def verify(self, history=None):
         """
         verify()
- 
+
         This function verifies if a tranaction is valid.
 
         Assumptions:
@@ -327,7 +327,7 @@ class RewardTransaction(Transaction):
         3. Output coins were created from scratch.
         4. Assume that history is already locked.
 
-        :param history: <History Object> A place where a history object can be 
+        :param history: <History Object> A place where a history object can be
             passed in to be used.
 
         :return: Whether the transaction is valid or not.
@@ -344,7 +344,7 @@ class RewardTransaction(Transaction):
 
         for coin in self._inputs:
             transaction = history.get_transaction(coin.get_transaction_id())
-            if transaction == None or not transaction.check_coin(self._sender, coin):
+            if transaction is None or not transaction.check_coin(self._sender, coin):
                 return False
 
         for coin in self.get_all_output_coins():
@@ -352,7 +352,7 @@ class RewardTransaction(Transaction):
                 return False
 
         return True
-    
+
     def reset(self):
         self._output_value = REWARD_COIN_VALUE
         self.inputs = []
@@ -394,7 +394,7 @@ def outputs_from_json(outputs, reward=False):
     """
 
     obj_outputs = {}
-    
+
     for recipient in outputs:
         obj_outputs[recipient] = []
         for output_coin in outputs[recipient]:
@@ -444,6 +444,7 @@ def transaction_from_json(data):
         data['timestamp']
     )
 
+
 def transaction_from_string(data, inputs, outputs):
     """
     transaction_from_string()
@@ -456,6 +457,7 @@ def transaction_from_string(data, inputs, outputs):
     """
 
     return transaction_from_json(json.loads(data))
+
 
 def transaction_verify(history, transaction, reward=False):
     """
@@ -470,7 +472,7 @@ def transaction_verify(history, transaction, reward=False):
     :return: <boolean> Whether the transaction passes verification.
     """
 
-    if history.get_transaction(transaction.get_uuid()) != None:
+    if history.get_transaction(transaction.get_uuid()) is not None:
         # The transaction already exists.
         logging.info("Bad transaction: transaction exists")
         return False
@@ -479,7 +481,7 @@ def transaction_verify(history, transaction, reward=False):
     bad_transaction = False
     for coin in transaction.get_inputs():
         found_coin = history.get_coin(coin.get_uuid())
-        if found_coin == None:
+        if found_coin is None:
             # The input coin does not exist.
             logging.info("Bad transaction: input coins do not exist")
             bad_transaction = True
@@ -500,17 +502,14 @@ def transaction_verify(history, transaction, reward=False):
         if bad_transaction:
             break
 
-
         for coin in transaction.get_all_output_recipient_coins()[recipient]:
             if history.get_coin(coin.get_uuid()):
                 logging.error('Fatal Error: This transaction contains an output coin that already exists: ' + str(transaction))
                 bad_transaction = True
                 break
 
-
     if bad_transaction:
         return False
-
 
     if transaction.verify(history):
         # The transaction looks proper. Remove inputs and add outputs to history.
@@ -526,4 +525,3 @@ def transaction_verify(history, transaction, reward=False):
 
     logging.info("Bad transaction: built in verification failed")
     return False
-
