@@ -286,7 +286,6 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
         blockchain_copy.chain = blockchain_copy.chain[:-1]
 
     # Add new blocks moving forward.
-    i = 0
     for block in blocks:
         block_obj = block_from_json(block)
         if block_obj is None:
@@ -294,11 +293,13 @@ def resolve_conflicts(block, history_copy, host_port, metadata, reward_transacti
         success = verify_block(history_copy, block_obj, blockchain_copy)
         blockchain_copy.add_block(block_obj)
 
+        # Add all transactions from the block to our history copy
+        for transaction in block_obj.transactions:
+            history_copy.add_transaction(transaction)
+
         if not success:
             logging.debug("Could not replace chain")
             return False
-
-        i = i + 1
 
     reward_coins = []
     # Roll forward current transactions

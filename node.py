@@ -9,7 +9,7 @@ Santa Clara University
 """
 
 # Standard library imports
-from uuid import uuid4
+from uuid import UUID
 
 # Local imports
 from blockchain import Blockchain
@@ -44,7 +44,7 @@ class Node:
         self.metadata['done'] = initialized
         self.metadata['host'] = host
         self.metadata['port'] = port
-        self.metadata['uuid'] = str(uuid4()).replace('-', '') if uuid is None else uuid
+        self.metadata['uuid'] = str(UUID(int=port)).replace('-', '') if uuid is None else uuid
         self.metadata['debug'] = debug
         self.metadata['no_mine'] = no_mine
         self.metadata['benchmark'] = benchmark
