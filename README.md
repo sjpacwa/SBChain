@@ -151,6 +151,20 @@ Unregisters peers with node through dispatcher thread
 }
 ```
 
+## **get_id**
+
+**Description:**
+Return the ID assigned to this node.
+
+**Parameters:** None
+
+```
+{
+    "action": "get_id",
+    "params": []
+}
+```
+
 ## **get_chain**
 
 **Description**:  
