@@ -48,6 +48,22 @@ Public API calls.
 
 
 @thread_function
+def get_id(*args, **kwargs):
+    """
+    get_id
+
+    This function returns the ID of this node.
+    """
+
+    metadata = args[0]
+    conn = args[2]
+
+    node_id = metadata['uuid']
+
+    ConnectionHandler()._send(conn, node_id)
+
+
+@thread_function
 def get_chain(*args, **kwargs):
     """
     get_chain()
