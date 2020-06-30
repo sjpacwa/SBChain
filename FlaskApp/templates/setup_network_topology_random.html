@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+        <article class="media content-section">
+            <div class="media-body">
+                <div class="article-metadata">
+                    <h1>Network Topology Information.</h1>
+                    <hr>
+                     <form action="/setupNetworkTopologyRandom" method="POST">
+
+                        <div class="form-group">
+                            <label>Number of Nodes:</label>
+                            <input class="form-control" type="text" name="number-nodes">
+                        </div>
+
+                         <p>How do you wish to connect the nodes:</p>
+                         <input type="radio" id="all" name="network-topology" value="all">
+                         <label for="all">All the nodes together.   </label>
+                         <input type="radio" id="random" name="network-topology" value="random">
+                         <label for="random">Random nodes together.   </label>
+                         <input type="radio" id="hierarchical" name="network-topology" value="hierarchical">
+                         <label for="hierarchical">In hierarchical fashions.</label>
+                         <br><br>
+
+                         <button type="submit" class="btn btn-primary">Send Information.</button>
+                         <br><br>
+                    </form>
+                </div>
+             </div>
+        </article>
+{% endblock content %}

@@ -1,0 +1,8 @@
+2020-04-21 14:24:43,411 - root - INFO - New Block
+2020-04-21 14:24:43,411 - root - INFO - {'index': 1, 'previous_hash': '1', 'proof': 100, 'timestamp': '2020-04-21T14:24:43Z', 'transactions': []}
+2020-04-21 14:24:43,417 - root - INFO - Registering Nodes
+2020-04-21 14:24:43,442 - root - INFO - (('localhost', 5000), ('localhost', 5001))
+2020-04-21 14:24:43,444 - root - INFO - Peers
+2020-04-21 14:24:43,448 - root - INFO - {"message": "Nodes added to peer list.", "total_nodes": [["localhost", 5000], ["localhost", 5001]]}
+2020-04-21 14:24:43,464 - root - INFO - Setting up socket and binding to localhost:5008
+2020-04-21 14:24:43,492 - root - INFO - Waiting for new connections

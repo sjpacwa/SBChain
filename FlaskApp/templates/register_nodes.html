@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1>Register your nodes.</h1>
+    <hr>
+    <h5>You can upload a csv file containing the information about the block-chain nodes.</h5>
+    <br>
+
+    <form action="/register-nodes" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" name="csv" id="register-nodes">
+                <label class="custom-file-label" for="register-nodes">Select a csv file.</label>
+            </div>
+            <br>
+            <br>
+            <button type="submit" class="btn btn-primary">Upload.</button>
+        </div>
+    </form>
+{% endblock content %}

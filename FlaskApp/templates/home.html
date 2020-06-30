@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block content %}
+        <article class="media content-section">
+          <div class="media-body">
+            <div class="article-metadata">
+              <h1>Welcome to SBChain benchmarking.</h1>
+                <br>
+            </div>
+              <h2>Step 1</h2>
+              <p>Setup <a href="/setupNetworkTopology"> Network Topology</a>.</p>
+                <h2>Step 2</h2>
+              <p>Send the <a href="/sendTransactions">transactions.</a></p>
+                    <br>
+              <h2>Step 3 (optional)</h2>
+              <p>You can retrieve the information regarding the SBChain block-chain by retrieving information about the <a href="/getBlockhain">entire block-chain</a> or <a href="getBlock">a single block</a>.</p>
+                    <br>
+                <h2>Step 4</h2>
+                    <p>Get analytical <a href="/getResults">results.</a></p>
+                    <br>
+          </div>
+        </article>
+{% endblock content %}

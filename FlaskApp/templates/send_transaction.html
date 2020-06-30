@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container">
+        <h1>Send Transaction:</h1>
+        <hr>
+        <form action="/send-transaction" method="POST">
+            <div class="form-group">
+                <label>Sender:</label>
+                <input class="form-control" type="text" name="sender">
+            </div>
+
+            <div class="form-group">
+                <label>Recipient:</label>
+                <input class="form-control" type="text" name="recipient">
+            </div>
+
+            <div class="form-group">
+                <label>Amount:</label>
+                <input class="form-control" type="number" name="amount">
+            </div>
+
+            <div class="form-group">
+                <label>Node IP:</label>
+                <input class="form-control" type="text" name="ip">
+            </div>
+
+            <div class="form-group">
+                <label>Node Port:</label>
+                <input class="form-control" type="number" name="port">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Send Transaction.</button>
+        </form>
+    </div>
+{% endblock content %}

@@ -1,0 +1,11 @@
+2020-04-21 14:23:40,911 - root - INFO - New Block
+2020-04-21 14:23:40,913 - root - INFO - {'index': 1, 'previous_hash': '1', 'proof': 100, 'timestamp': '2020-04-21T14:23:40Z', 'transactions': []}
+2020-04-21 14:23:40,920 - root - INFO - Registering Nodes
+2020-04-21 14:23:40,941 - root - INFO - (('localhost', 5000), ('localhost', 5001))
+2020-04-21 14:23:40,947 - root - INFO - Peers
+2020-04-21 14:23:40,954 - root - INFO - {"message": "Nodes added to peer list.", "total_nodes": [["localhost", 5000], ["localhost", 5001]]}
+2020-04-21 14:23:40,975 - root - INFO - Setting up socket and binding to localhost:5002
+2020-04-21 14:23:40,997 - root - INFO - Waiting for new connections
+2020-04-21 14:24:33,009 - root - INFO - Created connection to 127.0.0.1:52697
+2020-04-21 14:24:33,012 - root - ERROR - Receieved invalid data format. Check README for description
+2020-04-21 14:24:33,014 - root - INFO - Waiting for new connections
